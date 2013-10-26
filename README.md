@@ -1,6 +1,6 @@
-IntellijIdea-pure-libGDX-project
-================================
-* git clone https://github.com/ruslux/IntellijIdea-pure-libGDX-project.git
-* mv IntellijIdea-pure-libGDX-project/ Main/
-* open IntellijIdea & open this project
-* run & fun!
+Graphical client for Tendiwa roguelike framework
+================================================
+
+The main official client for Tendiwa framework. Written in Java,
+communicates directly with framework's core, uses LibGDX for
+rendering via OpenGL. 
