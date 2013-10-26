@@ -19,7 +19,7 @@ public TendiwaGame(LwjglApplicationConfiguration cfg) {
 @Override
 public void create() {
 	world = new MainModule().createWorld();
-	setScreen(new GameScreen(this));
+	setScreen(new WorldMapScreen(this));
 }
 
 @Override

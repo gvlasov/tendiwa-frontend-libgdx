@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+You should not change this file.
+
+When you need to customize build process for a module, edit build.properties file.
+-->
+<project name="Tendiwa Client">
+    <property file="build.properties"/>
+    <fail unless="frameworkPath">
+        You must set frameworkPath property in build.properties!
+    </fail>
+    <!--<import file="${frameworkPath}/build.xml"/>-->
+    <property name="staticDataDir" value="staticData"/>
+    <property environment="env"/>
+    <path id="tendiwa.jars">
+        <fileset dir="${frameworkPath}/lib">
+            <include name="*.jar"/>
+        </fileset>
+        <fileset dir="${frameworkPath}">
+            <include name="tendiwa.jar"/>
+        </fileset>
+    </path>
+    <path id="tendiwa.client.libs">
+        <fileset dir="libs">
+            <include name="*jar"/>
+        </fileset>
+        <fileset dir="libs/extensions">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <description>
+        Graphical client for Tendiwa roguelike framework
+    </description>
+
+    <target name="compile">
+        <mkdir dir="bin"/>
+        <javac destdir="bin" failonerror="true">
+            <classpath>
+                <path refid="tendiwa.client.libs"/>
+                <path refid="tendiwa.jars"/>
+            </classpath>
+            <src>
+                <pathelement path="Desktop/src"/>
+                <pathelement path="src"/>
+            </src>
+        </javac>
+    </target>
+    <target name="atlas" depends="compile">
+        <delete dir="pack"/>
+        <java classname="org.tendiwa.client.DesktopStarter" failonerror="true">
+            <arg value="buildAtlas"/>
+            <classpath>
+                <path refid="tendiwa.client.libs"/>
+                <pathelement path="bin"/>
+            </classpath>
+        </java>
+        <echo message="Built textures to atlases"/>
+    </target>
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+</project>

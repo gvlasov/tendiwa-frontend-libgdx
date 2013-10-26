@@ -26,9 +26,6 @@ private final TendiwaGame game;
 private final PixmapTextureAtlas pixmapTextureAtlas;
 private final TextureAtlas atlas;
 private final SpriteBatch batch;
-private final Texture spriteWater;
-private final Texture spriteStone;
-private final Texture spriteGrass;
 private final Cell[][] cells;
 private final ShaderProgram shader;
 private final int windowHeight;
@@ -39,6 +36,8 @@ private final int TILE_SIZE = 32;
 private final Texture cursor;
 private final int windowWidthCells;
 private final int windowHeightCells;
+private final int maxStartX;
+private final int maxStartY;
 OrthographicCamera camera;
 String vertexShader = "attribute vec4 a_position;    \n" +
 	"attribute vec4 a_color;\n" +
@@ -71,14 +70,12 @@ private Texture bufTexture1 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixma
 private Texture bufTexture2 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
 private Texture bufTexture3 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
 private int cameraMoveStep = 5;
-private final int maxStartX;
-private final int maxStartY;
 
 public GameScreen(final TendiwaGame game) {
 	windowWidth = game.cfg.width;
 	windowHeight = game.cfg.height;
-	windowWidthCells = (int) Math.ceil(((float)windowWidth)/32);
-	windowHeightCells = (int) Math.ceil(((float)windowHeight)/32);
+	windowWidthCells = (int) Math.ceil(((float) windowWidth) / 32);
+	windowHeightCells = (int) Math.ceil(((float) windowHeight) / 32);
 
 	camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	camera.setToOrtho(true, windowWidth, windowHeight);
@@ -87,18 +84,12 @@ public GameScreen(final TendiwaGame game) {
 
 	atlas = new TextureAtlas("pack/package.atlas");
 	pixmapTextureAtlas = new PixmapTextureAtlas(Gdx.files.internal("pack/package.png"), Gdx.files.internal("pack/package.atlas"));
-//	Gdx.graphics.setContinuousRendering(false);
-//	Gdx.graphics.requestRendering();
 
 	batch = new SpriteBatch();
 	batch.setProjectionMatrix(camera.combined);
 
-	spriteGrass = atlas.findRegion("grass").getTexture();
-	spriteStone = atlas.findRegion("stone").getTexture();
-	spriteWater = atlas.findRegion("water").getTexture();
 	cells = game.world.getCellContents();
 	shader = new ShaderProgram(vertexShader, fragmentShader);
-//	batch.setShader(shader);
 	font.setScale(1, -1);
 
 	cursor = buildCursorTexture();
@@ -314,11 +305,6 @@ public void dispose() {
 
 }
 
-void buildTextures() {
-	TexturePacker2.Settings settings = new TexturePacker2.Settings();
-	settings.flattenPaths = true;
-	TexturePacker2.process("/home/suseika/Projects/tendiwa/server/modules/images/floors", "pack", "package");
-}
 
 Texture buildCursorTexture() {
 	Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
