@@ -1,0 +1,15 @@
+# Other platforms (no need to add these to VCS for now)
+Android
+# Resoureces directories (contents here change rapidly
+# in current development state, so it makes no sense to 
+# version-control these)
+assets
+font.fnt
+font.png
+# Client should add the necessary libraries himself 
+# (those are mostly jars from libgdx-nightly)
+libs
+# Build otput
+out
+pack
+gen
