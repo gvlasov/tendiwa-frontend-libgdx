@@ -10,7 +10,6 @@ import tendiwa.resources.ObjectTypes;
 
 public class WorldMapScreen implements Screen {
 private final TendiwaGame game;
-private final Texture bucket = new Texture(Gdx.files.internal("assets/bucket.png"));
 private OrthographicCamera camera;
 private SpriteBatch batch;
 

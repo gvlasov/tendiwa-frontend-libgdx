@@ -4,29 +4,15 @@ You should not change this file.
 
 When you need to customize build process for a module, edit build.properties file.
 -->
-<project name="Tendiwa Client">
-    <property file="build.properties"/>
-    <fail unless="frameworkPath">
-        You must set frameworkPath property in build.properties!
-    </fail>
-    <!--<import file="${frameworkPath}/build.xml"/>-->
-    <property name="staticDataDir" value="staticData"/>
+<project name="tendiwa_frontend">
     <property environment="env"/>
     <path id="tendiwa.jars">
-        <fileset dir="${frameworkPath}/lib">
-            <include name="*.jar"/>
-        </fileset>
-        <fileset dir="${frameworkPath}">
-            <include name="tendiwa.jar"/>
-        </fileset>
-    </path>
-    <path id="tendiwa.client.libs">
-        <fileset dir="libs">
-            <include name="*jar"/>
-        </fileset>
-        <fileset dir="libs/extensions">
+        <fileset dir="../libs">
             <include name="**/*.jar"/>
         </fileset>
+        <pathelement path="../tendiwa-backend.jar"/>
+        <pathelement path="../tendiwa-ontology.jar"/>
+        <!--<fileset dir="/usr/share/java" includes="gwt*.jar"/>-->
     </path>
 
     <description>
@@ -34,11 +20,17 @@ When you need to customize build process for a module, edit build.properties fil
     </description>
 
     <target name="compile">
+        <ant dir="../MainModule" target="jar"/>
         <mkdir dir="bin"/>
         <javac destdir="bin" failonerror="true">
             <classpath>
-                <path refid="tendiwa.client.libs"/>
                 <path refid="tendiwa.jars"/>
+
+                <!--temporary-->
+                <pathelement path="../tendiwa-ontology.jar"/>
+                <!--temporary-->
+                <pathelement path="../MainModule.jar"/>
+                <fileset dir="../libs" includes="**/*.jar"/>
             </classpath>
             <src>
                 <pathelement path="Desktop/src"/>
@@ -51,7 +43,6 @@ When you need to customize build process for a module, edit build.properties fil
         <java classname="org.tendiwa.client.DesktopStarter" failonerror="true">
             <arg value="buildAtlas"/>
             <classpath>
-                <path refid="tendiwa.client.libs"/>
                 <pathelement path="bin"/>
             </classpath>
         </java>
@@ -59,5 +50,19 @@ When you need to customize build process for a module, edit build.properties fil
     </target>
     <target name="clean">
         <delete dir="bin"/>
+    </target>
+    <target name="jar" depends="compile">
+        <jar destfile="../tendiwa-frontend-libgdx.jar">
+            <fileset dir="bin"/>
+            <zipgroupfileset dir="../libs/libgdx">
+                <include name="gdx.jar"/>
+                <include name="gdx-backend-lwjgl.jar"/>
+            </zipgroupfileset>
+            <fileset dir="../libs">
+                <include name="**/*.so"/>
+                <include name="**/*.dll"/>
+                <include name="**/*.dylib"/>
+            </fileset>
+        </jar>
     </target>
 </project>
