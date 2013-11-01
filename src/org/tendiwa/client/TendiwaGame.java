@@ -39,8 +39,8 @@ public void render() {
 @Override
 public void event(EventMove e) {
 	Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
-
-
-
+	characterActor.setX(e.getX());
+	characterActor.setY(e.getY());
+	System.out.println("LALAL");
 }
 }
