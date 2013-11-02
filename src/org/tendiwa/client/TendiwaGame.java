@@ -1,33 +1,26 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.badlogic.gdx.scenes.scene2d.Actor;
-import org.tendiwa.events.EventMove;
-import tendiwa.core.PlayerCharacter;
 import tendiwa.core.TendiwaClient;
-import tendiwa.core.World;
-import tendiwa.modules.MainModule;
-import tendiwa.resources.CharacterTypes;
+import tendiwa.core.TendiwaClientEventManager;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 
 public static int WIDTH = 800;
 public static int HEIGHT = 600;
-final LwjglApplicationConfiguration cfg;
-final World world;
-final PlayerCharacter player;
+LwjglApplicationConfiguration cfg;
 private GameScreen gameScreen;
+private final TendiwaClientEventManager eventManager;
 
-public TendiwaGame(LwjglApplicationConfiguration cfg) {
-	this.cfg = cfg;
-	world = new MainModule().createWorld();
-	player = PlayerCharacter.resideToWorld(world, 150, 120, "Suseika", CharacterTypes.human);
+public TendiwaGame() {
+	gameScreen = new GameScreen(this);
+	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 }
 
 @Override
 public void create() {
-	gameScreen = new GameScreen(this);
 	setScreen(gameScreen);
 }
 
@@ -37,10 +30,21 @@ public void render() {
 }
 
 @Override
-public void event(EventMove e) {
-	Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
-	characterActor.setX(e.getX());
-	characterActor.setY(e.getY());
-	System.out.println("LALAL");
+public void startup() {
+	this.cfg = new LwjglApplicationConfiguration();
+	cfg.title = "Title";
+	cfg.useGL20 = true;
+	cfg.width = 1024;
+	cfg.height = 768;
+	cfg.resizable = false;
+//	cfg.vSyncEnabled = false;
+//  new LwjglApplication(new BookFun(), cfg);
+	new LwjglApplication(this, cfg);
 }
+
+@Override
+public TendiwaClientEventManager getEventManager() {
+	return eventManager;
+}
+
 }

@@ -27,6 +27,7 @@ import java.util.Map;
 public class GameScreen implements Screen {
 
 static final int TILE_SIZE = 32;
+final Stage stage;
 private final TendiwaGame game;
 private final PixmapTextureAtlas pixmapTextureAtlasFloors;
 private final SpriteBatch batch;
@@ -44,7 +45,6 @@ private final TextureAtlas atlasFloors;
 private final TextureAtlas atlasObjects;
 private final int transitionsAtlasSize = 1024;
 private final FrameBuffer transitionsFrameBuffer;
-private final Stage stage;
 private final SpriteBatch defaultBatch;
 OrthographicCamera camera;
 String vertexShader = "attribute vec4 a_position;    \n" +
@@ -70,6 +70,8 @@ String fragmentShader = "#ifdef GL_ES\n" +
 	"{                                            \n" +
 	"  gl_FragColor = v_color* texture2D(u_texture, v_texCoords);\n" +
 	"}";
+World WORLD;
+PlayerCharacter PLAYER;
 private int startX;
 private int startY;
 private int centerX;
@@ -86,19 +88,17 @@ private FrameBuffer cellNetFramebuffer;
 private Map<Character, Actor> characterActors = new HashMap<>();
 
 public GameScreen(final TendiwaGame game) {
+	WORLD = Tendiwa.getWorld();
+	PLAYER = WORLD.getPlayerCharacter();
+
 	windowWidth = game.cfg.width;
 	windowHeight = game.cfg.height;
 	windowWidthCells = (int) Math.ceil(((float) windowWidth) / 32);
 	windowHeightCells = (int) Math.ceil(((float) windowHeight) / 32);
 
-	startX = 127;
-	startY = 110;
-	centerX = startX + windowWidthCells / 2;
-	centerY = startY + windowHeightCells / 2;
 	camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	camera.setToOrtho(true, windowWidth, windowHeight);
-	camera.position.set(centerX * TILE_SIZE, centerY * TILE_SIZE, 0);
-	camera.update();
+	centerCamera(PLAYER.getX(), PLAYER.getY());
 
 	this.game = game;
 
@@ -115,7 +115,7 @@ public GameScreen(final TendiwaGame game) {
 	stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, batch);
 	stage.setCamera(camera);
 
-	cells = game.world.getCellContents();
+	cells = WORLD.getCellContents();
 	shader = new ShaderProgram(vertexShader, fragmentShader);
 
 	cursor = buildCursorTexture();
@@ -128,6 +128,19 @@ public GameScreen(final TendiwaGame game) {
 
 	buildNet();
 	initializeActors();
+//	Gdx.input.setInputProcessor(new GameScreenInputProcessor(this));
+
+//	Gdx.graphics.setContinuousRendering(false);
+//	Gdx.graphics.requestRendering();
+}
+
+void centerCamera(int x, int y) {
+	startX = x - windowWidthCells / 2;
+	startY = y - windowHeightCells / 2;
+	centerX = x;
+	centerY = y;
+	camera.position.set(centerX * TILE_SIZE, centerY * TILE_SIZE, 0);
+//	camera.update();
 }
 
 private PixmapTextureAtlas createPixmapTextureAtlas(String name) {
@@ -144,10 +157,10 @@ public void render(float delta) {
 	for (int x = 0; x < windowWidth / TILE_SIZE + 1; x++) {
 		for (int y = 0; y < windowHeight / TILE_SIZE + 1; y++) {
 			TextureRegion floor = getFloorTextureByCell(startX + x, startY + y);
-			batch.draw(floor, camera.position.x - windowWidth / 2 + x * TILE_SIZE, camera.position.y - windowHeight / 2 + y * TILE_SIZE);
+			batch.draw(floor, (startX + x) * TILE_SIZE, (startY + y) * TILE_SIZE);
 		}
 	}
-//	batch.draw(transitionsFrameBuffer.getColorBufferTexture(), 0, 0);
+//	batch.drawWorld(transitionsFrameBuffer.getColorBufferTexture(), 0, 0);
 
 	batch.end();
 
@@ -166,11 +179,10 @@ public void render(float delta) {
 	int cursorWorldY = startY + cursorScreenCoordY / TILE_SIZE;
 
 	// Draw objects and characters
-	camera.update();
 	batch.begin();
 	drawNet();
 	batch.draw(cursor, cursorWorldX * TILE_SIZE, cursorWorldY * TILE_SIZE);
-	// But first draw cursor before drawing objects
+	// But first drawWorld cursor before drawing objects
 	for (int x = 0; x < windowWidth / TILE_SIZE + 1; x++) {
 		// Objects are drawn for one additional row to see high objects
 		for (int y = 0; y < windowHeight / TILE_SIZE + 2; y++) {
@@ -187,11 +199,12 @@ public void render(float delta) {
 	font.draw(batch, Gdx.graphics.getFramesPerSecond() + "; " + startX + ":" + startY + ", worldMouse: " + cursorWorldX + ":" + cursorWorldY, startX * TILE_SIZE + 100, startY * TILE_SIZE + 100);
 	batch.end();
 
+
+	stage.act(Gdx.graphics.getDeltaTime());
 	processInput();
-
-
-	stage.act();
 	stage.draw();
+
+
 }
 
 private Actor createCharacterActor(Character character) {
@@ -199,10 +212,11 @@ private Actor createCharacterActor(Character character) {
 }
 
 private void initializeActors() {
-	TimeStream timeStream = game.world.getPlayerCharacter().getTimeStream();
+	TimeStream timeStream = WORLD.getPlayerCharacter().getTimeStream();
 	for (Character character : timeStream.getCharacters()) {
-		Actor characterActor = createCharacterActor(character);
-		stage.addActor(characterActor);
+		Actor actor = createCharacterActor(character);
+		characterActors.put(character, actor);
+		stage.addActor(actor);
 	}
 }
 
@@ -236,28 +250,14 @@ private void processInput() {
 			camera.translate(0, cameraMoveStep * TILE_SIZE);
 		}
 	}
-	stage.getCamera().update();
-
 	if (Gdx.input.isKeyPressed(Input.Keys.H)) {
-		if (game.player.getX() > 0) {
-			game.player.move(game.player.getX() - 1, game.player.getY());
-		}
-	}
-	if (Gdx.input.isKeyPressed(Input.Keys.L)) {
-		if (game.player.getX() + 1 < TendiwaGame.WIDTH) {
-			game.player.move(game.player.getX() + 1, game.player.getY());
-		}
-	}
-	if (Gdx.input.isKeyPressed(Input.Keys.J)) {
-		if (game.player.getY() + 1 < TendiwaGame.HEIGHT) {
-			game.player.move(game.player.getX(), game.player.getY() + 1);
-			System.out.println(222222222);
-		}
-	}
-	if (Gdx.input.isKeyPressed(Input.Keys.K)) {
-		if (game.player.getY() > 0) {
-			game.player.move(game.player.getX(), game.player.getY() - 1);
-		}
+		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.W));
+	} else if (Gdx.input.isKeyPressed(Input.Keys.L)) {
+		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.E));
+	} else if (Gdx.input.isKeyPressed(Input.Keys.J)) {
+		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.S));
+	} else if (Gdx.input.isKeyPressed(Input.Keys.K)) {
+		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.N));
 	}
 }
 
@@ -465,4 +465,5 @@ Texture buildCursorTexture() {
 public Actor getCharacterActor(Character character) {
 	return characterActors.get(character);
 }
+
 }

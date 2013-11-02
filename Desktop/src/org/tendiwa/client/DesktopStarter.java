@@ -2,9 +2,6 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import org.tendiwa.client.ResourcesBuilder;
-import org.tendiwa.client.TendiwaGame;
-import tendiwa.core.Main;
 
 public class DesktopStarter {
 public static void main(String[] args) {
@@ -16,17 +13,7 @@ public static void main(String[] args) {
 }
 
 public static void loadGame() {
-	LwjglApplicationConfiguration cfg = new LwjglApplicationConfiguration();
-	cfg.title = "Title";
-	cfg.useGL20 = true;
-	cfg.width = 1024;
-	cfg.height = 768;
-	cfg.resizable = false;
-//	cfg.vSyncEnabled = false;
-//        new LwjglApplication(new BookFun(), cfg);
-	TendiwaGame client = new TendiwaGame(cfg);
-	Main.client = client;
-	new LwjglApplication(client, cfg);
+	new TendiwaGame().startup();
 }
 
 public static void buildResources() {

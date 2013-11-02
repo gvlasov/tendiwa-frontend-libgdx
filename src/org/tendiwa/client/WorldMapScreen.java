@@ -5,6 +5,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import tendiwa.core.Cell;
+import tendiwa.core.Tendiwa;
 import tendiwa.resources.FloorTypes;
 import tendiwa.resources.ObjectTypes;
 
@@ -30,7 +31,7 @@ public void render(float delta) {
 	camera.update();
 	batch.setProjectionMatrix(camera.combined);
 	batch.begin();
-	Cell[][] cellContents = game.world.getCellContents();
+	Cell[][] cellContents = Tendiwa.getWorld().getCellContents();
 	int width = cellContents.length;
 	int height = cellContents[0].length;
 	int width1 = nearestPowerOf2(width);

@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import tendiwa.core.Character;
+import tendiwa.core.Tendiwa;
 
 public class CharacterActor extends Actor {
 private static final TextureAtlas atlasCharacters = new TextureAtlas(Gdx.files.internal("pack/characters.atlas"), true);
