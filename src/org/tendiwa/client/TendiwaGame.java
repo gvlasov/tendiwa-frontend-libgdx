@@ -4,23 +4,22 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import tendiwa.core.TendiwaClient;
-import tendiwa.core.TendiwaClientEventManager;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 
 public static int WIDTH = 800;
 public static int HEIGHT = 600;
+private TendiwaClientLibgdxEventManager eventManager;
 LwjglApplicationConfiguration cfg;
 private GameScreen gameScreen;
-private final TendiwaClientEventManager eventManager;
 
 public TendiwaGame() {
-	gameScreen = new GameScreen(this);
-	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 }
 
 @Override
 public void create() {
+	gameScreen = new GameScreen(this);
+	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 	setScreen(gameScreen);
 }
 
@@ -43,7 +42,7 @@ public void startup() {
 }
 
 @Override
-public TendiwaClientEventManager getEventManager() {
+public TendiwaClientLibgdxEventManager getEventManager() {
 	return eventManager;
 }
 
