@@ -84,8 +84,9 @@ private Map<String, TextureRegion> transitionsMap = new HashMap<>();
 private FrameBuffer cellNetFramebuffer;
 private Map<Character, Actor> characterActors = new HashMap<>();
 private boolean eventResultProcessingIsGoing = false;
-private int startPixelX;
-private int startPixelY;
+int startPixelX;
+int startPixelY;
+private final GameScreenInputProcessor controller;
 
 public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
@@ -127,7 +128,8 @@ public GameScreen(final TendiwaGame game) {
 
 	buildNet();
 	initializeActors();
-	Gdx.input.setInputProcessor(new GameScreenInputProcessor(this));
+	controller = new GameScreenInputProcessor(this);
+	Gdx.input.setInputProcessor(controller);
 
 //	Gdx.graphics.setContinuousRendering(false);
 //	Gdx.graphics.requestRendering();
@@ -152,6 +154,7 @@ public void render(float delta) {
 
 	Actor characterActor = getCharacterActor(Tendiwa.getPlayer());
 	stage.act(Gdx.graphics.getDeltaTime());
+	controller.executeCurrentTask();
 	processEvents();
 	centerCamera(
 		(int) (characterActor.getX() * TILE_SIZE),
@@ -195,6 +198,9 @@ public void render(float delta) {
 	// Draw objects and characters
 	batch.begin();
 	drawNet();
+	batch.end();
+	stage.draw();
+	batch.begin();
 	batch.draw(cursor, cursorWorldX * TILE_SIZE, cursorWorldY * TILE_SIZE);
 	// But first drawWorld cursor before drawing objects
 	for (int x = 0; x < windowWidth / TILE_SIZE + 1; x++) {
@@ -213,7 +219,6 @@ public void render(float delta) {
 	font.draw(batch, Gdx.graphics.getFramesPerSecond() + "; " + startCellX + ":" + startCellY + ", worldMouse: " + cursorWorldX + ":" + cursorWorldY, startPixelX + 100, startPixelY + 100);
 	batch.end();
 
-	stage.draw();
 
 
 }
@@ -286,7 +291,7 @@ private void drawNet() {
 private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 	ObjectType objectType = ObjectType.getById(cells[x][y].object());
 	String name = objectType.getName();
-	if (objectType.isWall()) {
+	if (objectType.getObjectClass() == ObjectType.ObjectClass.WALL) {
 		int index = 0;
 		if (cells[x][y - 1].contains(objectType)) {
 			index += 1000;
@@ -322,6 +327,7 @@ private void getTransitionTextureByCell(int x, int y) {
 
 private TextureRegion getFloorTextureByCell(int x, int y) {
 	String name = FloorType.getById(cells[x][y].floor()).getName();
+	// TODO: Randomized tile indexes
 	return atlasFloors.findRegion(
 		name
 	);

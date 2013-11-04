@@ -33,7 +33,7 @@ public void event(final EventMove e) {
 			Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
 			MoveToAction action = new MoveToAction();
 			action.setPosition(e.getX(), e.getY());
-			action.setDuration(0.5f);
+			action.setDuration(0.1f);
 			Action sequence = sequence(action, run(new Runnable() {
 				@Override
 				public void run() {
