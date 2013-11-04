@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.utils.Array;
 import tendiwa.core.*;
 import tendiwa.core.Character;
 import tendiwa.core.meta.Chance;
@@ -44,6 +45,7 @@ private final TextureAtlas atlasObjects;
 private final int transitionsAtlasSize = 1024;
 private final FrameBuffer transitionsFrameBuffer;
 private final SpriteBatch defaultBatch;
+private final GameScreenInputProcessor controller;
 protected int startCellX;
 OrthographicCamera camera;
 String vertexShader = "attribute vec4 a_position;    \n" +
@@ -75,6 +77,8 @@ int startCellY;
 int centerPixelX;
 int centerPixelY;
 int cameraMoveStep = 1;
+int startPixelX;
+int startPixelY;
 private BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(20, "qwertyuiop[]asdfghjkl;'zxcvbnm,./1234567890-=!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?\\|", true);
 private Texture bufTexture0 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
 private Texture bufTexture1 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
@@ -84,9 +88,19 @@ private Map<String, TextureRegion> transitionsMap = new HashMap<>();
 private FrameBuffer cellNetFramebuffer;
 private Map<Character, Actor> characterActors = new HashMap<>();
 private boolean eventResultProcessingIsGoing = false;
-int startPixelX;
-int startPixelY;
-private final GameScreenInputProcessor controller;
+private Map<Integer, TextureRegion> floorRegions = new HashMap<>();
+/**
+ * Max index of each floor type's images.
+ */
+private Map<Short, Integer> floorIndices = new HashMap<>();
+/**
+ * The greatest value of camera's center pixel on y axis.
+ */
+private int maxPixelY;
+/**
+ * The greatest value of camera's center pixel on x axis.
+ */
+private int maxPixelX;
 
 public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
@@ -124,24 +138,52 @@ public GameScreen(final TendiwaGame game) {
 	maxStartY = TendiwaGame.HEIGHT - windowHeightCells - cameraMoveStep;
 
 	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width, game.cfg.height, false);
-	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width+TILE_SIZE, game.cfg.height+TILE_SIZE, false);
+	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width + TILE_SIZE, game.cfg.height + TILE_SIZE, false);
 
 	buildNet();
 	initializeActors();
 	controller = new GameScreenInputProcessor(this);
 	Gdx.input.setInputProcessor(controller);
 
+	cacheRegions();
+
+	maxPixelX = WORLD.getWidth() * TILE_SIZE - windowWidth / 2;
+	maxPixelY = WORLD.getHeight() * TILE_SIZE - windowHeight / 2;
+
 //	Gdx.graphics.setContinuousRendering(false);
 //	Gdx.graphics.requestRendering();
 }
 
+/**
+ * Centers camera on a certain point of the world to render viewport around that point. Viewport will always be inside
+ * world rectangle, so near world borders camera will be shifted back so viewport doesn't look at area outside the
+ * world.
+ *
+ * @param x
+ * 	X coordinate in pixels
+ * @param y
+ * 	Y coordinate in pixels
+ */
 void centerCamera(int x, int y) {
+	if (x < windowWidth / 2) {
+		x = windowWidth / 2;
+	}
+	if (y < windowHeight / 2) {
+		y = windowHeight / 2;
+	}
+	if (x > maxPixelX) {
+		x = maxPixelX;
+	}
+	if (y > maxPixelY) {
+		y = maxPixelY;
+	}
 	startCellX = (x - x % TILE_SIZE) / TILE_SIZE - windowWidthCells / 2;
 	startCellY = (y - y % TILE_SIZE) / TILE_SIZE - windowHeightCells / 2;
 	centerPixelX = x;
 	centerPixelY = y;
 	startPixelX = centerPixelX - windowWidth / 2;
 	startPixelY = centerPixelY - windowHeight / 2;
+
 }
 
 private PixmapTextureAtlas createPixmapTextureAtlas(String name) {
@@ -151,11 +193,9 @@ private PixmapTextureAtlas createPixmapTextureAtlas(String name) {
 @Override
 public void render(float delta) {
 
-
 	Actor characterActor = getCharacterActor(Tendiwa.getPlayer());
-	stage.act(Gdx.graphics.getDeltaTime());
-	controller.executeCurrentTask();
 	processEvents();
+	stage.act(Gdx.graphics.getDeltaTime());
 	centerCamera(
 		(int) (characterActor.getX() * TILE_SIZE),
 		(int) (characterActor.getY() * TILE_SIZE)
@@ -173,8 +213,10 @@ public void render(float delta) {
 	int maxY = getMaxRenderCellY();
 	for (int x = startCellX; x < maxX; x++) {
 		for (int y = startCellY; y < maxY; y++) {
-			TextureRegion floor = getFloorTextureByCell(x, y);
-			batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
+			if (PLAYER.canSee(x, y)) {
+				TextureRegion floor = getFloorTextureByCell(x, y);
+				batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
+			}
 		}
 	}
 //	batch.drawWorld(transitionsFrameBuffer.getColorBufferTexture(), 0, 0);
@@ -182,9 +224,11 @@ public void render(float delta) {
 	batch.end();
 
 	// Draw transitions
-	for (int x = 0; x < windowWidth / TILE_SIZE + 1; x++) {
-		for (int y = 0; y < windowHeight / TILE_SIZE + 1; y++) {
-			getTransitionTextureByCell(startCellX + x, startCellY + y);
+	for (int x = 0; x < windowWidth / TILE_SIZE; x++) {
+		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
+			if (PLAYER.canSee(startCellX + x, startCellY + y)) {
+				getTransitionTextureByCell(startCellX + x, startCellY + y);
+			}
 		}
 	}
 
@@ -203,23 +247,23 @@ public void render(float delta) {
 	batch.begin();
 	batch.draw(cursor, cursorWorldX * TILE_SIZE, cursorWorldY * TILE_SIZE);
 	// But first drawWorld cursor before drawing objects
-	for (int x = 0; x < windowWidth / TILE_SIZE + 1; x++) {
+	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
-		for (int y = 0; y < windowHeight / TILE_SIZE + 2; y++) {
+		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY ? 0 : 2); y++) {
 			Cell cell = cells[startCellX + x][startCellY + y];
-			if (cell.object() != ObjectType.VOID.getId()) {
-				TextureAtlas.AtlasRegion objectTexture = getObjectTextureByCell(startCellX + x, startCellY + y);
-				int textureX = (startCellX + x) * TILE_SIZE - (objectTexture.getRegionWidth() - TILE_SIZE) / 2;
-				int textureY = (startCellY + y) * TILE_SIZE - (objectTexture.getRegionHeight() - TILE_SIZE);
-				batch.draw(objectTexture, textureX, textureY);
+			if (PLAYER.canSee(startCellX + x, startCellY + y)) {
+				if (cell.object() != ObjectType.VOID.getId()) {
+					TextureAtlas.AtlasRegion objectTexture = getObjectTextureByCell(startCellX + x, startCellY + y);
+					int textureX = (startCellX + x) * TILE_SIZE - (objectTexture.getRegionWidth() - TILE_SIZE) / 2;
+					int textureY = (startCellY + y) * TILE_SIZE - (objectTexture.getRegionHeight() - TILE_SIZE);
+					batch.draw(objectTexture, textureX, textureY);
+				}
 			}
 		}
 	}
 	// Draw stats
 	font.draw(batch, Gdx.graphics.getFramesPerSecond() + "; " + startCellX + ":" + startCellY + ", worldMouse: " + cursorWorldX + ":" + cursorWorldY, startPixelX + 100, startPixelY + 100);
 	batch.end();
-
-
 
 }
 
@@ -232,6 +276,9 @@ private int getMaxRenderCellY() {
 }
 
 private void processEvents() {
+	if (!eventResultProcessingIsGoing) {
+		controller.executeCurrentTask();
+	}
 	Queue<EventResult> queue = game.getEventManager().getPendingOperations();
 	// Loop variable will remain true if it is not set to true inside process.
 	while (!eventResultProcessingIsGoing && !queue.isEmpty()) {
@@ -266,7 +313,7 @@ private void buildNet() {
 	cellNetFramebuffer.begin();
 
 	// Imitating the same camera as for batch, but with a greater viewport.
-	OrthographicCamera adHocCamera = new OrthographicCamera(windowWidth+TILE_SIZE, windowHeight+TILE_SIZE);
+	OrthographicCamera adHocCamera = new OrthographicCamera(windowWidth + TILE_SIZE, windowHeight + TILE_SIZE);
 	adHocCamera.setToOrtho(true, windowWidth + TILE_SIZE, windowHeight + TILE_SIZE);
 
 	ShapeRenderer shapeRenderer = new ShapeRenderer();
@@ -274,10 +321,10 @@ private void buildNet() {
 	shapeRenderer.setColor(0, 0, 0, 0.2f);
 	shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 	for (int cellX = 0; cellX < windowWidth / TILE_SIZE + 2; cellX++) {
-		shapeRenderer.line(cellX * TILE_SIZE, 0, cellX * TILE_SIZE, windowHeight+TILE_SIZE);
+		shapeRenderer.line(cellX * TILE_SIZE, 0, cellX * TILE_SIZE, windowHeight + TILE_SIZE);
 	}
 	for (int cellY = 0; cellY < windowWidth / TILE_SIZE + 2; cellY++) {
-		shapeRenderer.line(0, cellY * TILE_SIZE, windowWidth+TILE_SIZE, cellY * TILE_SIZE);
+		shapeRenderer.line(0, cellY * TILE_SIZE, windowWidth + TILE_SIZE, cellY * TILE_SIZE);
 	}
 	shapeRenderer.end();
 	cellNetFramebuffer.end();
@@ -285,7 +332,7 @@ private void buildNet() {
 }
 
 private void drawNet() {
-	batch.draw(cellNetFramebuffer.getColorBufferTexture(), startCellX*TILE_SIZE, startCellY*TILE_SIZE);
+	batch.draw(cellNetFramebuffer.getColorBufferTexture(), startCellX * TILE_SIZE, startCellY * TILE_SIZE);
 }
 
 private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
@@ -325,12 +372,48 @@ private void getTransitionTextureByCell(int x, int y) {
 	}
 }
 
+private void cacheRegions() {
+	Map<String, Short> floorTypeName2id = new HashMap<>();
+	Map<String, Array<TextureAtlas.AtlasRegion>> name2regions = new HashMap<>();
+	for (Map.Entry<Short, FloorType> e : FloorType.getAll().entrySet()) {
+		floorTypeName2id.put(e.getValue().getName(), e.getKey());
+	}
+	for (TextureAtlas.AtlasRegion region : atlasFloors.getRegions()) {
+		if (floorTypeName2id.containsKey(region.name)) {
+			floorRegions.put(floorTypeName2id.get(region.name) * (1 << 15) + region.index, region);
+		} else {
+			Tendiwa.getLogger().warn("Floor with name " + region.name + "_" + region.index + " has its sprite, but it is not declared in ontology");
+		}
+	}
+	for (Map.Entry<String, Short> e : floorTypeName2id.entrySet()) {
+		Array<TextureAtlas.AtlasRegion> regions = atlasFloors.findRegions(e.getKey());
+		name2regions.put(e.getKey(), regions);
+		floorIndices.put(e.getValue(), regions.size - 1);
+	}
+	// Validate that all images have indices from 0 to n without skips.
+	for (Map.Entry<String, Array<TextureAtlas.AtlasRegion>> e : name2regions.entrySet()) {
+		boolean zeroIndexFound = false;
+		boolean lastIndexFound = false;
+		int size = e.getValue().size;
+		for (TextureAtlas.AtlasRegion region : e.getValue()) {
+			if (region.index == 0) {
+				zeroIndexFound = true;
+			}
+			if (region.index == size - 1) {
+				lastIndexFound = true;
+			}
+		}
+		if (!zeroIndexFound || !lastIndexFound) {
+			throw new RuntimeException("Floor images with name \"" + e.getKey() + "\" have wrong indices. Indices of images must start with 0 and don't skip any integer values.");
+		}
+	}
+
+}
+
 private TextureRegion getFloorTextureByCell(int x, int y) {
-	String name = FloorType.getById(cells[x][y].floor()).getName();
-	// TODO: Randomized tile indexes
-	return atlasFloors.findRegion(
-		name
-	);
+	int floorId = WORLD.getDefaultPlane().getCell(x, y).floor();
+	int key = (int) ((floorId * (1 << 15)) + Math.round(Math.abs(Math.sin(x * y)) * floorIndices.get((short) floorId)));
+	return floorRegions.get(key);
 }
 
 private void drawCellWithTransitions(int x, int y, int north, int east, int south, int west) {

@@ -31,16 +31,20 @@ public void event(final EventMove e) {
 		@Override
 		public void process() {
 			Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
-			MoveToAction action = new MoveToAction();
-			action.setPosition(e.getX(), e.getY());
-			action.setDuration(0.1f);
-			Action sequence = sequence(action, run(new Runnable() {
-				@Override
-				public void run() {
-					gameScreen.eventProcessingDone();
-				}
-			}));
-			characterActor.addAction(sequence);
+//			MoveToAction action = new MoveToAction();
+//			action.setPosition(e.getX(), e.getY());
+//			action.setDuration(0.001f);
+//			Action sequence = sequence(action, run(new Runnable() {
+//				@Override
+//				public void run() {
+//					gameScreen.eventProcessingDone();
+//				}
+//			}));
+//			characterActor.addAction(sequence);
+
+			characterActor.setX(e.getX());
+			characterActor.setY(e.getY());
+			gameScreen.eventProcessingDone();
 		}
 	});
 }
