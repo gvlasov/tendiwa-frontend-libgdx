@@ -46,6 +46,8 @@ private final int transitionsAtlasSize = 1024;
 private final FrameBuffer transitionsFrameBuffer;
 private final SpriteBatch defaultBatch;
 private final GameScreenInputProcessor controller;
+private final int worldWidthCells;
+private final int worldHeightCells;
 protected int startCellX;
 OrthographicCamera camera;
 String vertexShader = "attribute vec4 a_position;    \n" +
@@ -106,6 +108,8 @@ public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
 	PLAYER = WORLD.getPlayerCharacter();
 
+	worldWidthCells = Tendiwa.getWorld().getWidth();
+	worldHeightCells = Tendiwa.getWorld().getHeight();
 	windowWidth = game.cfg.width;
 	windowHeight = game.cfg.height;
 	windowWidthCells = (int) Math.ceil(((float) windowWidth) / 32);
@@ -134,8 +138,8 @@ public GameScreen(final TendiwaGame game) {
 
 	cursor = buildCursorTexture();
 
-	maxStartX = TendiwaGame.WIDTH - windowWidthCells - cameraMoveStep;
-	maxStartY = TendiwaGame.HEIGHT - windowHeightCells - cameraMoveStep;
+	maxStartX = worldWidthCells - windowWidthCells - cameraMoveStep;
+	maxStartY = worldHeightCells - windowHeightCells - cameraMoveStep;
 
 	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width, game.cfg.height, false);
 	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width + TILE_SIZE, game.cfg.height + TILE_SIZE, false);
@@ -249,7 +253,7 @@ public void render(float delta) {
 	// But first drawWorld cursor before drawing objects
 	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
-		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY ? 0 : 2); y++) {
+		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY || centerPixelY == maxPixelY - TILE_SIZE ? 0 : 2); y++) {
 			Cell cell = cells[startCellX + x][startCellY + y];
 			if (PLAYER.canSee(startCellX + x, startCellY + y)) {
 				if (cell.object() != ObjectType.VOID.getId()) {
@@ -276,11 +280,11 @@ private int getMaxRenderCellY() {
 }
 
 private void processEvents() {
-	if (!eventResultProcessingIsGoing) {
+	Queue<EventResult> queue = game.getEventManager().getPendingOperations();
+	if (!eventResultProcessingIsGoing && queue.size() == 0) {
 		controller.executeCurrentTask();
 	}
-	Queue<EventResult> queue = game.getEventManager().getPendingOperations();
-	// Loop variable will remain true if it is not set to true inside process.
+	// Loop variable will remain true if it is not set to true inside .process().
 	while (!eventResultProcessingIsGoing && !queue.isEmpty()) {
 		EventResult result = queue.remove();
 		eventResultProcessingIsGoing = true;
@@ -362,8 +366,8 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 
 private void getTransitionTextureByCell(int x, int y) {
 	int self = cells[x][y].floor();
-	int north = y + 1 < TendiwaGame.HEIGHT ? cells[x][y + 1].floor() : self;
-	int east = x + 1 < TendiwaGame.WIDTH ? cells[x + 1][y].floor() : self;
+	int north = y + 1 < worldHeightCells ? cells[x][y + 1].floor() : self;
+	int east = x + 1 < worldWidthCells ? cells[x + 1][y].floor() : self;
 	int south = y > 0 ? cells[x][y - 1].floor() : self;
 	int west = x > 0 ? cells[x - 1][y].floor() : self;
 

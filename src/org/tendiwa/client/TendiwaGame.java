@@ -7,13 +7,22 @@ import tendiwa.core.TendiwaClient;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 
-public static int WIDTH = 800;
-public static int HEIGHT = 600;
-private TendiwaClientLibgdxEventManager eventManager;
+private static TendiwaGame INSTANCE = new TendiwaGame();
+public int WIDTH;
+public int HEIGHT;
 LwjglApplicationConfiguration cfg;
+private TendiwaClientLibgdxEventManager eventManager;
 private GameScreen gameScreen;
 
 public TendiwaGame() {
+
+}
+
+public static TendiwaGame getInstance() {
+	if (INSTANCE == null) {
+		INSTANCE = new TendiwaGame();
+	}
+	return INSTANCE;
 }
 
 @Override

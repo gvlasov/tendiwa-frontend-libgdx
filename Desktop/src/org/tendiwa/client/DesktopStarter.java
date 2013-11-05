@@ -13,7 +13,7 @@ public static void main(String[] args) {
 }
 
 public static void loadGame() {
-	new TendiwaGame().startup();
+	TendiwaGame.getInstance().startup();
 }
 
 public static void buildResources() {

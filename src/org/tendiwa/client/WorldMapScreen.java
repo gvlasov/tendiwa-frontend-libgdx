@@ -17,7 +17,7 @@ private SpriteBatch batch;
 WorldMapScreen(final TendiwaGame game) {
 	this.game = game;
 	camera = new OrthographicCamera();
-	camera.setToOrtho(false, TendiwaGame.WIDTH, TendiwaGame.HEIGHT);
+	camera.setToOrtho(false, Tendiwa.getWorld().getWidth(), Tendiwa.getWorld().getHeight());
 
 	batch = new SpriteBatch();
 	Gdx.graphics.setContinuousRendering(false);

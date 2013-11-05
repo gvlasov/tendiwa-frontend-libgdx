@@ -116,7 +116,10 @@ public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 		@Override
 		public void execute() {
 			EnhancedPoint nextStep = path.removeFirst();
-			player.move(nextStep.x, nextStep.y);
+			Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
+				nextStep.x - player.getX(),
+				nextStep.y - player.getY()
+			)));
 		}
 	};
 	return true;
@@ -139,9 +142,10 @@ public boolean scrolled(int amount) {
 
 public void executeCurrentTask() {
 	if (currentTask != null) {
-		currentTask.execute();
 		if (currentTask.ended()) {
 			currentTask = null;
+		} else {
+			currentTask.execute();
 		}
 	}
 }
