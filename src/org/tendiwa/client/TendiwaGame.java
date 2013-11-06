@@ -3,6 +3,8 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import tendiwa.core.RequestInitialTerrain;
+import tendiwa.core.Tendiwa;
 import tendiwa.core.TendiwaClient;
 
 public class TendiwaGame extends Game implements TendiwaClient {
@@ -28,8 +30,8 @@ public static TendiwaGame getInstance() {
 @Override
 public void create() {
 	gameScreen = new GameScreen(this);
-	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 	setScreen(gameScreen);
+	Tendiwa.getServer().pushRequest(new RequestInitialTerrain());
 }
 
 @Override
@@ -52,6 +54,9 @@ public void startup() {
 
 @Override
 public TendiwaClientLibgdxEventManager getEventManager() {
+	if (eventManager == null) {
+		eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
+	}
 	return eventManager;
 }
 

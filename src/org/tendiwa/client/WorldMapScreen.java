@@ -4,10 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import tendiwa.core.Cell;
+import tendiwa.core.HorizontalPlane;
 import tendiwa.core.Tendiwa;
-import tendiwa.resources.FloorTypes;
+import tendiwa.core.World;
 import tendiwa.resources.ObjectTypes;
+import tendiwa.resources.TerrainTypes;
 
 public class WorldMapScreen implements Screen {
 private final TendiwaGame game;
@@ -31,20 +32,20 @@ public void render(float delta) {
 	camera.update();
 	batch.setProjectionMatrix(camera.combined);
 	batch.begin();
-	Cell[][] cellContents = Tendiwa.getWorld().getCellContents();
-	int width = cellContents.length;
-	int height = cellContents[0].length;
+	World world = Tendiwa.getWorld();
+	HorizontalPlane plane = world.getDefaultPlane();
+	int width = world.getWidth();
+	int height = world.getHeight();
 	int width1 = nearestPowerOf2(width);
 	int height1 = nearestPowerOf2(height);
 	Pixmap pixmap = new Pixmap(width1, height1, Pixmap.Format.RGBA8888);
 
 	for (int x = 0; x < width; x++) {
 		for (int y = 0; y < height; y++) {
-			Cell cell = cellContents[x][y];
 			int color;
-			if (ObjectTypes.wall_grey_stone.containedIn(cell)) {
+			if (TerrainTypes.wall_grey_stone.containedIn(plane, x, y)) {
 				color = Color.rgba8888(0.2f, 0.2f, 0.2f, 1);
-			} else if (FloorTypes.water.containedIn(cell)) {
+			} else if (TerrainTypes.water.containedIn(plane, x, y)) {
 				color = Color.rgba8888(0.2f, 0.3f, 0.93f, 1);
 			} else {
 				color = Color.rgba8888(0.2f, 0.7f, 0.3f, 1);

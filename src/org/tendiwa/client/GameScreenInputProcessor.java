@@ -11,14 +11,12 @@ public class GameScreenInputProcessor implements InputProcessor {
 final GameScreen gameScreen;
 final PlayerCharacter player;
 final World world;
-final Cell[][] cells;
 private Task currentTask;
 
 GameScreenInputProcessor(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
 	this.player = Tendiwa.getPlayer();
 	this.world = Tendiwa.getWorld();
-	this.cells = world.getCellContents();
 }
 
 @Override

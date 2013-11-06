@@ -4,13 +4,19 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.Event;
+import org.tendiwa.events.EventFovChange;
+import org.tendiwa.events.EventInitialTerrain;
 import org.tendiwa.events.EventMove;
 import tendiwa.core.EventSay;
+import tendiwa.core.RenderCell;
+import tendiwa.core.Tendiwa;
 import tendiwa.core.TendiwaClientEventManager;
 
 import java.util.LinkedList;
 import java.util.Queue;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
+
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 /**
  * On each received {@link Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
@@ -55,6 +61,36 @@ public void event(final EventSay e) {
 		@Override
 		public void process() {
 
+		}
+	});
+}
+
+@Override
+public void event(final EventFovChange eventFovChange) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			for (Integer coord : eventFovChange.unseen) {
+				gameScreen.cells.get(coord).setVisible(false);
+			}
+			for (RenderCell cell : eventFovChange.seen) {
+				gameScreen.cells.put(cell.getX() * Tendiwa.getWorld().getHeight() + cell.getY(), cell);
+			}
+			gameScreen.eventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventInitialTerrain eventInitialTerrain) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			for (RenderCell cell : eventInitialTerrain.seen) {
+				int coord = cell.getX() * Tendiwa.getWorld().getHeight() + cell.getY();
+				gameScreen.cells.put(coord, cell);
+			}
+			gameScreen.eventProcessingDone();
 		}
 	});
 }
