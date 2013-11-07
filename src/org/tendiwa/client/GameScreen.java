@@ -216,16 +216,17 @@ public void render(float delta) {
 	int maxX = getMaxRenderCellX();
 	int maxY = getMaxRenderCellY();
 
-	TextureAtlas.AtlasRegion grass = atlasFloors.findRegion("grass", 0);
-
 	for (int x = startCellX; x < maxX; x++) {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
 			if (cell != null) {
 				if (cell.isVisible()) {
-					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
-						TextureRegion floor = getFloorTextureByCell(x, y);
-						batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
+					short terrain = cell.getTerrain();
+					if (TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
+						drawFloor(terrain, x, y);
+					} else {
+						assert TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.WALL;
+						drawFloorUnderWall(x, y);
 					}
 				} else {
 					// Draw shaded cell
@@ -252,24 +253,24 @@ public void render(float delta) {
 		}
 	}
 
-//	batch.begin();
-//	// Draw walls
-//	for (int x = startCellX; x < maxX; x++) {
-//		for (int y = startCellY; y < maxY; y++) {
-//			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
-//			if (cell != null) {
-//				if (cell.isVisible()) {
-//					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
-//						TextureRegion wall = getWallTextureByCell(x, y);
-//						batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE);
-//					}
-//				} else {
-//					// Draw shaded cell
-//				}
-//			}
-//		}
-//	}
-//	batch.end();
+	batch.begin();
+	// Draw walls
+	for (int x = startCellX; x < maxX; x++) {
+		for (int y = startCellY; y < maxY; y++) {
+			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
+			if (cell != null) {
+				if (cell.isVisible()) {
+					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+						TextureRegion wall = getWallTextureByCell(x, y);
+						batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE-(wall.getRegionHeight()-TILE_SIZE));
+					}
+				} else {
+					// Draw shaded cell
+				}
+			}
+		}
+	}
+	batch.end();
 
 	int cursorX = Gdx.input.getX();
 	int cursorY = Gdx.input.getY();
@@ -312,11 +313,39 @@ public void render(float delta) {
 		batch,
 		Gdx.graphics.getFramesPerSecond()
 			+ "; " + startCellX + ":" + startCellY + " "
-			+ (cellUnderCursor == null ? "0" : "1" + TerrainType.getById(cellUnderCursor.getTerrain()).getName())
+			+ (cellUnderCursor == null ? "" : TerrainType.getById(cellUnderCursor.getTerrain()).getName())
 		+ " cursor: "+cursorWorldX+" "+cursorWorldY,
 		startPixelX + 100,
 		startPixelY + 100);
 	batch.end();
+}
+
+private void drawFloorUnderWall(int x, int y) {
+	if (x == 221 && y == 161) {
+		System.out.println(1);
+	}
+	int[] dx = new int[] {0, 1, 0, -1};
+	int[] dy = new int[] {-1, 0, 1, 0};
+	for (int i=0; i<4; i++) {
+		RenderCell cell = getCell(x+dx[i], y+dy[i]);
+		if (cell == null) {
+			continue;
+		}
+		short terrain = cell.getTerrain();
+		if (TerrainType.isFloor(terrain)) {
+			drawFloor(terrain, x, y);
+			break;
+		}
+	}
+}
+
+private void drawFloor(short terrain, int x, int y) {
+	TextureRegion floor = getFloorTextureByCell(terrain, x, y);
+	batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
+}
+
+RenderCell getCell(int x, int y) {
+	return cells.get(x*Tendiwa.getWorld().getHeight()+y);
 }
 
 private TextureRegion getWallTextureByCell(int x, int y) {
@@ -325,16 +354,20 @@ private TextureRegion getWallTextureByCell(int x, int y) {
 	String name = wallType.getName();
 	assert wallType.getTerrainClass() == TerrainType.TerrainClass.WALL;
 	int index = 0;
-	if (cells.get(x * WORLD.getHeight() + (y - 1)).getTerrain() == terrain) {
+	RenderCell neighborCell = cells.get(x * WORLD.getHeight() + (y - 1));
+	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
 		index += 1000;
 	}
-	if (cells.get((x + 1) * WORLD.getHeight() + y).getTerrain() == terrain) {
+	neighborCell = cells.get((x + 1) * WORLD.getHeight() + y);
+	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
 		index += 100;
 	}
-	if (cells.get(x * WORLD.getHeight() + (y + 1)).getTerrain() == terrain) {
+	neighborCell = cells.get(x * WORLD.getHeight() + (y + 1));
+	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
 		index += 10;
 	}
-	if (cells.get((x - 1) * WORLD.getHeight() + y).getTerrain() == terrain) {
+	neighborCell = cells.get((x - 1) * WORLD.getHeight() + y);
+	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
 		index += 1;
 	}
 	return atlasWalls.findRegion(name, index);
@@ -358,6 +391,9 @@ private void processEvents() {
 		EventResult result = queue.remove();
 		eventResultProcessingIsGoing = true;
 		result.process();
+	}
+	if (queue.size() > 0) {
+		throw new RuntimeException("Penis");
 	}
 }
 
@@ -488,8 +524,8 @@ private void cacheRegions() {
 
 }
 
-private TextureRegion getFloorTextureByCell(int x, int y) {
-	int floorId = (int) cells.get(x * WORLD.getHeight() + y).getTerrain();
+private TextureRegion getFloorTextureByCell(short terrain, int x, int y) {
+	int floorId = (int) terrain;
 	int key = (int) ((floorId * (1 << 15)) + Math.round(Math.abs(Math.sin(x * y)) * floorIndices.get((short) floorId)));
 	return floorRegions.get(key);
 }

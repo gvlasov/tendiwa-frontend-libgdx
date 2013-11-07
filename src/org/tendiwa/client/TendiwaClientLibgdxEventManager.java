@@ -1,8 +1,6 @@
 package org.tendiwa.client;
 
-import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.Event;
 import org.tendiwa.events.EventFovChange;
 import org.tendiwa.events.EventInitialTerrain;
@@ -14,9 +12,6 @@ import tendiwa.core.TendiwaClientEventManager;
 
 import java.util.LinkedList;
 import java.util.Queue;
-
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 /**
  * On each received {@link Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
@@ -70,11 +65,7 @@ public void event(final EventFovChange eventFovChange) {
 		@Override
 		public void process() {
 			for (Integer coord : eventFovChange.unseen) {
-				if (gameScreen.cells.get(coord) != null) {
-					gameScreen.cells.get(coord).setVisible(false);
-				} else {
-					System.out.println("Missed cell " + (coord / Tendiwa.getWorld().getHeight()) + ":" + (coord - coord / Tendiwa.getWorld().getHeight() * Tendiwa.getWorld().getHeight()));
-				}
+				gameScreen.cells.get(coord).setVisible(false);
 			}
 			for (RenderCell cell : eventFovChange.seen) {
 				gameScreen.cells.put(cell.getX() * Tendiwa.getWorld().getHeight() + cell.getY(), cell);
