@@ -9,7 +9,7 @@ import tendiwa.core.TendiwaClient;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 
-private static TendiwaGame INSTANCE = new TendiwaGame();
+private static TendiwaGame INSTANCE;
 public int WIDTH;
 public int HEIGHT;
 LwjglApplicationConfiguration cfg;
@@ -17,19 +17,20 @@ private TendiwaClientLibgdxEventManager eventManager;
 private GameScreen gameScreen;
 
 public TendiwaGame() {
-
+	if (INSTANCE != null) {
+		throw new RuntimeException("Attempting to create multiple TendiwaGame instances");
+	}
+	INSTANCE = this;
 }
 
 public static TendiwaGame getInstance() {
-	if (INSTANCE == null) {
-		INSTANCE = new TendiwaGame();
-	}
 	return INSTANCE;
 }
 
 @Override
 public void create() {
 	gameScreen = new GameScreen(this);
+	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 	setScreen(gameScreen);
 	Tendiwa.getServer().pushRequest(new RequestInitialTerrain());
 }
@@ -54,9 +55,6 @@ public void startup() {
 
 @Override
 public TendiwaClientLibgdxEventManager getEventManager() {
-	if (eventManager == null) {
-		eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
-	}
 	return eventManager;
 }
 

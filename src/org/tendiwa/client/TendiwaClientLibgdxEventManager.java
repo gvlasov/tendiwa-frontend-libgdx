@@ -27,7 +27,6 @@ private GameScreen gameScreen;
 private Queue<EventResult> pendingOperations = new LinkedList<>();
 
 TendiwaClientLibgdxEventManager(GameScreen gameScreen) {
-
 	this.gameScreen = gameScreen;
 }
 
@@ -37,16 +36,16 @@ public void event(final EventMove e) {
 		@Override
 		public void process() {
 			Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
-			MoveToAction action = new MoveToAction();
-			action.setPosition(e.getX(), e.getY());
-			action.setDuration(0.001f);
-			Action sequence = sequence(action, run(new Runnable() {
-				@Override
-				public void run() {
-					gameScreen.eventProcessingDone();
-				}
-			}));
-			characterActor.addAction(sequence);
+//			MoveToAction action = new MoveToAction();
+//			action.setPosition(e.getX(), e.getY());
+//			action.setDuration(0.001f);
+//			Action sequence = sequence(action, run(new Runnable() {
+//				@Override
+//				public void run() {
+//					gameScreen.eventProcessingDone();
+//				}
+//			}));
+//			characterActor.addAction(sequence);
 
 			characterActor.setX(e.getX());
 			characterActor.setY(e.getY());
@@ -71,7 +70,11 @@ public void event(final EventFovChange eventFovChange) {
 		@Override
 		public void process() {
 			for (Integer coord : eventFovChange.unseen) {
-				gameScreen.cells.get(coord).setVisible(false);
+				if (gameScreen.cells.get(coord) != null) {
+					gameScreen.cells.get(coord).setVisible(false);
+				} else {
+					System.out.println("Missed cell " + (coord / Tendiwa.getWorld().getHeight()) + ":" + (coord - coord / Tendiwa.getWorld().getHeight() * Tendiwa.getWorld().getHeight()));
+				}
 			}
 			for (RenderCell cell : eventFovChange.seen) {
 				gameScreen.cells.put(cell.getX() * Tendiwa.getWorld().getHeight() + cell.getY(), cell);

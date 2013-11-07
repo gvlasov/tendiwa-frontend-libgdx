@@ -197,7 +197,6 @@ private PixmapTextureAtlas createPixmapTextureAtlas(String name) {
 
 @Override
 public void render(float delta) {
-
 	Actor characterActor = getCharacterActor(Tendiwa.getPlayer());
 	processEvents();
 	stage.act(Gdx.graphics.getDeltaTime());
@@ -216,6 +215,9 @@ public void render(float delta) {
 	batch.begin();
 	int maxX = getMaxRenderCellX();
 	int maxY = getMaxRenderCellY();
+
+	TextureAtlas.AtlasRegion grass = atlasFloors.findRegion("grass", 0);
+
 	for (int x = startCellX; x < maxX; x++) {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
@@ -229,6 +231,7 @@ public void render(float delta) {
 					// Draw shaded cell
 				}
 			}
+
 		}
 	}
 //	batch.drawWorld(transitionsFrameBuffer.getColorBufferTexture(), 0, 0);
@@ -249,22 +252,24 @@ public void render(float delta) {
 		}
 	}
 
-	// Draw walls
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
-			if (cell != null) {
-				if (cell.isVisible()) {
-					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
-						TextureRegion wall = getWallTextureByCell(x, y);
-						batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE);
-					}
-				} else {
-					// Draw shaded cell
-				}
-			}
-		}
-	}
+//	batch.begin();
+//	// Draw walls
+//	for (int x = startCellX; x < maxX; x++) {
+//		for (int y = startCellY; y < maxY; y++) {
+//			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
+//			if (cell != null) {
+//				if (cell.isVisible()) {
+//					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+//						TextureRegion wall = getWallTextureByCell(x, y);
+//						batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE);
+//					}
+//				} else {
+//					// Draw shaded cell
+//				}
+//			}
+//		}
+//	}
+//	batch.end();
 
 	int cursorX = Gdx.input.getX();
 	int cursorY = Gdx.input.getY();
@@ -307,7 +312,8 @@ public void render(float delta) {
 		batch,
 		Gdx.graphics.getFramesPerSecond()
 			+ "; " + startCellX + ":" + startCellY + " "
-			+ (cellUnderCursor == null ? "0" : "1" + TerrainType.getById(cellUnderCursor.getTerrain()).getName()),
+			+ (cellUnderCursor == null ? "0" : "1" + TerrainType.getById(cellUnderCursor.getTerrain()).getName())
+		+ " cursor: "+cursorWorldX+" "+cursorWorldY,
 		startPixelX + 100,
 		startPixelY + 100);
 	batch.end();
