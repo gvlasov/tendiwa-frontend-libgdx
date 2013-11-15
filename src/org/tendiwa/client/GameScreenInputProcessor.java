@@ -101,6 +101,9 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
 	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
+	if (cellX == gameScreen.PLAYER.getX() && cellY == gameScreen.PLAYER.getY()) {
+		return true;
+	}
 	final LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
 	if (path == null) {
 		return true;

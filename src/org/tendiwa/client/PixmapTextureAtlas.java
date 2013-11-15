@@ -24,8 +24,10 @@ public PixmapTextureAtlas(TextureAtlas textureAtlas, Pixmap textureAtlasPixmap) 
 
 public Pixmap createPixmap(String regionName) {
 	TextureAtlas.AtlasRegion region = textureAtlas.findRegion(regionName);
+	if (region == null) {
+		throw new NullPointerException("No atlas region with name "+regionName);
+	}
 
-	System.out.println(regionName);
 	int width = MathUtils.nextPowerOfTwo(region.getRegionWidth());
 	int height = MathUtils.nextPowerOfTwo(region.getRegionHeight());
 

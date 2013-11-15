@@ -2,16 +2,14 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
@@ -47,31 +45,11 @@ private final SpriteBatch defaultBatch;
 private final GameScreenInputProcessor controller;
 private final int worldWidthCells;
 private final int worldHeightCells;
+private final FrameBuffer depthTestFrameBuffer;
+private final FovEdge fovEdge;
+private final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 protected int startCellX;
 OrthographicCamera camera;
-String vertexShader = "attribute vec4 a_position;    \n" +
-	"attribute vec4 a_color;\n" +
-	"attribute vec2 a_texCoord0;\n" +
-	"uniform mat4 u_worldView;\n" +
-	"uniform mat4 u_projTrans;\n" +
-	"varying vec4 v_color;" +
-	"varying vec2 v_texCoords;" +
-	"void main()                  \n" +
-	"{                            \n" +
-	"   v_color = vec4(1, 1, 1, 1); \n" +
-	"   v_texCoords = a_texCoord0; \n" +
-	"   gl_Position =  u_projTrans * a_position;  \n" +
-	"}                            \n";
-String fragmentShader = "#ifdef GL_ES\n" +
-	"precision mediump float;\n" +
-	"#endif\n" +
-	"varying vec4 v_color;\n" +
-	"varying vec2 v_texCoords;\n" +
-	"uniform sampler2D u_texture;\n" +
-	"void main()                                  \n" +
-	"{                                            \n" +
-	"  gl_FragColor = v_color* texture2D(u_texture, v_texCoords);\n" +
-	"}";
 World WORLD;
 PlayerCharacter PLAYER;
 int startCellY;
@@ -105,6 +83,9 @@ private int maxPixelY;
 private int maxPixelX;
 private com.badlogic.gdx.graphics.g2d.TextureAtlas atlasWalls;
 private Map<Integer, GameObject> objects = new HashMap<>();
+private ShapeRenderer shapeRen = new ShapeRenderer();
+private int cursorWorldX;
+private int cursorWorldY;
 
 public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
@@ -144,6 +125,7 @@ public GameScreen(final TendiwaGame game) {
 
 	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width, game.cfg.height, false);
 	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width + TILE_SIZE, game.cfg.height + TILE_SIZE, false);
+	depthTestFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width, game.cfg.height, true);
 
 	buildNet();
 	initializeActors();
@@ -155,8 +137,11 @@ public GameScreen(final TendiwaGame game) {
 	maxPixelX = WORLD.getHeight() * TILE_SIZE - windowWidth / 2;
 	maxPixelY = WORLD.getHeight() * TILE_SIZE - windowHeight / 2;
 
+	fovEdge = new FovEdge();
+
 //	Gdx.graphics.setContinuousRendering(false);
 //	Gdx.graphics.requestRendering();
+
 }
 
 /**
@@ -206,84 +191,32 @@ public void render(float delta) {
 	);
 
 	camera.position.set(centerPixelX, centerPixelY, 0);
+
 	Gdx.gl.glClearColor(0, 0, 0, 1);
 	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 	camera.update();
 	batch.setProjectionMatrix(camera.combined);
 
-	// Draw whole floor tiles
-	batch.begin();
-	int maxX = getMaxRenderCellX();
-	int maxY = getMaxRenderCellY();
+	drawFloor();
+	drawTransitions();
+	drawWalls();
+	updateCursorCoords();
+	drawNet();
+	stage.draw();
+	drawObjects();
+	applyUnseenBrightnessMap();
+}
 
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
-			if (cell != null) {
-				if (cell.isVisible()) {
-					short terrain = cell.getTerrain();
-					if (TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
-						drawFloor(terrain, x, y);
-					} else {
-						assert TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.WALL;
-						drawFloorUnderWall(x, y);
-					}
-				} else {
-					// Draw shaded cell
-				}
-			}
-
-		}
-	}
-//	batch.drawWorld(transitionsFrameBuffer.getColorBufferTexture(), 0, 0);
-
-	batch.end();
-
-	// Draw transitions
-	for (int x = 0; x < windowWidth / TILE_SIZE; x++) {
-		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
-			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
-			if (cell != null) {
-				if (cell.isVisible()) {
-					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
-						getTransitionTextureByCell(cell);
-					}
-				}
-			}
-		}
-	}
-
-	batch.begin();
-	// Draw walls
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
-			if (cell != null) {
-				if (cell.isVisible()) {
-					if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
-						TextureRegion wall = getWallTextureByCell(x, y);
-						batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE-(wall.getRegionHeight()-TILE_SIZE));
-					}
-				} else {
-					// Draw shaded cell
-				}
-			}
-		}
-	}
-	batch.end();
-
+private void updateCursorCoords() {
 	int cursorX = Gdx.input.getX();
 	int cursorY = Gdx.input.getY();
 	int cursorScreenCoordX = (cursorX - cursorX % TILE_SIZE);
 	int cursorScreenCoordY = (cursorY - cursorY % TILE_SIZE);
-	int cursorWorldX = startCellX + cursorScreenCoordX / TILE_SIZE;
-	int cursorWorldY = startCellY + cursorScreenCoordY / TILE_SIZE;
+	cursorWorldX = startCellX + cursorScreenCoordX / TILE_SIZE;
+	cursorWorldY = startCellY + cursorScreenCoordY / TILE_SIZE;
+}
 
-	// Draw objects and characters
-	batch.begin();
-	drawNet();
-	batch.end();
-	stage.draw();
+private void drawObjects() {
 	batch.begin();
 	// But first drawWorld cursor before drawing objects
 	batch.draw(cursor, cursorWorldX * TILE_SIZE, cursorWorldY * TILE_SIZE);
@@ -314,20 +247,206 @@ public void render(float delta) {
 		Gdx.graphics.getFramesPerSecond()
 			+ "; " + startCellX + ":" + startCellY + " "
 			+ (cellUnderCursor == null ? "" : TerrainType.getById(cellUnderCursor.getTerrain()).getName())
-		+ " cursor: "+cursorWorldX+" "+cursorWorldY,
+			+ " cursor: " + cursorWorldX + " " + cursorWorldY,
 		startPixelX + 100,
 		startPixelY + 100);
 	batch.end();
 }
 
-private void drawFloorUnderWall(int x, int y) {
-	if (x == 221 && y == 161) {
-		System.out.println(1);
+private void drawTransitions() {
+	// Draw transitions
+	for (int x = 0; x < windowWidth / TILE_SIZE; x++) {
+		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
+			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
+			if (cell != null) {
+				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
+					drawFloorTransitionsInCell(cell);
+				}
+			}
+		}
 	}
-	int[] dx = new int[] {0, 1, 0, -1};
-	int[] dy = new int[] {-1, 0, 1, 0};
-	for (int i=0; i<4; i++) {
-		RenderCell cell = getCell(x+dx[i], y+dy[i]);
+}
+
+private void drawWalls() {
+	int maxX = getMaxRenderCellX();
+	int maxY = getMaxRenderCellY();
+	batch.begin();
+	for (int x = startCellX; x < maxX; x++) {
+		for (int y = startCellY; y < maxY; y++) {
+			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
+			if (cell != null) {
+				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+					TextureRegion wall = getWallTextureByCell(x, y);
+					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wall.getRegionHeight() - TILE_SIZE));
+				}
+			}
+		}
+	}
+	batch.end();
+}
+
+private void drawFloor() {
+	int maxX = getMaxRenderCellX();
+	int maxY = getMaxRenderCellY();
+	batch.begin();
+	for (int x = startCellX; x < maxX; x++) {
+		for (int y = startCellY; y < maxY; y++) {
+			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
+			if (cell != null) {
+//				if (cell.isVisible()) {
+				short terrain = cell.getTerrain();
+				if (TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
+					drawFloor(terrain, x, y);
+				} else {
+					assert TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.WALL;
+					drawFloorUnderWall(x, y);
+				}
+//				} else {
+//					// Draw shaded cell
+//				}
+			}
+
+		}
+	}
+	batch.end();
+}
+
+private void applyUnseenBrightnessMap() {
+	depthTestFrameBuffer.begin();
+
+	Gdx.gl.glClearColor(0, 0, 0, 0);
+	Gdx.gl.glClearDepthf(1.0f);
+	Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glDepthFunc(GL10.GL_LESS);
+	Gdx.gl.glDepthMask(true);
+	Gdx.gl.glColorMask(false, false, false, false);
+
+	shapeRen.setProjectionMatrix(camera.combined);
+	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
+	shapeRen.setColor(1, 0, 0, 0.5f);
+	int maxRenderCellX = getMaxRenderCellX();
+	int maxRenderCellY = getMaxRenderCellY();
+	for (int x = startCellX; x < maxRenderCellX; x++) {
+		for (int y = startCellY; y < maxRenderCellY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null) {
+				if (!cell.isVisible()) {
+					shapeRen.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+				}
+			}
+		}
+	}
+	shapeRen.end();
+
+	// Draw transitions to not yet seen cells
+	Gdx.gl.glColorMask(true, true, true, true);
+	fovEdge.batch.setShader(defaultShader);
+	fovEdge.batch.setProjectionMatrix(camera.combined);
+	fovEdge.batch.begin();
+	for (int x = startCellX; x < maxRenderCellX; x++) {
+		for (int y = startCellY; y < maxRenderCellY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null) {
+				fovEdge.drawTransitions(
+					fovEdge.batch,
+					x * TILE_SIZE,
+					y * TILE_SIZE,
+					getHasNotYetSeenNeighbors(x, y),
+					x - startCellX,
+					y - startCellY
+				);
+			}
+		}
+	}
+	fovEdge.batch.end();
+
+	// Draw transitions to unseen cells (half-transparent)
+	fovEdge.batch.setShader(fovEdge.halfTransparencyShader);
+	fovEdge.batch.begin();
+	for (int x = startCellX; x < maxRenderCellX; x++) {
+		for (int y = startCellY; y < maxRenderCellY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null && cell.isVisible()) {
+				boolean[] hasUnseenNeighbors = getHasUnseenNeighbors(x, y);
+				if (hasUnseenNeighbors[0] || hasUnseenNeighbors[1] || hasUnseenNeighbors[2] || hasUnseenNeighbors[3]) {
+					fovEdge.drawTransitions(
+						fovEdge.batch,
+						x * TILE_SIZE,
+						y * TILE_SIZE,
+						hasUnseenNeighbors,
+						x - startCellX,
+						y - startCellY
+					);
+				}
+			}
+		}
+	}
+	fovEdge.batch.end();
+
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
+
+	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
+	shapeRen.setColor(0, 0, 0, 0.4f);
+	// Draw black transparent color above mask
+	shapeRen.rect(startCellX * TILE_SIZE, startCellY * TILE_SIZE, windowWidth, windowHeight);
+	shapeRen.end();
+	depthTestFrameBuffer.end();
+
+	Gdx.gl.glDepthMask(false);
+	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
+
+	batch.begin();
+	batch.draw(depthTestFrameBuffer.getColorBufferTexture(), startCellX * TILE_SIZE, startCellY * TILE_SIZE);
+	batch.end();
+
+}
+
+private boolean[] getHasNotYetSeenNeighbors(int x, int y) {
+	return new boolean[]{
+		!hasCell(x, y - 1),
+		!hasCell(x + 1, y),
+		!hasCell(x, y + 1),
+		!hasCell(x - 1, y)
+	};
+}
+
+private boolean[] getHasUnseenNeighbors(int x, int y) {
+	return new boolean[]{
+		hasCell(x, y - 1) && !getCell(x, y - 1).isVisible(),
+		hasCell(x + 1, y) && !getCell(x + 1, y).isVisible(),
+		hasCell(x, y + 1) && !getCell(x, y + 1).isVisible(),
+		hasCell(x - 1, y) && !getCell(x - 1, y).isVisible()
+	};
+}
+
+private boolean hasCell(int x, int y) {
+	return cells.containsKey(x * WORLD.getHeight() + y);
+}
+
+private void depthTest2() {
+
+	Gdx.gl.glClearDepthf(1.0f);
+	Gdx.gl.glClear(GL10.GL_DEPTH_BUFFER_BIT);
+	Gdx.gl.glDepthFunc(GL10.GL_LESS);
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glDepthMask(true);
+	Gdx.gl.glColorMask(false, false, false, false);
+	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
+	shapeRen.setColor(1, 0, 0, 0.5f);
+	shapeRen.circle((cursorWorldX - startCellX) * TILE_SIZE, (cursorWorldY - startCellY) * TILE_SIZE, 200);
+	shapeRen.end();
+	Gdx.gl.glColorMask(true, true, true, true);
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
+}
+
+private void drawFloorUnderWall(int x, int y) {
+	int[] dx = new int[]{0, 1, 0, -1};
+	int[] dy = new int[]{-1, 0, 1, 0};
+	for (int i = 0; i < 4; i++) {
+		RenderCell cell = getCell(x + dx[i], y + dy[i]);
 		if (cell == null) {
 			continue;
 		}
@@ -345,7 +464,7 @@ private void drawFloor(short terrain, int x, int y) {
 }
 
 RenderCell getCell(int x, int y) {
-	return cells.get(x*Tendiwa.getWorld().getHeight()+y);
+	return cells.get(x * Tendiwa.getWorld().getHeight() + y);
 }
 
 private TextureRegion getWallTextureByCell(int x, int y) {
@@ -355,19 +474,19 @@ private TextureRegion getWallTextureByCell(int x, int y) {
 	assert wallType.getTerrainClass() == TerrainType.TerrainClass.WALL;
 	int index = 0;
 	RenderCell neighborCell = cells.get(x * WORLD.getHeight() + (y - 1));
-	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
 		index += 1000;
 	}
 	neighborCell = cells.get((x + 1) * WORLD.getHeight() + y);
-	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
 		index += 100;
 	}
 	neighborCell = cells.get(x * WORLD.getHeight() + (y + 1));
-	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
 		index += 10;
 	}
 	neighborCell = cells.get((x - 1) * WORLD.getHeight() + y);
-	if (neighborCell != null && neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
 		index += 1;
 	}
 	return atlasWalls.findRegion(name, index);
@@ -387,13 +506,10 @@ private void processEvents() {
 		controller.executeCurrentTask();
 	}
 	// Loop variable will remain true if it is not set to true inside .process().
-	while (!eventResultProcessingIsGoing && !queue.isEmpty()) {
+	while (!eventResultProcessingIsGoing && !Server.isTurnComputing() && !queue.isEmpty()) {
 		EventResult result = queue.remove();
 		eventResultProcessingIsGoing = true;
 		result.process();
-	}
-	if (queue.size() > 0) {
-		throw new RuntimeException("Penis");
 	}
 }
 
@@ -427,7 +543,7 @@ private void buildNet() {
 
 	ShapeRenderer shapeRenderer = new ShapeRenderer();
 	shapeRenderer.setProjectionMatrix(adHocCamera.combined);
-	shapeRenderer.setColor(0, 0, 0, 0.2f);
+	shapeRenderer.setColor(0, 0, 0, 0.1f);
 	shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
 	for (int cellX = 0; cellX < windowWidth / TILE_SIZE + 2; cellX++) {
 		shapeRenderer.line(cellX * TILE_SIZE, 0, cellX * TILE_SIZE, windowHeight + TILE_SIZE);
@@ -441,7 +557,9 @@ private void buildNet() {
 }
 
 private void drawNet() {
+	batch.begin();
 	batch.draw(cellNetFramebuffer.getColorBufferTexture(), startCellX * TILE_SIZE, startCellY * TILE_SIZE);
+	batch.end();
 }
 
 private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
@@ -454,7 +572,7 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 	);
 }
 
-private void getTransitionTextureByCell(RenderCell cell) {
+private void drawFloorTransitionsInCell(RenderCell cell) {
 	int self = cells.get(cell.getX() * WORLD.getHeight() + cell.getY()).getTerrain();
 	RenderCell renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() + 1));
 	int north = cell.getY() + 1 < worldHeightCells && renderCell != null ? renderCell.getTerrain() : self;
@@ -531,17 +649,20 @@ private TextureRegion getFloorTextureByCell(short terrain, int x, int y) {
 }
 
 private void drawCellWithTransitions(int x, int y, int north, int east, int south, int west) {
-	String transitionKey = north + "_" + east + "_" + south + "_" + west;
 	// Get individual transition pixmap for each side
-	TextureRegion region;
-	if (transitionsMap.containsKey(transitionKey)) {
-		region = transitionsMap.get(transitionKey);
-	} else {
-		region = createNewFloorTransitionRegion(north, east, south, west);
-	}
+	TextureRegion region = getTransition(north, east, south, west);
 	batch.begin();
 	batch.draw(region, x * TILE_SIZE, y * TILE_SIZE);
 	batch.end();
+}
+
+private TextureRegion getTransition(int north, int east, int south, int west) {
+	String transitionKey = north + "_" + east + "_" + south + "_" + west;
+	if (transitionsMap.containsKey(transitionKey)) {
+		return transitionsMap.get(transitionKey);
+	} else {
+		return createNewFloorTransitionRegion(north, east, south, west);
+	}
 }
 
 private TextureRegion createNewFloorTransitionRegion(int north, int east, int south, int west) {
