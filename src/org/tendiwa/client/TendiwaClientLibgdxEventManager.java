@@ -26,9 +26,13 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
 private GameScreen gameScreen;
 private Queue<EventResult> pendingOperations = new LinkedList<>();
+private static boolean animationsEnabled = false;
 
 TendiwaClientLibgdxEventManager(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
+}
+public static void toggleAnimations() {
+	animationsEnabled = !animationsEnabled;
 }
 
 @Override
@@ -38,24 +42,26 @@ public void event(final EventMove e) {
 		public void process() {
 			Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
 
-//			MoveToAction action = new MoveToAction();
-//			action.setPosition(e.getX(), e.getY());
-//			action.setDuration(0.1f);
-//			Action sequence = sequence(action, run(new Runnable() {
-//				@Override
-//				public void run() {
-//					gameScreen.PLAYER.setX(e.getX());
-//					gameScreen.PLAYER.setY(e.getY());
-//					gameScreen.eventProcessingDone();
-//				}
-//			}));
-//			characterActor.addAction(sequence);
-
-			characterActor.setX(e.getX());
-			characterActor.setY(e.getY());
-			gameScreen.PLAYER.setX(e.getX());
-			gameScreen.PLAYER.setY(e.getY());
-			gameScreen.eventProcessingDone();
+			if (animationsEnabled) {
+				MoveToAction action = new MoveToAction();
+				action.setPosition(e.getX(), e.getY());
+				action.setDuration(0.1f);
+				Action sequence = sequence(action, run(new Runnable() {
+					@Override
+					public void run() {
+						gameScreen.PLAYER.setX(e.getX());
+						gameScreen.PLAYER.setY(e.getY());
+						gameScreen.eventProcessingDone();
+					}
+				}));
+				characterActor.addAction(sequence);
+			} else {
+				characterActor.setX(e.getX());
+				characterActor.setY(e.getY());
+				gameScreen.PLAYER.setX(e.getX());
+				gameScreen.PLAYER.setY(e.getY());
+				gameScreen.eventProcessingDone();
+			}
 		}
 	});
 }

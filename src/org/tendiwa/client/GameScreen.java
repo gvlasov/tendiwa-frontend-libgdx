@@ -113,8 +113,8 @@ public GameScreen(final TendiwaGame game) {
 	centerCamera(PLAYER.getX() * TILE_SIZE, PLAYER.getY() * TILE_SIZE);
 	camera.update();
 
-	oneTileWiderCanera = new OrthographicCamera(Gdx.graphics.getWidth()+TILE_SIZE, Gdx.graphics.getHeight()+TILE_SIZE);
-	oneTileWiderCanera.setToOrtho(true, windowWidth+TILE_SIZE, windowHeight+TILE_SIZE);
+	oneTileWiderCanera = new OrthographicCamera(Gdx.graphics.getWidth() + TILE_SIZE, Gdx.graphics.getHeight() + TILE_SIZE);
+	oneTileWiderCanera.setToOrtho(true, windowWidth + TILE_SIZE, windowHeight + TILE_SIZE);
 
 	this.game = game;
 
@@ -147,13 +147,12 @@ public GameScreen(final TendiwaGame game) {
 
 	cacheRegions();
 
-	maxPixelX = WORLD.getHeight() * TILE_SIZE - windowWidth / 2;
+	maxPixelX = WORLD.getWidth() * TILE_SIZE - windowWidth / 2;
 	maxPixelY = WORLD.getHeight() * TILE_SIZE - windowHeight / 2;
 
 	fovEdgeOpaque = new FovEdgeOpaque();
 
-//	Gdx.graphics.setContinuousRendering(false);
-//	Gdx.graphics.requestRendering();
+	setRenderingMode();
 
 	drawOpaqueToDepth05Shader = new ShaderProgram(defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
 	int numberOfWallTypes = TerrainType.getNumberOfWallTypes();
@@ -177,6 +176,15 @@ public static ShaderProgram createShader(FileHandle file) {
 		throw new RuntimeException("Could not compile a shader");
 	}
 	return shader;
+}
+
+/**
+ * Sets continuous rendering. Needed for restoration of this Screen after switching from another screen with
+ * non-continuous rendering.
+ */
+private void setRenderingMode() {
+	Gdx.graphics.setContinuousRendering(true);
+	Gdx.graphics.requestRendering();
 }
 
 /**
@@ -340,6 +348,7 @@ private void drawWalls() {
 							// Draw shaded south front faces of unseen walls that don't have a wall neighbor from south.
 							// For that we'll need to update the depth mask from scratch, so we clear depth buffer to 1.0.
 							// It will consist only of rectangles covering those wall sides.
+//							Gdx.gl.glDepthMask(false);
 							batch.setShader(drawOpaqueToDepth05Shader);
 							int wallSideHeight = wallTextureHeight - TILE_SIZE;
 							int origY = wall.getRegionY();
@@ -356,6 +365,7 @@ private void drawWalls() {
 							Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 							wall.setRegion(origX, origY, TILE_SIZE, -wallTextureHeight);
 							batch.setShader(writeOpaqueToDepthShader);
+//							Gdx.gl.glDepthMask(true);
 
 						}
 					}
@@ -454,10 +464,10 @@ private void drawTransitionsOnWall(int x, int y, RenderCell cell) {
 		if (transition != null) {
 			batch.draw(transition, x * TILE_SIZE, y * TILE_SIZE - wallHeight + TILE_SIZE);
 //			if (noNeighbor) {
-				batch.end();
-				Gdx.gl.glColorMask(false, false, false, false);
-				Gdx.gl.glDepthMask(true);
-				batch.begin();
+			batch.end();
+			Gdx.gl.glColorMask(false, false, false, false);
+			Gdx.gl.glDepthMask(true);
+			batch.begin();
 //			}
 		}
 	}
@@ -548,7 +558,7 @@ private void applyUnseenBrightnessMap() {
 	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
 	shapeRen.setColor(0, 0, 0, 0.4f);
 	// Draw black transparent color above mask
-	shapeRen.rect(startCellX * TILE_SIZE, startCellY * TILE_SIZE, windowWidth+TILE_SIZE, windowHeight+TILE_SIZE);
+	shapeRen.rect(startCellX * TILE_SIZE, startCellY * TILE_SIZE, windowWidth + TILE_SIZE, windowHeight + TILE_SIZE);
 	shapeRen.end();
 
 	// Draw transitions to not yet seen cells
@@ -929,7 +939,7 @@ public void resize(int width, int height) {
 
 @Override
 public void show() {
-
+	setRenderingMode();
 }
 
 @Override

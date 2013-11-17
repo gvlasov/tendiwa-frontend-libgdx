@@ -15,6 +15,7 @@ public int HEIGHT;
 LwjglApplicationConfiguration cfg;
 private TendiwaClientLibgdxEventManager eventManager;
 private GameScreen gameScreen;
+private WorldMapScreen worldMapScreen;
 
 public TendiwaGame() {
 	if (INSTANCE != null) {
@@ -25,6 +26,21 @@ public TendiwaGame() {
 
 public static TendiwaGame getInstance() {
 	return INSTANCE;
+}
+
+public static void switchToWorldMapScreen() {
+	if (INSTANCE.worldMapScreen == null) {
+		INSTANCE.worldMapScreen = new WorldMapScreen(INSTANCE);
+	}
+	INSTANCE.setScreen(INSTANCE.worldMapScreen);
+}
+
+public static void switchToGameScreen() {
+	INSTANCE.setScreen(INSTANCE.gameScreen);
+}
+
+public static boolean isGameScreenActive() {
+	return INSTANCE.getScreen() == INSTANCE.gameScreen;
 }
 
 @Override
@@ -57,5 +73,4 @@ public void startup() {
 public TendiwaClientLibgdxEventManager getEventManager() {
 	return eventManager;
 }
-
 }

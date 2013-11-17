@@ -21,6 +21,10 @@ WorldMapScreen(final TendiwaGame game) {
 	camera.setToOrtho(false, Tendiwa.getWorld().getWidth(), Tendiwa.getWorld().getHeight());
 
 	batch = new SpriteBatch();
+	setRenderOnce();
+}
+
+private void setRenderOnce() {
 	Gdx.graphics.setContinuousRendering(false);
 	Gdx.graphics.requestRendering();
 }
@@ -69,7 +73,7 @@ public void resize(int width, int height) {
 
 @Override
 public void show() {
-
+	setRenderOnce();
 }
 
 @Override

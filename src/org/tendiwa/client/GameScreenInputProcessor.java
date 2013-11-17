@@ -78,6 +78,14 @@ public boolean keyDown(int keycode) {
 		if (player.canStepOn(player.getX() + 1, player.getY() + 1)) {
 			Tendiwa.getServer().pushRequest(new RequestWalk(Directions.SE));
 		}
+	} else if (keycode == F9) {
+		if (TendiwaGame.isGameScreenActive()) {
+			TendiwaGame.switchToWorldMapScreen();
+		} else {
+			TendiwaGame.switchToGameScreen();
+		}
+	} else if (keycode == F10) {
+		TendiwaClientLibgdxEventManager.toggleAnimations();
 	}
 	return true;
 }
