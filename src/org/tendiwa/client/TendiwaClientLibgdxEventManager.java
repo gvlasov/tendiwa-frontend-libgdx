@@ -1,6 +1,8 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.Event;
 import org.tendiwa.events.EventFovChange;
 import org.tendiwa.events.EventInitialTerrain;
@@ -12,6 +14,9 @@ import tendiwa.core.TendiwaClientEventManager;
 
 import java.util.LinkedList;
 import java.util.Queue;
+
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
 
 /**
  * On each received {@link Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
@@ -31,20 +36,20 @@ public void event(final EventMove e) {
 		@Override
 		public void process() {
 			Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
-//			MoveToAction action = new MoveToAction();
-//			action.setPosition(e.getX(), e.getY());
-//			action.setDuration(0.001f);
-//			Action sequence = sequence(action, run(new Runnable() {
-//				@Override
-//				public void run() {
-//					gameScreen.eventProcessingDone();
-//				}
-//			}));
-//			characterActor.addAction(sequence);
+			MoveToAction action = new MoveToAction();
+			action.setPosition(e.getX(), e.getY());
+			action.setDuration(0.1f);
+			Action sequence = sequence(action, run(new Runnable() {
+				@Override
+				public void run() {
+					gameScreen.eventProcessingDone();
+				}
+			}));
+			characterActor.addAction(sequence);
 
-			characterActor.setX(e.getX());
-			characterActor.setY(e.getY());
-			gameScreen.eventProcessingDone();
+//			characterActor.setX(e.getX());
+//			characterActor.setY(e.getY());
+//			gameScreen.eventProcessingDone();
 		}
 	});
 }

@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -25,6 +26,7 @@ import java.util.Queue;
 public class GameScreen implements Screen {
 
 static final int TILE_SIZE = 32;
+private static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 final Stage stage;
 final int maxStartX;
 final int maxStartY;
@@ -46,8 +48,15 @@ private final GameScreenInputProcessor controller;
 private final int worldWidthCells;
 private final int worldHeightCells;
 private final FrameBuffer depthTestFrameBuffer;
-private final FovEdge fovEdge;
-private final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
+private final TransitionPregenerator fovEdgeOpaque;
+private final ShaderProgram drawOpaqueToDepth05Shader;
+private final int[] wallHeights;
+private final ShaderProgram writeOpaqueToDepthShader;
+private final ShaderProgram drawWithDepth0Shader;
+private final TransitionPregenerator fovEdgeOnWallToUnseen;
+private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
+private final ShaderProgram fillWithTransparentBlack;
+private final ShaderProgram drawWithRGB06Shader;
 protected int startCellX;
 OrthographicCamera camera;
 World WORLD;
@@ -137,11 +146,33 @@ public GameScreen(final TendiwaGame game) {
 	maxPixelX = WORLD.getHeight() * TILE_SIZE - windowWidth / 2;
 	maxPixelY = WORLD.getHeight() * TILE_SIZE - windowHeight / 2;
 
-	fovEdge = new FovEdge();
+	fovEdgeOpaque = new FovEdgeOpaque();
 
 //	Gdx.graphics.setContinuousRendering(false);
 //	Gdx.graphics.requestRendering();
 
+	drawOpaqueToDepth05Shader = new ShaderProgram(defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
+	int numberOfWallTypes = TerrainType.getNumberOfWallTypes();
+	wallHeights = new int[numberOfWallTypes];
+	for (int i = 0; i < numberOfWallTypes; i++) {
+		wallHeights[i] = atlasWalls.findRegion(TerrainType.getById(-i - 1).getName()).getRegionHeight();
+	}
+
+	writeOpaqueToDepthShader = createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
+	drawWithDepth0Shader = createShader(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
+	fovEdgeOnWallToUnseen = new FovEdgeTransparent();
+	fovEdgeOnWallToNotYetSeen = new FovEdgeOpaque();
+	fillWithTransparentBlack = createShader(Gdx.files.internal("shaders/fillWithTransparentBlack.f.glsl"));
+	drawWithRGB06Shader = createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+}
+
+public static ShaderProgram createShader(FileHandle file) {
+	ShaderProgram shader = new ShaderProgram(defaultShader.getVertexShaderSource(), file.readString());
+	if (!shader.isCompiled()) {
+		Tendiwa.getLogger().error(shader.getLog());
+		throw new RuntimeException("Could not compile a shader");
+	}
+	return shader;
 }
 
 /**
@@ -199,12 +230,12 @@ public void render(float delta) {
 
 	drawFloor();
 	drawTransitions();
+	applyUnseenBrightnessMap();
 	drawWalls();
 	updateCursorCoords();
 	drawNet();
 	stage.draw();
 	drawObjects();
-	applyUnseenBrightnessMap();
 }
 
 private void updateCursorCoords() {
@@ -268,13 +299,76 @@ private void drawTransitions() {
 }
 
 private void drawWalls() {
+	// There is a complexity in drawing walls: drawing transitions above walls.
+	// These transitions go on the "roof" of a wall, i.e. higher than floor transitions.
+	depthTestFrameBuffer.begin();
+	Gdx.gl.glClearColor(0, 0, 0, 0);
+	Gdx.gl.glClearDepthf(1.0f);
+	Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glDepthFunc(GL10.GL_ALWAYS);
+
 	int maxX = getMaxRenderCellX();
-	int maxY = getMaxRenderCellY();
+	int maxY = getMaxRenderCellY() + 1; // +1 here is to draw walls that start below viewport
+
+	// Draw visible walls.
+	// For each opaque fragment of a visible wall, we place a 0 to the depth buffer.
+	// This will later indicate a mask for drawing transitions on walls.
+	batch.setShader(writeOpaqueToDepthShader);
 	batch.begin();
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	// SpriteBatch disables depth buffer with glDepthMask(false) internally,
+	// so we have to reenable it to properly wirte our depth mask.
+	Gdx.gl.glDepthMask(true);
 	for (int x = startCellX; x < maxX; x++) {
 		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
-			if (cell != null) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null && cell.isVisible()) {
+				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+					TextureRegion wall = getWallTextureByCell(x, y);
+					int wallTextureHeight = wall.getRegionHeight();
+					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wallTextureHeight - TILE_SIZE));
+					RenderCell cellFromSouth = getCell(x, y + 1);
+					if (cellFromSouth != null && !cellFromSouth.isVisible()) {
+						if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL &&
+							TerrainType.getById(cellFromSouth.getTerrain()).getTerrainClass() != TerrainType.TerrainClass.WALL
+							) {
+							// Draw shaded south front faces of unseen walls that don't have a wall neighbor from south.
+							// For that we'll need to update the depth mask from scratch, so we clear depth buffer to 1.0.
+							// It will consist only of rectangles covering those wall sides.
+							batch.setShader(drawOpaqueToDepth05Shader);
+							int wallSideHeight = wallTextureHeight - TILE_SIZE;
+							int origY = wall.getRegionY();
+							int origX = wall.getRegionX();
+							wall.setRegion(origX, origY, TILE_SIZE, -wallSideHeight);
+							Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
+							batch.draw(
+								wall,
+								x * TILE_SIZE,
+								y * TILE_SIZE + TILE_SIZE - wallTextureHeight + TILE_SIZE,
+								TILE_SIZE,
+								wallSideHeight
+							);
+							Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+							wall.setRegion(origX, origY, TILE_SIZE, -wallTextureHeight);
+							batch.setShader(writeOpaqueToDepthShader);
+
+						}
+					}
+				}
+			}
+		}
+	}
+	batch.end();
+
+	// Draw unseen walls
+	batch.setShader(drawWithDepth0Shader);
+	batch.begin();
+	Gdx.gl.glDepthMask(true);
+	for (int x = startCellX; x < maxX; x++) {
+		for (int y = startCellY; y < maxY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null && !cell.isVisible()) {
 				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
 					TextureRegion wall = getWallTextureByCell(x, y);
 					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wall.getRegionHeight() - TILE_SIZE));
@@ -283,6 +377,90 @@ private void drawWalls() {
 		}
 	}
 	batch.end();
+
+	// Create mask for transitions upon seen walls
+	Gdx.gl.glDepthFunc(GL10.GL_GREATER);
+	batch.setShader(drawOpaqueToDepth05Shader);
+	batch.begin();
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glColorMask(false, false, false, false);
+	Gdx.gl.glDepthMask(true);
+	for (int x = startCellX; x < maxX; x++) {
+		for (int y = startCellY; y < maxY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null) {
+				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+					drawTransitionsOnWall(x, y, cell);
+				}
+			}
+		}
+	}
+	batch.end();
+
+	// Draw seen walls again above the mask
+	Gdx.gl.glColorMask(true, true, true, true);
+	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
+	batch.setShader(drawWithRGB06Shader);
+	batch.begin();
+	for (int x = startCellX; x < maxX; x++) {
+		for (int y = startCellY; y < maxY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null && cell.isVisible()) {
+				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+					TextureRegion wall = getWallTextureByCell(x, y);
+					int wallTextureHeight = wall.getRegionHeight();
+					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wallTextureHeight - TILE_SIZE));
+				}
+			}
+		}
+	}
+	batch.end();
+
+	Gdx.gl.glDepthMask(false);
+	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
+
+	batch.setShader(defaultShader);
+
+	depthTestFrameBuffer.end();
+
+	batch.begin();
+	batch.draw(depthTestFrameBuffer.getColorBufferTexture(), startPixelX, startPixelY);
+	batch.end();
+
+}
+
+private void drawTransitionsOnWall(int x, int y, RenderCell cell) {
+	int wallHeight = getWallHeight(cell.getTerrain());
+	for (CardinalDirection dir : CardinalDirection.values()) {
+		// Here to get texture number shift we pass absolute coordinates x and y, because,
+		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
+		int[] d = dir.side2d();
+		RenderCell neighborCell = getCell(x + d[0], y + d[1]);
+		TextureRegion transition = null;
+		boolean noNeighbor = neighborCell == null;
+		if (noNeighbor) {
+			Gdx.gl.glColorMask(true, true, true, true);
+			Gdx.gl.glDepthMask(false);
+			transition = fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y);
+		} else if (cell.isVisible() && !neighborCell.isVisible()) {
+			Gdx.gl.glColorMask(false, false, false, false);
+			Gdx.gl.glDepthMask(true);
+			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
+		}
+		if (transition != null) {
+			batch.draw(transition, x * TILE_SIZE, y * TILE_SIZE - wallHeight + TILE_SIZE);
+//			if (noNeighbor) {
+				batch.end();
+				Gdx.gl.glColorMask(false, false, false, false);
+				Gdx.gl.glDepthMask(true);
+				batch.begin();
+//			}
+		}
+	}
+}
+
+private int getWallHeight(short terrain) {
+	return wallHeights[-terrain];
 }
 
 private void drawFloor() {
@@ -293,7 +471,6 @@ private void drawFloor() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
 			if (cell != null) {
-//				if (cell.isVisible()) {
 				short terrain = cell.getTerrain();
 				if (TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
 					drawFloor(terrain, x, y);
@@ -301,9 +478,6 @@ private void drawFloor() {
 					assert TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.WALL;
 					drawFloorUnderWall(x, y);
 				}
-//				} else {
-//					// Draw shaded cell
-//				}
 			}
 
 		}
@@ -314,6 +488,7 @@ private void drawFloor() {
 private void applyUnseenBrightnessMap() {
 	depthTestFrameBuffer.begin();
 
+	fovEdgeOpaque.batch.setProjectionMatrix(camera.combined);
 	Gdx.gl.glClearColor(0, 0, 0, 0);
 	Gdx.gl.glClearDepthf(1.0f);
 	Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
@@ -338,40 +513,19 @@ private void applyUnseenBrightnessMap() {
 		}
 	}
 	shapeRen.end();
-
-	// Draw transitions to not yet seen cells
 	Gdx.gl.glColorMask(true, true, true, true);
-	fovEdge.batch.setShader(defaultShader);
-	fovEdge.batch.setProjectionMatrix(camera.combined);
-	fovEdge.batch.begin();
-	for (int x = startCellX; x < maxRenderCellX; x++) {
-		for (int y = startCellY; y < maxRenderCellY; y++) {
-			RenderCell cell = getCell(x, y);
-			if (cell != null) {
-				fovEdge.drawTransitions(
-					fovEdge.batch,
-					x * TILE_SIZE,
-					y * TILE_SIZE,
-					getHasNotYetSeenNeighbors(x, y),
-					x - startCellX,
-					y - startCellY
-				);
-			}
-		}
-	}
-	fovEdge.batch.end();
 
 	// Draw transitions to unseen cells (half-transparent)
-	fovEdge.batch.setShader(fovEdge.halfTransparencyShader);
-	fovEdge.batch.begin();
+	fovEdgeOpaque.batch.setShader(fovEdgeOpaque.halfTransparencyShader);
+	fovEdgeOpaque.batch.begin();
 	for (int x = startCellX; x < maxRenderCellX; x++) {
 		for (int y = startCellY; y < maxRenderCellY; y++) {
 			RenderCell cell = getCell(x, y);
 			if (cell != null && cell.isVisible()) {
 				boolean[] hasUnseenNeighbors = getHasUnseenNeighbors(x, y);
 				if (hasUnseenNeighbors[0] || hasUnseenNeighbors[1] || hasUnseenNeighbors[2] || hasUnseenNeighbors[3]) {
-					fovEdge.drawTransitions(
-						fovEdge.batch,
+					fovEdgeOpaque.drawTransitions(
+						fovEdgeOpaque.batch,
 						x * TILE_SIZE,
 						y * TILE_SIZE,
 						hasUnseenNeighbors,
@@ -382,7 +536,7 @@ private void applyUnseenBrightnessMap() {
 			}
 		}
 	}
-	fovEdge.batch.end();
+	fovEdgeOpaque.batch.end();
 
 	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
@@ -392,10 +546,29 @@ private void applyUnseenBrightnessMap() {
 	// Draw black transparent color above mask
 	shapeRen.rect(startCellX * TILE_SIZE, startCellY * TILE_SIZE, windowWidth, windowHeight);
 	shapeRen.end();
-	depthTestFrameBuffer.end();
 
-	Gdx.gl.glDepthMask(false);
+	// Draw transitions to not yet seen cells
 	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
+	fovEdgeOpaque.batch.setShader(defaultShader);
+	fovEdgeOpaque.batch.begin();
+	for (int x = startCellX; x < maxRenderCellX; x++) {
+		for (int y = startCellY; y < maxRenderCellY; y++) {
+			RenderCell cell = getCell(x, y);
+			if (cell != null) {
+				fovEdgeOpaque.drawTransitions(
+					fovEdgeOpaque.batch,
+					x * TILE_SIZE,
+					y * TILE_SIZE,
+					getHasNotYetSeenNeighbors(x, y),
+					x - startCellX,
+					y - startCellY
+				);
+			}
+		}
+	}
+	fovEdgeOpaque.batch.end();
+
+	depthTestFrameBuffer.end();
 
 	batch.begin();
 	batch.draw(depthTestFrameBuffer.getColorBufferTexture(), startCellX * TILE_SIZE, startCellY * TILE_SIZE);
@@ -425,24 +598,11 @@ private boolean hasCell(int x, int y) {
 	return cells.containsKey(x * WORLD.getHeight() + y);
 }
 
-private void depthTest2() {
-
-	Gdx.gl.glClearDepthf(1.0f);
-	Gdx.gl.glClear(GL10.GL_DEPTH_BUFFER_BIT);
-	Gdx.gl.glDepthFunc(GL10.GL_LESS);
-	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-	Gdx.gl.glDepthMask(true);
-	Gdx.gl.glColorMask(false, false, false, false);
-	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
-	shapeRen.setColor(1, 0, 0, 0.5f);
-	shapeRen.circle((cursorWorldX - startCellX) * TILE_SIZE, (cursorWorldY - startCellY) * TILE_SIZE, 200);
-	shapeRen.end();
-	Gdx.gl.glColorMask(true, true, true, true);
-	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
-}
-
 private void drawFloorUnderWall(int x, int y) {
+	RenderCell cellOneRowLower = getCell(x, y + 1);
+	if (cellOneRowLower == null) {
+		return;
+	}
 	int[] dx = new int[]{0, 1, 0, -1};
 	int[] dy = new int[]{-1, 0, 1, 0};
 	for (int i = 0; i < 4; i++) {
