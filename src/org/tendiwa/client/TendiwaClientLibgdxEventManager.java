@@ -1,5 +1,6 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
@@ -36,20 +37,25 @@ public void event(final EventMove e) {
 		@Override
 		public void process() {
 			Actor characterActor = gameScreen.getCharacterActor(e.getCharacter());
-			MoveToAction action = new MoveToAction();
-			action.setPosition(e.getX(), e.getY());
-			action.setDuration(0.1f);
-			Action sequence = sequence(action, run(new Runnable() {
-				@Override
-				public void run() {
-					gameScreen.eventProcessingDone();
-				}
-			}));
-			characterActor.addAction(sequence);
 
-//			characterActor.setX(e.getX());
-//			characterActor.setY(e.getY());
-//			gameScreen.eventProcessingDone();
+//			MoveToAction action = new MoveToAction();
+//			action.setPosition(e.getX(), e.getY());
+//			action.setDuration(0.1f);
+//			Action sequence = sequence(action, run(new Runnable() {
+//				@Override
+//				public void run() {
+//					gameScreen.PLAYER.setX(e.getX());
+//					gameScreen.PLAYER.setY(e.getY());
+//					gameScreen.eventProcessingDone();
+//				}
+//			}));
+//			characterActor.addAction(sequence);
+
+			characterActor.setX(e.getX());
+			characterActor.setY(e.getY());
+			gameScreen.PLAYER.setX(e.getX());
+			gameScreen.PLAYER.setY(e.getY());
+			gameScreen.eventProcessingDone();
 		}
 	});
 }

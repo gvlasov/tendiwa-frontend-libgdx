@@ -57,10 +57,11 @@ private final TransitionPregenerator fovEdgeOnWallToUnseen;
 private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 private final ShaderProgram fillWithTransparentBlack;
 private final ShaderProgram drawWithRGB06Shader;
+private final OrthographicCamera oneTileWiderCanera;
 protected int startCellX;
 OrthographicCamera camera;
 World WORLD;
-PlayerCharacter PLAYER;
+RenderPlayer PLAYER;
 int startCellY;
 int centerPixelX;
 int centerPixelY;
@@ -98,7 +99,7 @@ private int cursorWorldY;
 
 public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
-	PLAYER = WORLD.getPlayerCharacter();
+	PLAYER = new RenderPlayer(WORLD.getPlayerCharacter());
 
 	worldWidthCells = Tendiwa.getWorld().getWidth();
 	worldHeightCells = Tendiwa.getWorld().getHeight();
@@ -111,6 +112,9 @@ public GameScreen(final TendiwaGame game) {
 	camera.setToOrtho(true, windowWidth, windowHeight);
 	centerCamera(PLAYER.getX() * TILE_SIZE, PLAYER.getY() * TILE_SIZE);
 	camera.update();
+
+	oneTileWiderCanera = new OrthographicCamera(Gdx.graphics.getWidth()+TILE_SIZE, Gdx.graphics.getHeight()+TILE_SIZE);
+	oneTileWiderCanera.setToOrtho(true, windowWidth+TILE_SIZE, windowHeight+TILE_SIZE);
 
 	this.game = game;
 
@@ -529,8 +533,8 @@ private void applyUnseenBrightnessMap() {
 						x * TILE_SIZE,
 						y * TILE_SIZE,
 						hasUnseenNeighbors,
-						x - startCellX,
-						y - startCellY
+						x + windowWidthCells - PLAYER.getX(),
+						y - windowHeightCells - PLAYER.getY()
 					);
 				}
 			}
@@ -544,7 +548,7 @@ private void applyUnseenBrightnessMap() {
 	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
 	shapeRen.setColor(0, 0, 0, 0.4f);
 	// Draw black transparent color above mask
-	shapeRen.rect(startCellX * TILE_SIZE, startCellY * TILE_SIZE, windowWidth, windowHeight);
+	shapeRen.rect(startCellX * TILE_SIZE, startCellY * TILE_SIZE, windowWidth+TILE_SIZE, windowHeight+TILE_SIZE);
 	shapeRen.end();
 
 	// Draw transitions to not yet seen cells
@@ -555,13 +559,21 @@ private void applyUnseenBrightnessMap() {
 		for (int y = startCellY; y < maxRenderCellY; y++) {
 			RenderCell cell = getCell(x, y);
 			if (cell != null) {
+				int hashX, hashY;
+				if (cell.isVisible()) {
+					hashX = x + windowWidthCells - PLAYER.getX();
+					hashY = y + windowHeightCells - PLAYER.getY();
+				} else {
+					hashX = x;
+					hashY = y;
+				}
 				fovEdgeOpaque.drawTransitions(
 					fovEdgeOpaque.batch,
 					x * TILE_SIZE,
 					y * TILE_SIZE,
 					getHasNotYetSeenNeighbors(x, y),
-					x - startCellX,
-					y - startCellY
+					hashX,
+					hashY
 				);
 			}
 		}
@@ -571,7 +583,7 @@ private void applyUnseenBrightnessMap() {
 	depthTestFrameBuffer.end();
 
 	batch.begin();
-	batch.draw(depthTestFrameBuffer.getColorBufferTexture(), startCellX * TILE_SIZE, startCellY * TILE_SIZE);
+	batch.draw(depthTestFrameBuffer.getColorBufferTexture(), startPixelX, startPixelY);
 	batch.end();
 
 }
@@ -713,7 +725,6 @@ private void buildNet() {
 	}
 	shapeRenderer.end();
 	cellNetFramebuffer.end();
-
 }
 
 private void drawNet() {
