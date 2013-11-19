@@ -14,15 +14,6 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../tendiwa-ontology.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
           <root url="file://$MODULE_DIR$/../libs/libgdx" />
         </CLASSES>
         <JAVADOC>
@@ -55,6 +46,15 @@
           <root url="jar://$MODULE_DIR$/../libs/libgdx/extensions/gdx-tools/sources/gdx-tools-sources.jar!/" />
         </SOURCES>
         <jarDirectory url="file://$MODULE_DIR$/../libs/libgdx/extensions/gdx-tools" recursive="false" />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/../tendiwa-ontology.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
       </library>
     </orderEntry>
   </component>

@@ -155,10 +155,10 @@ public GameScreen(final TendiwaGame game) {
 	setRenderingMode();
 
 	drawOpaqueToDepth05Shader = new ShaderProgram(defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
-	int numberOfWallTypes = TerrainType.getNumberOfWallTypes();
+	int numberOfWallTypes = WallType.getNumberOfWallTypes();
 	wallHeights = new int[numberOfWallTypes];
 	for (int i = 0; i < numberOfWallTypes; i++) {
-		wallHeights[i] = atlasWalls.findRegion(TerrainType.getById(-i - 1).getName()).getRegionHeight();
+		wallHeights[i] = atlasWalls.findRegion(WallType.getById(i + 1).getName()).getRegionHeight();
 	}
 
 	writeOpaqueToDepthShader = createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
@@ -240,7 +240,7 @@ public void render(float delta) {
 	camera.update();
 	batch.setProjectionMatrix(camera.combined);
 
-	drawFloor();
+	drawFloors();
 	drawTransitions();
 	applyUnseenBrightnessMap();
 	drawWalls();
@@ -289,7 +289,7 @@ private void drawObjects() {
 		batch,
 		Gdx.graphics.getFramesPerSecond()
 			+ "; " + startCellX + ":" + startCellY + " "
-			+ (cellUnderCursor == null ? "" : TerrainType.getById(cellUnderCursor.getTerrain()).getName())
+			+ (cellUnderCursor == null ? "" : FloorType.getById(cellUnderCursor.getFloor()).getName())
 			+ " cursor: " + cursorWorldX + " " + cursorWorldY,
 		startPixelX + 100,
 		startPixelY + 100);
@@ -302,9 +302,9 @@ private void drawTransitions() {
 		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
 			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
 			if (cell != null) {
-//				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
-				drawFloorTransitionsInCell(cell);
-//				}
+				if (!cell.hasWall()) {
+					drawFloorTransitionsInCell(cell);
+				}
 			}
 		}
 	}
@@ -336,19 +336,16 @@ private void drawWalls() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = getCell(x, y);
 			if (cell != null && cell.isVisible()) {
-				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+				if (cell.hasWall()) {
 					TextureRegion wall = getWallTextureByCell(x, y);
 					int wallTextureHeight = wall.getRegionHeight();
 					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wallTextureHeight - TILE_SIZE));
 					RenderCell cellFromSouth = getCell(x, y + 1);
 					if (cellFromSouth != null && !cellFromSouth.isVisible()) {
-						if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL &&
-							TerrainType.getById(cellFromSouth.getTerrain()).getTerrainClass() != TerrainType.TerrainClass.WALL
-							) {
+						if (cell.hasWall() && !cellFromSouth.hasWall()) {
 							// Draw shaded south front faces of unseen walls that don't have a wall neighbor from south.
 							// For that we'll need to update the depth mask from scratch, so we clear depth buffer to 1.0.
 							// It will consist only of rectangles covering those wall sides.
-//							Gdx.gl.glDepthMask(false);
 							batch.setShader(drawOpaqueToDepth05Shader);
 							int wallSideHeight = wallTextureHeight - TILE_SIZE;
 							int origY = wall.getRegionY();
@@ -365,8 +362,6 @@ private void drawWalls() {
 							Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 							wall.setRegion(origX, origY, TILE_SIZE, -wallTextureHeight);
 							batch.setShader(writeOpaqueToDepthShader);
-//							Gdx.gl.glDepthMask(true);
-
 						}
 					}
 				}
@@ -383,7 +378,7 @@ private void drawWalls() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = getCell(x, y);
 			if (cell != null && !cell.isVisible()) {
-				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+				if (cell.hasWall()) {
 					TextureRegion wall = getWallTextureByCell(x, y);
 					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wall.getRegionHeight() - TILE_SIZE));
 				}
@@ -403,7 +398,7 @@ private void drawWalls() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = getCell(x, y);
 			if (cell != null) {
-				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+				if (cell.hasWall()) {
 					drawTransitionsOnWall(x, y, cell);
 				}
 			}
@@ -420,7 +415,7 @@ private void drawWalls() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = getCell(x, y);
 			if (cell != null && cell.isVisible()) {
-				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.WALL) {
+				if (cell.hasWall()) {
 					TextureRegion wall = getWallTextureByCell(x, y);
 					int wallTextureHeight = wall.getRegionHeight();
 					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wallTextureHeight - TILE_SIZE));
@@ -444,7 +439,7 @@ private void drawWalls() {
 }
 
 private void drawTransitionsOnWall(int x, int y, RenderCell cell) {
-	int wallHeight = getWallHeight(cell.getTerrain());
+	int wallHeight = getWallHeight(cell.getFloor());
 	for (CardinalDirection dir : CardinalDirection.values()) {
 		// Here to get texture number shift we pass absolute coordinates x and y, because,
 		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
@@ -474,10 +469,10 @@ private void drawTransitionsOnWall(int x, int y, RenderCell cell) {
 }
 
 private int getWallHeight(short terrain) {
-	return wallHeights[-terrain];
+	return wallHeights[terrain];
 }
 
-private void drawFloor() {
+private void drawFloors() {
 	int maxX = getMaxRenderCellX();
 	int maxY = getMaxRenderCellY();
 	batch.begin();
@@ -485,7 +480,7 @@ private void drawFloor() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
 			if (cell != null) {
-				drawFloor(cell.getTerrain(), x, y);
+				drawFloor(cell.getFloor(), x, y);
 			}
 
 		}
@@ -618,51 +613,17 @@ private void drawFloorUnderWall(int x, int y) {
 }
 
 private void drawFloor(short terrain, int x, int y) {
-	if (!TerrainType.isFloor(terrain)) {
-		short oldTerrain = terrain;
-		terrain = getFloorId(getCell(x, y));
-		if (terrain == oldTerrain) {
-			// If it is not possible to determine the type of floor in cell, don't draw it at all.
-			return;
-		}
+	if (getCell(x, y).hasWall() && !hasCell(x, y + 1)) {
+		// Don't draw floor on cells that are right under a wall on the edge of field of view,
+		// because drawing one produces an unpleasant and unrealistic effect.
+		return;
 	}
 	TextureRegion floor = getFloorTextureByCell(terrain, x, y);
 	batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
 }
 
-/**
- * Returns a floor id to draw in a cell where there is no floor (i.e. there is a wall).
- *
- * @param cell
- * 	A cell go get floor id of.
- * @return A floor id or {@link tendiwa.core.TerrainType#getEmptiness()} value if id could not be computed.
- */
 private short getFloorId(RenderCell cell) {
-	if (TerrainType.isFloor(cell.getTerrain())) {
-		// If there is a floor id in cell's terrain id, return it.
-		return cell.getTerrain();
-	} else {
-		// If there is a wall id in cell's terrain id, compute floor id for it.
-		int x = cell.getX();
-		int y = cell.getY();
-		RenderCell cellOneRowLower = getCell(x, y + 1);
-		if (cellOneRowLower == null) {
-			// Don't draw the floor that is under a wall on the edge of field of view,
-			// because it produces an unnatural look.
-			return TerrainType.getEmptiness();
-		}
-		for (int i = 0; i < 4; i++) {
-			RenderCell neighborCell = getCell(x + CardinalDirection.dx[i], y + CardinalDirection.dy[i]);
-			if (neighborCell == null) {
-				continue;
-			}
-			if (TerrainType.isFloor(neighborCell.getTerrain())) {
-				return neighborCell.getTerrain();
-			}
-		}
-	}
-	// If it is not possible to compute floor id for wall id, then return emptiness floor.
-	return TerrainType.getEmptiness();
+	return cell.getFloor();
 }
 
 RenderCell getCell(int x, int y) {
@@ -670,25 +631,24 @@ RenderCell getCell(int x, int y) {
 }
 
 private TextureRegion getWallTextureByCell(int x, int y) {
-	short terrain = cells.get(x * WORLD.getHeight() + y).getTerrain();
-	TerrainType wallType = TerrainType.getById(terrain);
+	short wallId = cells.get(x * WORLD.getHeight() + y).getWall();
+	WallType wallType = WallType.getById(wallId);
 	String name = wallType.getName();
-	assert wallType.getTerrainClass() == TerrainType.TerrainClass.WALL;
 	int index = 0;
 	RenderCell neighborCell = cells.get(x * WORLD.getHeight() + (y - 1));
-	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 1000;
 	}
 	neighborCell = cells.get((x + 1) * WORLD.getHeight() + y);
-	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 100;
 	}
 	neighborCell = cells.get(x * WORLD.getHeight() + (y + 1));
-	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 10;
 	}
 	neighborCell = cells.get((x - 1) * WORLD.getHeight() + y);
-	if (neighborCell == null || neighborCell.getTerrain() == terrain) {
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 1;
 	}
 	return atlasWalls.findRegion(name, index);
@@ -776,31 +736,17 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 private void drawFloorTransitionsInCell(RenderCell cell) {
 
 	int self = getFloorId(cell);
-	if (self == TerrainType.getEmptiness()) {
+	if (self == FloorType.getEmptiness()) {
 		return;
 	}
 	RenderCell renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() + 1));
 	int north = cell.getY() + 1 < worldHeightCells && renderCell != null ? getFloorId(renderCell) : self;
-	if (!TerrainType.isFloor(north)) {
-		north = self;
-	}
 	renderCell = cells.get((cell.getX() + 1) * WORLD.getHeight() + cell.getY());
 	int east = cell.getX() + 1 < worldWidthCells && renderCell != null ? getFloorId(renderCell) : self;
-	if (!TerrainType.isFloor(east)) {
-		east = self;
-	}
-
 	renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() - 1));
 	int south = cell.getY() > 0 && renderCell != null ? getFloorId(renderCell) : self;
-	if (!TerrainType.isFloor(south)) {
-		south = self;
-	}
 	renderCell = cells.get((cell.getX() - 1) * WORLD.getHeight() + cell.getY());
 	int west = cell.getX() > 0 && renderCell != null ? getFloorId(renderCell) : self;
-	if (!TerrainType.isFloor(west)) {
-		west = self;
-	}
-
 	if (north != self || east != self || south != self || west != self) {
 		drawCellWithTransitions(cell.getX(), cell.getY(), north, east, south, west);
 	}
@@ -809,10 +755,7 @@ private void drawFloorTransitionsInCell(RenderCell cell) {
 private void cacheRegions() {
 	Map<String, Short> floorTypeName2id = new HashMap<>();
 	Map<String, Array<TextureAtlas.AtlasRegion>> name2regions = new HashMap<>();
-	for (Map.Entry<Short, TerrainType> e : TerrainType.getAll().entrySet()) {
-		if (e.getValue().getTerrainClass() != TerrainType.TerrainClass.FLOOR) {
-			continue;
-		}
+	for (Map.Entry<Short, FloorType> e : FloorType.getAll().entrySet()) {
 		floorTypeName2id.put(e.getValue().getName(), e.getKey());
 	}
 	for (TextureAtlas.AtlasRegion region : atlasFloors.getRegions()) {
@@ -920,7 +863,7 @@ private Pixmap createTransition(CardinalDirection dir, int floorId) {
 		dir = dir.opposite();
 	}
 	Pixmap.setBlending(Pixmap.Blending.None);
-	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(TerrainType.getById(floorId).getName());
+	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(FloorType.getById(floorId).getName());
 	CardinalDirection opposite = dir.opposite();
 	EnhancedRectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
 	EnhancedRectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
