@@ -96,6 +96,7 @@ private Map<Integer, GameObject> objects = new HashMap<>();
 private ShapeRenderer shapeRen = new ShapeRenderer();
 private int cursorWorldX;
 private int cursorWorldY;
+private final ShaderProgram drawWithDepth05Shader;
 
 public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
@@ -167,6 +168,7 @@ public GameScreen(final TendiwaGame game) {
 	fovEdgeOnWallToNotYetSeen = new FovEdgeOpaque();
 	fillWithTransparentBlack = createShader(Gdx.files.internal("shaders/fillWithTransparentBlack.f.glsl"));
 	drawWithRGB06Shader = createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+	drawWithDepth05Shader = createShader(Gdx.files.internal("shaders/drawWithDepth05.f.glsl"));
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -301,10 +303,10 @@ private void drawTransitions() {
 	for (int x = 0; x < windowWidth / TILE_SIZE; x++) {
 		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
 			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
-			if (cell != null) {
-				if (!cell.hasWall()) {
-					drawFloorTransitionsInCell(cell);
-				}
+			// (!A || B) — see "Logical implication" in Wikipedia.
+			// Shortly, if there is a wall, then floor under it should be drawn for a condition to pass.
+			if (cell != null && (!cell.hasWall() || isFloorUnderWallShouldBeDrawn(startCellX+x, startCellY+y))) {
+				drawFloorTransitionsInCell(cell);
 			}
 		}
 	}
@@ -330,7 +332,7 @@ private void drawWalls() {
 	batch.begin();
 	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	// SpriteBatch disables depth buffer with glDepthMask(false) internally,
-	// so we have to reenable it to properly wirte our depth mask.
+	// so we have to re-enable it to properly write our depth mask.
 	Gdx.gl.glDepthMask(true);
 	for (int x = startCellX; x < maxX; x++) {
 		for (int y = startCellY; y < maxY; y++) {
@@ -350,6 +352,8 @@ private void drawWalls() {
 							int wallSideHeight = wallTextureHeight - TILE_SIZE;
 							int origY = wall.getRegionY();
 							int origX = wall.getRegionX();
+							// For drawing the south side of a wall we temporarily set wall's texture region
+							// to cover only that part of wall...
 							wall.setRegion(origX, origY, TILE_SIZE, -wallSideHeight);
 							Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
 							batch.draw(
@@ -360,6 +364,7 @@ private void drawWalls() {
 								wallSideHeight
 							);
 							Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+							// ...and then restore it back.
 							wall.setRegion(origX, origY, TILE_SIZE, -wallTextureHeight);
 							batch.setShader(writeOpaqueToDepthShader);
 						}
@@ -387,7 +392,7 @@ private void drawWalls() {
 	}
 	batch.end();
 
-	// Create mask for transitions upon seen walls
+	// Create mask for FOV transitions above walls
 	Gdx.gl.glDepthFunc(GL10.GL_GREATER);
 	batch.setShader(drawOpaqueToDepth05Shader);
 	batch.begin();
@@ -399,14 +404,14 @@ private void drawWalls() {
 			RenderCell cell = getCell(x, y);
 			if (cell != null) {
 				if (cell.hasWall()) {
-					drawTransitionsOnWall(x, y, cell);
+					drawDepthMaskAndOpaqueTransitionOnWall(x, y, cell);
 				}
 			}
 		}
 	}
 	batch.end();
 
-	// Draw seen walls again above the mask
+	// Draw seen walls again above the mask, but now with rbg *= 0.6 so masked pixels appear darker
 	Gdx.gl.glColorMask(true, true, true, true);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
 	batch.setShader(drawWithRGB06Shader);
@@ -438,7 +443,18 @@ private void drawWalls() {
 
 }
 
-private void drawTransitionsOnWall(int x, int y, RenderCell cell) {
+/**
+ * For a transition where there is no neighbor from that side, draws an opaque black transition; for a transition to an
+ * unseen neighbor cell, draws a mask for an upcoming darkened transition.
+ *
+ * @param x
+ * 	Absolute x coordinate of a cell.
+ * @param y
+ * 	Absolute y coordinate of a cell.
+ * @param cell
+ * 	The cell with those coordinates.
+ */
+private void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 	int wallHeight = getWallHeight(cell.getFloor());
 	for (CardinalDirection dir : CardinalDirection.values()) {
 		// Here to get texture number shift we pass absolute coordinates x and y, because,
@@ -448,22 +464,57 @@ private void drawTransitionsOnWall(int x, int y, RenderCell cell) {
 		TextureRegion transition = null;
 		boolean noNeighbor = neighborCell == null;
 		if (noNeighbor) {
+			// Drawing black pixels for transitions to not yet seen cells on wall's height
+			// (right into color buffer, hence trueing color mask).
 			Gdx.gl.glColorMask(true, true, true, true);
 			Gdx.gl.glDepthMask(false);
 			transition = fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y);
 		} else if (cell.isVisible() && !neighborCell.isVisible()) {
+			// Draw mask for transitions to unseen walls.
 			Gdx.gl.glColorMask(false, false, false, false);
 			Gdx.gl.glDepthMask(true);
 			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
+		} else if (dir.isHorizontal()
+			&& cell.isVisible()
+			&& neighborCell.isVisible()
+			&& hasCell(x, y+1)
+			&& !getCell(x, y + 1).hasWall()
+			&& hasCell(x-d[0], y)
+			&& !getCell(x-d[0], y).hasWall()
+			) {
+			// Draw transitions just on south side of a wall in case where a neighbor wall is visible, but there should
+			// be a transition because a cell below it is not.
+			if (hasCell(x + d[0], y + 1)) {
+				if (!getCell(x + d[0], y + 1).isVisible()) {
+					batch.setShader(drawWithDepth05Shader);
+					Gdx.gl.glColorMask(false, false, false, false);
+					Gdx.gl.glDepthMask(true);
+					batch.draw(fovEdgeOnWallToUnseen.getTransition(dir, x, y), x*TILE_SIZE, y*TILE_SIZE);
+					batch.setShader(drawOpaqueToDepth05Shader);
+				}
+			} else {
+				Gdx.gl.glColorMask(true, true, true, true);
+//				Gdx.gl.glDepthMask(false);
+				Gdx.gl.glDepthFunc(GL10.GL_ALWAYS);
+				batch.setShader(drawWithDepth05Shader);
+				batch.draw(fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y), x*TILE_SIZE, y*TILE_SIZE);
+				Gdx.gl.glDepthFunc(GL10.GL_GREATER);
+				batch.setShader(drawOpaqueToDepth05Shader);
+				Gdx.gl.glColorMask(false, false, false, false);
+				Gdx.gl.glDepthMask(true);
+			}
 		}
 		if (transition != null) {
+			if (dir.isHorizontal() && hasCell(x, y + 1) && !getCell(x, y + 1).hasWall()) {
+				// If this wall has a visible south side,
+				// draw transitions on the lower part of a wall too.
+				batch.draw(transition, x * TILE_SIZE, y * TILE_SIZE);
+			}
 			batch.draw(transition, x * TILE_SIZE, y * TILE_SIZE - wallHeight + TILE_SIZE);
-//			if (noNeighbor) {
 			batch.end();
 			Gdx.gl.glColorMask(false, false, false, false);
 			Gdx.gl.glDepthMask(true);
 			batch.begin();
-//			}
 		}
 	}
 }
@@ -609,17 +660,27 @@ private boolean hasCell(int x, int y) {
 	return cells.containsKey(x * WORLD.getHeight() + y);
 }
 
-private void drawFloorUnderWall(int x, int y) {
-}
-
 private void drawFloor(short terrain, int x, int y) {
-	if (getCell(x, y).hasWall() && !hasCell(x, y + 1)) {
+	if (!isFloorUnderWallShouldBeDrawn(x, y)) {
 		// Don't draw floor on cells that are right under a wall on the edge of field of view,
 		// because drawing one produces an unpleasant and unrealistic effect.
 		return;
 	}
 	TextureRegion floor = getFloorTextureByCell(terrain, x, y);
 	batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
+}
+
+/**
+ * Checks if a floor tile should be drawn under certain cell.
+ *
+ * @param x
+ * 	World x coordinate of a cell.
+ * @param y
+ * 	World y coordinate of a cell.
+ * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seen, true otherwise.
+ */
+private boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
+	return !(getCell(x, y).hasWall() && !hasCell(x, y + 1));
 }
 
 private short getFloorId(RenderCell cell) {
@@ -734,11 +795,7 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 }
 
 private void drawFloorTransitionsInCell(RenderCell cell) {
-
-	int self = getFloorId(cell);
-	if (self == FloorType.getEmptiness()) {
-		return;
-	}
+	int self = cell.getFloor();
 	RenderCell renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() + 1));
 	int north = cell.getY() + 1 < worldHeightCells && renderCell != null ? getFloorId(renderCell) : self;
 	renderCell = cells.get((cell.getX() + 1) * WORLD.getHeight() + cell.getY());
