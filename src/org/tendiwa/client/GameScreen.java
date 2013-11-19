@@ -302,9 +302,9 @@ private void drawTransitions() {
 		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
 			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
 			if (cell != null) {
-				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
-					drawFloorTransitionsInCell(cell);
-				}
+//				if (TerrainType.getById(cell.getTerrain()).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
+				drawFloorTransitionsInCell(cell);
+//				}
 			}
 		}
 	}
@@ -485,13 +485,7 @@ private void drawFloor() {
 		for (int y = startCellY; y < maxY; y++) {
 			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
 			if (cell != null) {
-				short terrain = cell.getTerrain();
-				if (TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.FLOOR) {
-					drawFloor(terrain, x, y);
-				} else {
-					assert TerrainType.getById(terrain).getTerrainClass() == TerrainType.TerrainClass.WALL;
-					drawFloorUnderWall(x, y);
-				}
+				drawFloor(cell.getTerrain(), x, y);
 			}
 
 		}
@@ -621,28 +615,54 @@ private boolean hasCell(int x, int y) {
 }
 
 private void drawFloorUnderWall(int x, int y) {
-	RenderCell cellOneRowLower = getCell(x, y + 1);
-	if (cellOneRowLower == null) {
-		return;
-	}
-	int[] dx = new int[]{0, 1, 0, -1};
-	int[] dy = new int[]{-1, 0, 1, 0};
-	for (int i = 0; i < 4; i++) {
-		RenderCell cell = getCell(x + dx[i], y + dy[i]);
-		if (cell == null) {
-			continue;
-		}
-		short terrain = cell.getTerrain();
-		if (TerrainType.isFloor(terrain)) {
-			drawFloor(terrain, x, y);
-			break;
-		}
-	}
 }
 
 private void drawFloor(short terrain, int x, int y) {
+	if (!TerrainType.isFloor(terrain)) {
+		short oldTerrain = terrain;
+		terrain = getFloorId(getCell(x, y));
+		if (terrain == oldTerrain) {
+			// If it is not possible to determine the type of floor in cell, don't draw it at all.
+			return;
+		}
+	}
 	TextureRegion floor = getFloorTextureByCell(terrain, x, y);
 	batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
+}
+
+/**
+ * Returns a floor id to draw in a cell where there is no floor (i.e. there is a wall).
+ *
+ * @param cell
+ * 	A cell go get floor id of.
+ * @return A floor id or {@link tendiwa.core.TerrainType#getEmptiness()} value if id could not be computed.
+ */
+private short getFloorId(RenderCell cell) {
+	if (TerrainType.isFloor(cell.getTerrain())) {
+		// If there is a floor id in cell's terrain id, return it.
+		return cell.getTerrain();
+	} else {
+		// If there is a wall id in cell's terrain id, compute floor id for it.
+		int x = cell.getX();
+		int y = cell.getY();
+		RenderCell cellOneRowLower = getCell(x, y + 1);
+		if (cellOneRowLower == null) {
+			// Don't draw the floor that is under a wall on the edge of field of view,
+			// because it produces an unnatural look.
+			return TerrainType.getEmptiness();
+		}
+		for (int i = 0; i < 4; i++) {
+			RenderCell neighborCell = getCell(x + CardinalDirection.dx[i], y + CardinalDirection.dy[i]);
+			if (neighborCell == null) {
+				continue;
+			}
+			if (TerrainType.isFloor(neighborCell.getTerrain())) {
+				return neighborCell.getTerrain();
+			}
+		}
+	}
+	// If it is not possible to compute floor id for wall id, then return emptiness floor.
+	return TerrainType.getEmptiness();
 }
 
 RenderCell getCell(int x, int y) {
@@ -754,25 +774,29 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 }
 
 private void drawFloorTransitionsInCell(RenderCell cell) {
-	int self = cells.get(cell.getX() * WORLD.getHeight() + cell.getY()).getTerrain();
+
+	int self = getFloorId(cell);
+	if (self == TerrainType.getEmptiness()) {
+		return;
+	}
 	RenderCell renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() + 1));
-	int north = cell.getY() + 1 < worldHeightCells && renderCell != null ? renderCell.getTerrain() : self;
+	int north = cell.getY() + 1 < worldHeightCells && renderCell != null ? getFloorId(renderCell) : self;
 	if (!TerrainType.isFloor(north)) {
 		north = self;
 	}
 	renderCell = cells.get((cell.getX() + 1) * WORLD.getHeight() + cell.getY());
-	int east = cell.getX() + 1 < worldWidthCells && renderCell != null ? renderCell.getTerrain() : self;
+	int east = cell.getX() + 1 < worldWidthCells && renderCell != null ? getFloorId(renderCell) : self;
 	if (!TerrainType.isFloor(east)) {
 		east = self;
 	}
 
 	renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() - 1));
-	int south = cell.getY() > 0 && renderCell != null ? renderCell.getTerrain() : self;
+	int south = cell.getY() > 0 && renderCell != null ? getFloorId(renderCell) : self;
 	if (!TerrainType.isFloor(south)) {
 		south = self;
 	}
 	renderCell = cells.get((cell.getX() - 1) * WORLD.getHeight() + cell.getY());
-	int west = cell.getX() > 0 && renderCell != null ? renderCell.getTerrain() : self;
+	int west = cell.getX() > 0 && renderCell != null ? getFloorId(renderCell) : self;
 	if (!TerrainType.isFloor(west)) {
 		west = self;
 	}
