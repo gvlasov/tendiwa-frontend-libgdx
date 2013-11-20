@@ -58,6 +58,8 @@ private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 private final ShaderProgram fillWithTransparentBlack;
 private final ShaderProgram drawWithRGB06Shader;
 private final OrthographicCamera oneTileWiderCanera;
+private final ShaderProgram drawWithDepth05Shader;
+private final ShaderProgram opaque0Transparent05DepthShader;
 protected int startCellX;
 OrthographicCamera camera;
 World WORLD;
@@ -96,7 +98,6 @@ private Map<Integer, GameObject> objects = new HashMap<>();
 private ShapeRenderer shapeRen = new ShapeRenderer();
 private int cursorWorldX;
 private int cursorWorldY;
-private final ShaderProgram drawWithDepth05Shader;
 
 public GameScreen(final TendiwaGame game) {
 	WORLD = Tendiwa.getWorld();
@@ -169,6 +170,7 @@ public GameScreen(final TendiwaGame game) {
 	fillWithTransparentBlack = createShader(Gdx.files.internal("shaders/fillWithTransparentBlack.f.glsl"));
 	drawWithRGB06Shader = createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
 	drawWithDepth05Shader = createShader(Gdx.files.internal("shaders/drawWithDepth05.f.glsl"));
+	opaque0Transparent05DepthShader = createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -305,7 +307,7 @@ private void drawTransitions() {
 			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should be drawn for a condition to pass.
-			if (cell != null && (!cell.hasWall() || isFloorUnderWallShouldBeDrawn(startCellX+x, startCellY+y))) {
+			if (cell != null && (!cell.hasWall() || isFloorUnderWallShouldBeDrawn(startCellX + x, startCellY + y))) {
 				drawFloorTransitionsInCell(cell);
 			}
 		}
@@ -314,7 +316,7 @@ private void drawTransitions() {
 
 private void drawWalls() {
 	// There is a complexity in drawing walls: drawing transitions above walls.
-	// These transitions go on the "roof" of a wall, i.e. higher than floor transitions.
+	// These transitions mostly go on the "roof" of a wall, i.e. higher than floor transitions.
 	depthTestFrameBuffer.begin();
 	Gdx.gl.glClearColor(0, 0, 0, 0);
 	Gdx.gl.glClearDepthf(1.0f);
@@ -411,7 +413,7 @@ private void drawWalls() {
 	}
 	batch.end();
 
-	// Draw seen walls again above the mask, but now with rbg *= 0.6 so masked pixels appear darker
+	// Draw seen walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
 	Gdx.gl.glColorMask(true, true, true, true);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
 	batch.setShader(drawWithRGB06Shader);
@@ -475,31 +477,34 @@ private void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cel
 			Gdx.gl.glDepthMask(true);
 			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
 		} else if (dir.isHorizontal()
-			&& cell.isVisible()
-			&& neighborCell.isVisible()
-			&& hasCell(x, y+1)
+			&& hasCell(x, y + 1)
 			&& !getCell(x, y + 1).hasWall()
-			&& hasCell(x-d[0], y)
-			&& !getCell(x-d[0], y).hasWall()
 			) {
 			// Draw transitions just on south side of a wall in case where a neighbor wall is visible, but there should
 			// be a transition because a cell below it is not.
-			if (hasCell(x + d[0], y + 1)) {
+			if (hasCell(x + d[0], y + 1)
+				&& neighborCell.isVisible()
+				&& cell.isVisible()
+				&& hasCell(x - d[0], y)
+				&& !getCell(x - d[0], y).hasWall()
+				) {
 				if (!getCell(x + d[0], y + 1).isVisible()) {
-					batch.setShader(drawWithDepth05Shader);
+					// Draw mask for transitions to unseen south wall sides.
+					batch.setShader(drawOpaqueToDepth05Shader);
 					Gdx.gl.glColorMask(false, false, false, false);
 					Gdx.gl.glDepthMask(true);
-					batch.draw(fovEdgeOnWallToUnseen.getTransition(dir, x, y), x*TILE_SIZE, y*TILE_SIZE);
+					batch.draw(fovEdgeOnWallToUnseen.getTransition(dir, x, y), x * TILE_SIZE, y * TILE_SIZE);
 					batch.setShader(drawOpaqueToDepth05Shader);
 				}
-			} else {
+			} else if (!isFloorUnderWallShouldBeDrawn(x + d[0], y)) {
+				// Draw black color for transitions to not yet seen south wall sides.
 				Gdx.gl.glColorMask(true, true, true, true);
-//				Gdx.gl.glDepthMask(false);
-				Gdx.gl.glDepthFunc(GL10.GL_ALWAYS);
-				batch.setShader(drawWithDepth05Shader);
-				batch.draw(fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y), x*TILE_SIZE, y*TILE_SIZE);
-				Gdx.gl.glDepthFunc(GL10.GL_GREATER);
+				Gdx.gl.glDepthMask(true);
+				Gdx.gl.glDepthFunc(GL10.GL_LESS);
+				batch.setShader(opaque0Transparent05DepthShader);
+				batch.draw(fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y), x * TILE_SIZE, y * TILE_SIZE);
 				batch.setShader(drawOpaqueToDepth05Shader);
+				Gdx.gl.glDepthFunc(GL10.GL_GREATER);
 				Gdx.gl.glColorMask(false, false, false, false);
 				Gdx.gl.glDepthMask(true);
 			}
