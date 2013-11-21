@@ -6,6 +6,7 @@ import tendiwa.core.CardinalDirection;
 public class FovEdgeTransparent extends FovEdgeOpaque {
 public FovEdgeTransparent() {
 	super();
+	createTransitions();
 }
 
 @Override

@@ -14,10 +14,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.utils.Array;
-import tendiwa.core.*;
 import tendiwa.core.Character;
-import tendiwa.core.meta.Chance;
+import tendiwa.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -26,40 +24,36 @@ import java.util.Queue;
 public class GameScreen implements Screen {
 
 static final int TILE_SIZE = 32;
-private static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
+static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 final Stage stage;
 final int maxStartX;
 final int maxStartY;
+final SpriteBatch batch;
+final int windowHeight;
+final int windowWidth;
+final int worldWidthCells;
+final int worldHeightCells;
+final FrameBuffer depthTestFrameBuffer;
+final ShaderProgram drawOpaqueToDepth05Shader;
+final ShaderProgram writeOpaqueToDepthShader;
+final ShaderProgram drawWithDepth0Shader;
+final TransitionPregenerator fovEdgeOnWallToUnseen;
+final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
+final ShaderProgram fillWithTransparentBlack;
+final ShaderProgram drawWithRGB06Shader;
+final ShaderProgram opaque0Transparent05DepthShader;
+final WallsLayer wallsLayer;
+final int windowWidthCells;
+final int windowHeightCells;
 private final TendiwaGame game;
-private final PixmapTextureAtlas pixmapTextureAtlasFloors;
-private final SpriteBatch batch;
-private final int windowHeight;
-private final int windowWidth;
-private final Map<CardinalDirection, Map<Integer, Pixmap>> floorTransitions = new HashMap<>();
 private final Texture cursor;
-private final int windowWidthCells;
-private final int windowHeightCells;
-private final TextureAtlas atlasFloors;
 private final TextureAtlas atlasObjects;
-private final int transitionsAtlasSize = 1024;
-private final FrameBuffer transitionsFrameBuffer;
-private final SpriteBatch defaultBatch;
 private final GameScreenInputProcessor controller;
-private final int worldWidthCells;
-private final int worldHeightCells;
-private final FrameBuffer depthTestFrameBuffer;
-private final TransitionPregenerator fovEdgeOpaque;
-private final ShaderProgram drawOpaqueToDepth05Shader;
+private final FovEdgeOpaque fovEdgeOpaque;
 private final int[] wallHeights;
-private final ShaderProgram writeOpaqueToDepthShader;
-private final ShaderProgram drawWithDepth0Shader;
-private final TransitionPregenerator fovEdgeOnWallToUnseen;
-private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
-private final ShaderProgram fillWithTransparentBlack;
-private final ShaderProgram drawWithRGB06Shader;
 private final OrthographicCamera oneTileWiderCanera;
 private final ShaderProgram drawWithDepth05Shader;
-private final ShaderProgram opaque0Transparent05DepthShader;
+private final FloorLayer floorLayer;
 protected int startCellX;
 OrthographicCamera camera;
 World WORLD;
@@ -72,19 +66,12 @@ int startPixelX;
 int startPixelY;
 Map<Integer, RenderCell> cells = new HashMap<>();
 private BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(20, "qwertyuiop[]asdfghjkl;'zxcvbnm,./1234567890-=!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?\\|", true);
-private Texture bufTexture0 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
-private Texture bufTexture1 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
-private Texture bufTexture2 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
-private Texture bufTexture3 = new Texture(new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888));
-private Map<String, TextureRegion> transitionsMap = new HashMap<>();
 private FrameBuffer cellNetFramebuffer;
 private Map<Character, Actor> characterActors = new HashMap<>();
-private boolean eventResultProcessingIsGoing = false;
-private Map<Integer, TextureRegion> floorRegions = new HashMap<>();
 /**
  * Max index of each floor type's images.
  */
-private Map<Short, Integer> floorIndices = new HashMap<>();
+private boolean eventResultProcessingIsGoing = false;
 /**
  * The greatest value of camera's center pixel on y axis.
  */
@@ -107,8 +94,8 @@ public GameScreen(final TendiwaGame game) {
 	worldHeightCells = Tendiwa.getWorld().getHeight();
 	windowWidth = game.cfg.width;
 	windowHeight = game.cfg.height;
-	windowWidthCells = (int) Math.ceil(((float) windowWidth) / 32);
-	windowHeightCells = (int) Math.ceil(((float) windowHeight) / 32);
+	windowWidthCells = (int) Math.ceil(((float) windowWidth) / TILE_SIZE);
+	windowHeightCells = (int) Math.ceil(((float) windowHeight) / TILE_SIZE);
 
 	camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	camera.setToOrtho(true, windowWidth, windowHeight);
@@ -120,15 +107,14 @@ public GameScreen(final TendiwaGame game) {
 
 	this.game = game;
 
-	atlasFloors = new TextureAtlas(Gdx.files.internal("pack/floors.atlas"), true);
 	atlasObjects = new TextureAtlas(Gdx.files.internal("pack/objects.atlas"), true);
 	atlasWalls = new TextureAtlas(Gdx.files.internal("pack/walls.atlas"), true);
-	pixmapTextureAtlasFloors = createPixmapTextureAtlas("floors");
+
+	TransitionPregenerator.initTileTextureRegionProvider(100);
 
 	// Sprite batch for drawing to world.
 	batch = new SpriteBatch();
 	// Utility batch with no transformations.
-	defaultBatch = new SpriteBatch();
 
 	stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, batch);
 	stage.setCamera(camera);
@@ -138,7 +124,6 @@ public GameScreen(final TendiwaGame game) {
 	maxStartX = worldWidthCells - windowWidthCells - cameraMoveStep;
 	maxStartY = worldHeightCells - windowHeightCells - cameraMoveStep;
 
-	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width, game.cfg.height, false);
 	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width + TILE_SIZE, game.cfg.height + TILE_SIZE, false);
 	depthTestFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, game.cfg.width, game.cfg.height, true);
 
@@ -146,8 +131,6 @@ public GameScreen(final TendiwaGame game) {
 	initializeActors();
 	controller = new GameScreenInputProcessor(this);
 	Gdx.input.setInputProcessor(controller);
-
-	cacheRegions();
 
 	maxPixelX = WORLD.getWidth() * TILE_SIZE - windowWidth / 2;
 	maxPixelY = WORLD.getHeight() * TILE_SIZE - windowHeight / 2;
@@ -171,6 +154,9 @@ public GameScreen(final TendiwaGame game) {
 	drawWithRGB06Shader = createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
 	drawWithDepth05Shader = createShader(Gdx.files.internal("shaders/drawWithDepth05.f.glsl"));
 	opaque0Transparent05DepthShader = createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
+
+	wallsLayer = new WallsLayer(this);
+	floorLayer = new FloorLayer(this);
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -223,10 +209,6 @@ void centerCamera(int x, int y) {
 
 }
 
-private PixmapTextureAtlas createPixmapTextureAtlas(String name) {
-	return new PixmapTextureAtlas(Gdx.files.internal("pack/" + name + ".png"), Gdx.files.internal("pack/" + name + ".atlas"));
-}
-
 @Override
 public void render(float delta) {
 	Actor characterActor = getCharacterActor(Tendiwa.getPlayer());
@@ -244,10 +226,9 @@ public void render(float delta) {
 	camera.update();
 	batch.setProjectionMatrix(camera.combined);
 
-	drawFloors();
-	drawTransitions();
+	floorLayer.draw();
 	applyUnseenBrightnessMap();
-	drawWalls();
+	wallsLayer.draw();
 	updateCursorCoords();
 	drawNet();
 	stage.draw();
@@ -300,248 +281,8 @@ private void drawObjects() {
 	batch.end();
 }
 
-private void drawTransitions() {
-	// Draw transitions
-	for (int x = 0; x < windowWidth / TILE_SIZE; x++) {
-		for (int y = 0; y < windowHeight / TILE_SIZE; y++) {
-			RenderCell cell = cells.get((startCellX + x) * WORLD.getHeight() + (startCellY + y));
-			// (!A || B) — see "Logical implication" in Wikipedia.
-			// Shortly, if there is a wall, then floor under it should be drawn for a condition to pass.
-			if (cell != null && (!cell.hasWall() || isFloorUnderWallShouldBeDrawn(startCellX + x, startCellY + y))) {
-				drawFloorTransitionsInCell(cell);
-			}
-		}
-	}
-}
-
-private void drawWalls() {
-	// There is a complexity in drawing walls: drawing transitions above walls.
-	// These transitions mostly go on the "roof" of a wall, i.e. higher than floor transitions.
-	depthTestFrameBuffer.begin();
-	Gdx.gl.glClearColor(0, 0, 0, 0);
-	Gdx.gl.glClearDepthf(1.0f);
-	Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT | GL10.GL_DEPTH_BUFFER_BIT);
-	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-	Gdx.gl.glDepthFunc(GL10.GL_ALWAYS);
-
-	int maxX = getMaxRenderCellX();
-	int maxY = getMaxRenderCellY() + 1; // +1 here is to draw walls that start below viewport
-
-	// Draw visible walls.
-	// For each opaque fragment of a visible wall, we place a 0 to the depth buffer.
-	// This will later indicate a mask for drawing transitions on walls.
-	batch.setShader(writeOpaqueToDepthShader);
-	batch.begin();
-	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-	// SpriteBatch disables depth buffer with glDepthMask(false) internally,
-	// so we have to re-enable it to properly write our depth mask.
-	Gdx.gl.glDepthMask(true);
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = getCell(x, y);
-			if (cell != null && cell.isVisible()) {
-				if (cell.hasWall()) {
-					TextureRegion wall = getWallTextureByCell(x, y);
-					int wallTextureHeight = wall.getRegionHeight();
-					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wallTextureHeight - TILE_SIZE));
-					RenderCell cellFromSouth = getCell(x, y + 1);
-					if (cellFromSouth != null && !cellFromSouth.isVisible()) {
-						if (cell.hasWall() && !cellFromSouth.hasWall()) {
-							// Draw shaded south front faces of unseen walls that don't have a wall neighbor from south.
-							// For that we'll need to update the depth mask from scratch, so we clear depth buffer to 1.0.
-							// It will consist only of rectangles covering those wall sides.
-							batch.setShader(drawOpaqueToDepth05Shader);
-							int wallSideHeight = wallTextureHeight - TILE_SIZE;
-							int origY = wall.getRegionY();
-							int origX = wall.getRegionX();
-							// For drawing the south side of a wall we temporarily set wall's texture region
-							// to cover only that part of wall...
-							wall.setRegion(origX, origY, TILE_SIZE, -wallSideHeight);
-							Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
-							batch.draw(
-								wall,
-								x * TILE_SIZE,
-								y * TILE_SIZE + TILE_SIZE - wallTextureHeight + TILE_SIZE,
-								TILE_SIZE,
-								wallSideHeight
-							);
-							Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-							// ...and then restore it back.
-							wall.setRegion(origX, origY, TILE_SIZE, -wallTextureHeight);
-							batch.setShader(writeOpaqueToDepthShader);
-						}
-					}
-				}
-			}
-		}
-	}
-	batch.end();
-
-	// Draw unseen walls
-	batch.setShader(drawWithDepth0Shader);
-	batch.begin();
-	Gdx.gl.glDepthMask(true);
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = getCell(x, y);
-			if (cell != null && !cell.isVisible()) {
-				if (cell.hasWall()) {
-					TextureRegion wall = getWallTextureByCell(x, y);
-					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wall.getRegionHeight() - TILE_SIZE));
-				}
-			}
-		}
-	}
-	batch.end();
-
-	// Create mask for FOV transitions above walls
-	Gdx.gl.glDepthFunc(GL10.GL_GREATER);
-	batch.setShader(drawOpaqueToDepth05Shader);
-	batch.begin();
-	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
-	Gdx.gl.glColorMask(false, false, false, false);
-	Gdx.gl.glDepthMask(true);
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = getCell(x, y);
-			if (cell != null) {
-				if (cell.hasWall()) {
-					drawDepthMaskAndOpaqueTransitionOnWall(x, y, cell);
-				}
-			}
-		}
-	}
-	batch.end();
-
-	// Draw seen walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
-	Gdx.gl.glColorMask(true, true, true, true);
-	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
-	batch.setShader(drawWithRGB06Shader);
-	batch.begin();
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = getCell(x, y);
-			if (cell != null && cell.isVisible()) {
-				if (cell.hasWall()) {
-					TextureRegion wall = getWallTextureByCell(x, y);
-					int wallTextureHeight = wall.getRegionHeight();
-					batch.draw(wall, x * TILE_SIZE, y * TILE_SIZE - (wallTextureHeight - TILE_SIZE));
-				}
-			}
-		}
-	}
-	batch.end();
-
-	Gdx.gl.glDepthMask(false);
-	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
-
-	batch.setShader(defaultShader);
-
-	depthTestFrameBuffer.end();
-
-	batch.begin();
-	batch.draw(depthTestFrameBuffer.getColorBufferTexture(), startPixelX, startPixelY);
-	batch.end();
-
-}
-
-/**
- * For a transition where there is no neighbor from that side, draws an opaque black transition; for a transition to an
- * unseen neighbor cell, draws a mask for an upcoming darkened transition.
- *
- * @param x
- * 	Absolute x coordinate of a cell.
- * @param y
- * 	Absolute y coordinate of a cell.
- * @param cell
- * 	The cell with those coordinates.
- */
-private void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
-	int wallHeight = getWallHeight(cell.getFloor());
-	for (CardinalDirection dir : CardinalDirection.values()) {
-		// Here to get texture number shift we pass absolute coordinates x and y, because,
-		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
-		int[] d = dir.side2d();
-		RenderCell neighborCell = getCell(x + d[0], y + d[1]);
-		TextureRegion transition = null;
-		boolean noNeighbor = neighborCell == null;
-		if (noNeighbor) {
-			// Drawing black pixels for transitions to not yet seen cells on wall's height
-			// (right into color buffer, hence trueing color mask).
-			Gdx.gl.glColorMask(true, true, true, true);
-			Gdx.gl.glDepthMask(false);
-			transition = fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y);
-		} else if (cell.isVisible() && !neighborCell.isVisible()) {
-			// Draw mask for transitions to unseen walls.
-			Gdx.gl.glColorMask(false, false, false, false);
-			Gdx.gl.glDepthMask(true);
-			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
-		} else if (dir.isHorizontal()
-			&& hasCell(x, y + 1)
-			&& !getCell(x, y + 1).hasWall()
-			) {
-			// Draw transitions just on south side of a wall in case where a neighbor wall is visible, but there should
-			// be a transition because a cell below it is not.
-			if (hasCell(x + d[0], y + 1)
-				&& neighborCell.isVisible()
-				&& cell.isVisible()
-				&& hasCell(x - d[0], y)
-				&& !getCell(x - d[0], y).hasWall()
-				) {
-				if (!getCell(x + d[0], y + 1).isVisible()) {
-					// Draw mask for transitions to unseen south wall sides.
-					batch.setShader(drawOpaqueToDepth05Shader);
-					Gdx.gl.glColorMask(false, false, false, false);
-					Gdx.gl.glDepthMask(true);
-					batch.draw(fovEdgeOnWallToUnseen.getTransition(dir, x, y), x * TILE_SIZE, y * TILE_SIZE);
-					batch.setShader(drawOpaqueToDepth05Shader);
-				}
-			} else if (!isFloorUnderWallShouldBeDrawn(x + d[0], y)) {
-				// Draw black color for transitions to not yet seen south wall sides.
-				Gdx.gl.glColorMask(true, true, true, true);
-				Gdx.gl.glDepthMask(true);
-				Gdx.gl.glDepthFunc(GL10.GL_LESS);
-				batch.setShader(opaque0Transparent05DepthShader);
-				batch.draw(fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y), x * TILE_SIZE, y * TILE_SIZE);
-				batch.setShader(drawOpaqueToDepth05Shader);
-				Gdx.gl.glDepthFunc(GL10.GL_GREATER);
-				Gdx.gl.glColorMask(false, false, false, false);
-				Gdx.gl.glDepthMask(true);
-			}
-		}
-		if (transition != null) {
-			if (dir.isHorizontal() && hasCell(x, y + 1) && !getCell(x, y + 1).hasWall()) {
-				// If this wall has a visible south side,
-				// draw transitions on the lower part of a wall too.
-				batch.draw(transition, x * TILE_SIZE, y * TILE_SIZE);
-			}
-			batch.draw(transition, x * TILE_SIZE, y * TILE_SIZE - wallHeight + TILE_SIZE);
-			batch.end();
-			Gdx.gl.glColorMask(false, false, false, false);
-			Gdx.gl.glDepthMask(true);
-			batch.begin();
-		}
-	}
-}
-
-private int getWallHeight(short terrain) {
+int getWallHeight(short terrain) {
 	return wallHeights[terrain];
-}
-
-private void drawFloors() {
-	int maxX = getMaxRenderCellX();
-	int maxY = getMaxRenderCellY();
-	batch.begin();
-	for (int x = startCellX; x < maxX; x++) {
-		for (int y = startCellY; y < maxY; y++) {
-			RenderCell cell = cells.get(x * WORLD.getHeight() + y);
-			if (cell != null) {
-				drawFloor(cell.getFloor(), x, y);
-			}
-
-		}
-	}
-	batch.end();
 }
 
 private void applyUnseenBrightnessMap() {
@@ -661,18 +402,8 @@ private boolean[] getHasUnseenNeighbors(int x, int y) {
 	};
 }
 
-private boolean hasCell(int x, int y) {
+boolean hasCell(int x, int y) {
 	return cells.containsKey(x * WORLD.getHeight() + y);
-}
-
-private void drawFloor(short terrain, int x, int y) {
-	if (!isFloorUnderWallShouldBeDrawn(x, y)) {
-		// Don't draw floor on cells that are right under a wall on the edge of field of view,
-		// because drawing one produces an unpleasant and unrealistic effect.
-		return;
-	}
-	TextureRegion floor = getFloorTextureByCell(terrain, x, y);
-	batch.draw(floor, x * TILE_SIZE, y * TILE_SIZE);
 }
 
 /**
@@ -684,19 +415,15 @@ private void drawFloor(short terrain, int x, int y) {
  * 	World y coordinate of a cell.
  * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seen, true otherwise.
  */
-private boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
+boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
 	return !(getCell(x, y).hasWall() && !hasCell(x, y + 1));
-}
-
-private short getFloorId(RenderCell cell) {
-	return cell.getFloor();
 }
 
 RenderCell getCell(int x, int y) {
 	return cells.get(x * Tendiwa.getWorld().getHeight() + y);
 }
 
-private TextureRegion getWallTextureByCell(int x, int y) {
+TextureRegion getWallTextureByCell(int x, int y) {
 	short wallId = cells.get(x * WORLD.getHeight() + y).getWall();
 	WallType wallType = WallType.getById(wallId);
 	String name = wallType.getName();
@@ -720,11 +447,11 @@ private TextureRegion getWallTextureByCell(int x, int y) {
 	return atlasWalls.findRegion(name, index);
 }
 
-private int getMaxRenderCellX() {
+int getMaxRenderCellX() {
 	return startCellX + windowWidthCells + (startPixelX % TILE_SIZE == 0 ? 0 : 1);
 }
 
-private int getMaxRenderCellY() {
+int getMaxRenderCellY() {
 	return startCellY + windowHeightCells + (startPixelY % TILE_SIZE == 0 ? 0 : 1);
 }
 
@@ -799,168 +526,6 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 	);
 }
 
-private void drawFloorTransitionsInCell(RenderCell cell) {
-	int self = cell.getFloor();
-	RenderCell renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() + 1));
-	int north = cell.getY() + 1 < worldHeightCells && renderCell != null ? getFloorId(renderCell) : self;
-	renderCell = cells.get((cell.getX() + 1) * WORLD.getHeight() + cell.getY());
-	int east = cell.getX() + 1 < worldWidthCells && renderCell != null ? getFloorId(renderCell) : self;
-	renderCell = cells.get(cell.getX() * WORLD.getHeight() + (cell.getY() - 1));
-	int south = cell.getY() > 0 && renderCell != null ? getFloorId(renderCell) : self;
-	renderCell = cells.get((cell.getX() - 1) * WORLD.getHeight() + cell.getY());
-	int west = cell.getX() > 0 && renderCell != null ? getFloorId(renderCell) : self;
-	if (north != self || east != self || south != self || west != self) {
-		drawCellWithTransitions(cell.getX(), cell.getY(), north, east, south, west);
-	}
-}
-
-private void cacheRegions() {
-	Map<String, Short> floorTypeName2id = new HashMap<>();
-	Map<String, Array<TextureAtlas.AtlasRegion>> name2regions = new HashMap<>();
-	for (Map.Entry<Short, FloorType> e : FloorType.getAll().entrySet()) {
-		floorTypeName2id.put(e.getValue().getName(), e.getKey());
-	}
-	for (TextureAtlas.AtlasRegion region : atlasFloors.getRegions()) {
-		if (floorTypeName2id.containsKey(region.name)) {
-			floorRegions.put(floorTypeName2id.get(region.name) * (1 << 15) + region.index, region);
-		} else {
-			Tendiwa.getLogger().warn("Floor with name " + region.name + "_" + region.index + " has its sprite, but it is not declared in ontology");
-		}
-	}
-	for (Map.Entry<String, Short> e : floorTypeName2id.entrySet()) {
-		Array<TextureAtlas.AtlasRegion> regions = atlasFloors.findRegions(e.getKey());
-		name2regions.put(e.getKey(), regions);
-		floorIndices.put(e.getValue(), regions.size - 1);
-	}
-	// Validate that all images have indices from 0 to n without skips.
-	for (Map.Entry<String, Array<TextureAtlas.AtlasRegion>> e : name2regions.entrySet()) {
-		boolean zeroIndexFound = false;
-		boolean lastIndexFound = false;
-		int size = e.getValue().size;
-		for (TextureAtlas.AtlasRegion region : e.getValue()) {
-			if (region.index == 0) {
-				zeroIndexFound = true;
-			}
-			if (region.index == size - 1) {
-				lastIndexFound = true;
-			}
-		}
-		if (!zeroIndexFound || !lastIndexFound) {
-			throw new RuntimeException("Floor images with name \"" + e.getKey() + "\" have wrong indices. Indices of images must start with 0 and don't skip any integer values.");
-		}
-	}
-
-}
-
-private TextureRegion getFloorTextureByCell(short terrain, int x, int y) {
-	int floorId = (int) terrain;
-	int key = (int) ((floorId * (1 << 15)) + Math.round(Math.abs(Math.sin(x * y)) * floorIndices.get((short) floorId)));
-	return floorRegions.get(key);
-}
-
-private void drawCellWithTransitions(int x, int y, int north, int east, int south, int west) {
-	// Get individual transition pixmap for each side
-	TextureRegion region = getTransition(north, east, south, west);
-	batch.begin();
-	batch.draw(region, x * TILE_SIZE, y * TILE_SIZE);
-	batch.end();
-}
-
-private TextureRegion getTransition(int north, int east, int south, int west) {
-	String transitionKey = north + "_" + east + "_" + south + "_" + west;
-	if (transitionsMap.containsKey(transitionKey)) {
-		return transitionsMap.get(transitionKey);
-	} else {
-		return createNewFloorTransitionRegion(north, east, south, west);
-	}
-}
-
-private TextureRegion createNewFloorTransitionRegion(int north, int east, int south, int west) {
-	String transitionKey = north + "_" + east + "_" + south + "_" + west;
-
-	Pixmap.Blending previousBlending = Pixmap.getBlending();
-	Pixmap.setBlending(Pixmap.Blending.None);
-	Pixmap transE = getTransition(Directions.E, east);
-	Pixmap transW = getTransition(Directions.W, west);
-	Pixmap transN = getTransition(Directions.N, north);
-	Pixmap transS = getTransition(Directions.S, south);
-	int atlasX = transitionsMap.size() * TILE_SIZE % transitionsAtlasSize;
-	int atlasY = transitionsMap.size() * TILE_SIZE / transitionsAtlasSize * TILE_SIZE;
-
-	Pixmap.setBlending(Pixmap.Blending.SourceOver);
-
-	bufTexture0.draw(transN, 0, 0);
-	bufTexture1.draw(transE, 0, 0);
-	bufTexture2.draw(transS, 0, 0);
-	bufTexture3.draw(transW, 0, 0);
-	transitionsFrameBuffer.begin();
-	defaultBatch.begin();
-	defaultBatch.draw(bufTexture0, atlasX, atlasY);
-	defaultBatch.draw(bufTexture1, atlasX, atlasY);
-	defaultBatch.draw(bufTexture2, atlasX, atlasY);
-	defaultBatch.draw(bufTexture3, atlasX, atlasY);
-	defaultBatch.end();
-	transitionsFrameBuffer.end();
-
-	TextureRegion textureRegion = new TextureRegion(transitionsFrameBuffer.getColorBufferTexture(), atlasX, atlasY, TILE_SIZE, TILE_SIZE);
-	transitionsMap.put(transitionKey, textureRegion);
-
-	Pixmap.setBlending(previousBlending);
-	return textureRegion;
-}
-
-private Pixmap getTransition(CardinalDirection dir, int floorId) {
-	if (!floorTransitions.containsKey(dir)) {
-		floorTransitions.put(dir, new HashMap<Integer, Pixmap>());
-	}
-	if (!floorTransitions.get(dir).containsKey(floorId)) {
-		floorTransitions.get(dir).put(floorId, createTransition(dir, floorId));
-	}
-	return floorTransitions.get(dir).get(floorId);
-}
-
-private Pixmap createTransition(CardinalDirection dir, int floorId) {
-	int diffusionDepth = 13;
-	if (dir.isVertical()) {
-		dir = dir.opposite();
-	}
-	Pixmap.setBlending(Pixmap.Blending.None);
-	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(FloorType.getById(floorId).getName());
-	CardinalDirection opposite = dir.opposite();
-	EnhancedRectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
-	EnhancedRectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
-	pixmap.setColor(0, 0, 0, 0);
-	// Fill the most of the pixmap with transparent pixels.
-	pixmap.fillRectangle(clearRec.x, clearRec.y, clearRec.width, clearRec.height);
-	Segment sideSegment = transitionRec.getSideAsSegment(dir);
-	EnhancedPoint point = new EnhancedPoint(sideSegment.x, sideSegment.y);
-	pixmap.setColor(0, 0, 0, 0);
-	CardinalDirection dynamicGrowingDir = dir.isVertical() ? Directions.E : Directions.S;
-	int startI = sideSegment.getStaticCoord();
-	int oppositeGrowing = opposite.getGrowing();
-	int iterationsI = 0;
-	for (
-		int i = startI;
-		i != startI + (diffusionDepth + 1) * opposite.getGrowing();
-		i += oppositeGrowing
-		) {
-		for (
-			int j = sideSegment.getStartCoord();
-			j <= sideSegment.getEndCoord();
-			j += 1
-			) {
-			if (Chance.roll((i - startI) / oppositeGrowing * 100 / diffusionDepth + 50)) {
-				// Set transparent pixels to leave only some non-transparent ones.
-				pixmap.drawPixel(point.x, point.y);
-			}
-			point.moveToSide(dynamicGrowingDir);
-		}
-		point.setLocation(sideSegment.x, sideSegment.y);
-		point.moveToSide(opposite, iterationsI++);
-	}
-	return pixmap;
-}
-
 @Override
 public void resize(int width, int height) {
 
@@ -992,7 +557,7 @@ public void dispose() {
 }
 
 Texture buildCursorTexture() {
-	Pixmap pixmap = new Pixmap(32, 32, Pixmap.Format.RGBA8888);
+	Pixmap pixmap = new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888);
 	pixmap.setColor(1, 1, 0, 0.3f);
 	pixmap.fillRectangle(0, 0, 31, 31);
 	return new Texture(pixmap);

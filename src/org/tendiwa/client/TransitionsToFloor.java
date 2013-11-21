@@ -2,38 +2,40 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import tendiwa.core.*;
 import tendiwa.core.meta.Chance;
 
-public class FovEdgeOpaque extends TransitionPregenerator {
-final SpriteBatch batch;
-public final ShaderProgram halfTransparencyShader;
-final ShaderProgram shader;
-public FovEdgeOpaque() {
-	super(4);
-	shader = new ShaderProgram(
-		SpriteBatch.createDefaultShader().getVertexShaderSource(),
-		Gdx.files.internal("shaders/fovTransition.f.glsl").readString()
-	);
-	ShaderProgram.pedantic = false;
-	if (!shader.isCompiled()) {
-		Tendiwa.getLogger().error(shader.getLog());
-	}
-	batch = new SpriteBatch();
-	batch.setShader(shader);
+/**
+ * This class generates textures of transitions to a certain type of floor and provides access to them.
+ */
+public class TransitionsToFloor extends TransitionPregenerator {
+private static final PixmapTextureAtlas pixmapTextureAtlasFloors;
 
-	halfTransparencyShader = GameScreen.createShader(Gdx.files.internal("shaders/fovHalfTransparency.f.glsl"));
+static {
+	pixmapTextureAtlasFloors = createPixmapTextureAtlas("floors");
+}
+
+private final short floorId;
+
+/**
+ * @param floorId
+ * 	Id of a floor whose pixels will be in transitions obtained from this object.
+ */
+TransitionsToFloor(short floorId) {
+	super(4);
+	this.floorId = floorId;
 	createTransitions();
 }
 
-protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
+private static PixmapTextureAtlas createPixmapTextureAtlas(String name) {
+	return new PixmapTextureAtlas(Gdx.files.internal("pack/" + name + ".png"), Gdx.files.internal("pack/" + name + ".atlas"));
+}
+
+@Override
+public Pixmap createTransition(CardinalDirection dir) {
 	int diffusionDepth = 13;
 	Pixmap.setBlending(Pixmap.Blending.None);
-	Pixmap pixmap = new Pixmap(TILE_SIZE, TILE_SIZE, Pixmap.Format.RGBA8888);
-	pixmap.setColor(0, 0, 0, opacity);
-	pixmap.fill();
+	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(FloorType.getById(floorId).getName());
 	CardinalDirection opposite = dir.opposite();
 	EnhancedRectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
 	EnhancedRectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
@@ -57,8 +59,8 @@ protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
 			j <= sideSegment.getEndCoord();
 			j += 1
 			) {
-			if (Chance.roll((i - startI) / oppositeGrowing * 100 / diffusionDepth + 10)) {
-				// Discard pixel (set it to be transparent)
+			if (Chance.roll((i - startI) / oppositeGrowing * 100 / diffusionDepth + 50)) {
+				// Set transparent pixels to leave only some non-transparent ones.
 				pixmap.drawPixel(point.x, point.y);
 			}
 			point.moveToSide(dynamicGrowingDir);
@@ -67,9 +69,5 @@ protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
 		point.moveToSide(opposite, iterationsI++);
 	}
 	return pixmap;
-}
-@Override
-public Pixmap createTransition(CardinalDirection dir) {
-	return createTransition(dir, 1.0f);
 }
 }
