@@ -2,13 +2,11 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.utils.Array;
-import tendiwa.core.CardinalDirection;
 import tendiwa.core.FloorType;
 import tendiwa.core.RenderCell;
 import tendiwa.core.Tendiwa;
@@ -20,18 +18,12 @@ public class FloorLayer {
 private final GameScreen gameScreen;
 private final TextureAtlas atlasFloors;
 private final SpriteBatch defaultBatch;
-private final Map<CardinalDirection, Map<Integer, Pixmap>> floorTransitions = new HashMap<>();
 private final int transitionsAtlasSize = 1024;
 private final FrameBuffer transitionsFrameBuffer;
 private final short[] floorsFrom4Sides = new short[4];
 private Map<Integer, TextureRegion> floorRegions = new HashMap<>();
 private Map<Short, Integer> floorIndices = new HashMap<>();
 private TransitionsToFloor[] floorTransitionsProviders;
-private Map<String, TextureRegion> transitionsMap = new HashMap<>();
-private Texture bufTexture0 = new Texture(new Pixmap(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, Pixmap.Format.RGBA8888));
-private Texture bufTexture1 = new Texture(new Pixmap(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, Pixmap.Format.RGBA8888));
-private Texture bufTexture2 = new Texture(new Pixmap(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, Pixmap.Format.RGBA8888));
-private Texture bufTexture3 = new Texture(new Pixmap(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, Pixmap.Format.RGBA8888));
 
 public FloorLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
@@ -61,7 +53,7 @@ private void drawFloors() {
 	gameScreen.batch.begin();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.cells.get(x * gameScreen.WORLD.getHeight() + y);
+			RenderCell cell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + y);
 			if (cell != null) {
 				drawFloor(cell.getFloor(), x, y);
 			}
@@ -86,7 +78,7 @@ private void drawTransitions() {
 	defaultBatch.begin();
 	for (int x = 0; x < gameScreen.windowWidth / GameScreen.TILE_SIZE; x++) {
 		for (int y = 0; y < gameScreen.windowHeight / GameScreen.TILE_SIZE; y++) {
-			RenderCell cell = gameScreen.cells.get((gameScreen.startCellX + x) * gameScreen.WORLD.getHeight() + (gameScreen.startCellY + y));
+			RenderCell cell = gameScreen.cells.get((gameScreen.startCellX + x) * gameScreen.backendWorld.getHeight() + (gameScreen.startCellY + y));
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
 			if (cell != null && (!cell.hasWall() || gameScreen.isFloorUnderWallShouldBeDrawn(gameScreen.startCellX + x, gameScreen.startCellY + y))) {
@@ -145,48 +137,6 @@ private TransitionsToFloor getFloorTransitionsProvider(short floorId) {
 	return floorTransitionsProviders[floorId];
 }
 
-//private Pixmap getTransition(CardinalDirection dir, int floorId) {
-//	if (!floorTransitions.containsKey(dir)) {
-//		floorTransitions.put(dir, new HashMap<Integer, Pixmap>());
-//	}
-//	if (!floorTransitions.get(dir).containsKey(floorId)) {
-//		floorTransitions.get(dir).put(floorId, getFloorTransitionsProvider(floorId).getTransition(dir, 1, 1));
-//	}
-//	return floorTransitions.get(dir).get(floorId);
-//}
-//private TextureRegion createNewFloorTransitionRegion(int north, int east, int south, int west) {
-//	String transitionKey = north + "_" + east + "_" + south + "_" + west;
-//
-//	Pixmap.Blending previousBlending = Pixmap.getBlending();
-//	Pixmap.setBlending(Pixmap.Blending.None);
-//	Pixmap transE = getTransition(Directions.E, east);
-//	Pixmap transW = getTransition(Directions.W, west);
-//	Pixmap transN = getTransition(Directions.N, north);
-//	Pixmap transS = getTransition(Directions.S, south);
-//	int atlasX = transitionsMap.size() * GameScreen.TILE_SIZE % transitionsAtlasSize;
-//	int atlasY = transitionsMap.size() * GameScreen.TILE_SIZE / transitionsAtlasSize * GameScreen.TILE_SIZE;
-//
-//	Pixmap.setBlending(Pixmap.Blending.SourceOver);
-//
-//	bufTexture0.draw(transN, 0, 0);
-//	bufTexture1.draw(transE, 0, 0);
-//	bufTexture2.draw(transS, 0, 0);
-//	bufTexture3.draw(transW, 0, 0);
-//	transitionsFrameBuffer.begin();
-//	defaultBatch.begin();
-//	defaultBatch.draw(bufTexture0, atlasX, atlasY);
-//	defaultBatch.draw(bufTexture1, atlasX, atlasY);
-//	defaultBatch.draw(bufTexture2, atlasX, atlasY);
-//	defaultBatch.draw(bufTexture3, atlasX, atlasY);
-//	defaultBatch.end();
-//	transitionsFrameBuffer.end();
-//
-//	TextureRegion textureRegion = new TextureRegion(transitionsFrameBuffer.getColorBufferTexture(), atlasX, atlasY, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
-//	transitionsMap.put(transitionKey, textureRegion);
-//
-//	Pixmap.setBlending(previousBlending);
-//	return textureRegion;
-//}
 private void drawCellWithTransitions(int x, int y, short self) {
 	// Get individual transition pixmap for each side
 	for (int i = 0; i < 4; i++) {
@@ -205,24 +155,16 @@ private void drawCellWithTransitions(int x, int y, short self) {
 	}
 }
 
-//private TextureRegion getTransition(int north, int east, int south, int west) {
-//	String transitionKey = north + "_" + east + "_" + south + "_" + west;
-//	if (transitionsMap.containsKey(transitionKey)) {
-//		return transitionsMap.get(transitionKey);
-//	} else {
-//		return createNewFloorTransitionRegion(north, east, south, west);
-//	}
-//}
 void drawFloorTransitionsInCell(RenderCell cell) {
 	short self = cell.getFloor();
-	RenderCell renderCell = gameScreen.cells.get(cell.getX() * gameScreen.WORLD.getHeight() + (cell.getY() + 1));
+	RenderCell renderCell = gameScreen.cells.get(cell.getX() * gameScreen.backendWorld.getHeight() + (cell.getY() + 1));
 	// Indices 0 and 2 are swapped
 	floorsFrom4Sides[2] = cell.getY() + 1 < gameScreen.worldHeightCells && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.cells.get((cell.getX() + 1) * gameScreen.WORLD.getHeight() + cell.getY());
+	renderCell = gameScreen.cells.get((cell.getX() + 1) * gameScreen.backendWorld.getHeight() + cell.getY());
 	floorsFrom4Sides[1] = cell.getX() + 1 < gameScreen.worldWidthCells && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.cells.get(cell.getX() * gameScreen.WORLD.getHeight() + (cell.getY() - 1));
+	renderCell = gameScreen.cells.get(cell.getX() * gameScreen.backendWorld.getHeight() + (cell.getY() - 1));
 	floorsFrom4Sides[0] = cell.getY() > 0 && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.cells.get((cell.getX() - 1) * gameScreen.WORLD.getHeight() + cell.getY());
+	renderCell = gameScreen.cells.get((cell.getX() - 1) * gameScreen.backendWorld.getHeight() + cell.getY());
 	floorsFrom4Sides[3] = cell.getX() > 0 && renderCell != null ? renderCell.getFloor() : self;
 	if (floorsFrom4Sides[0] != self || floorsFrom4Sides[1] != self || floorsFrom4Sides[2] != self || floorsFrom4Sides[3] != self) {
 		drawCellWithTransitions(cell.getX(), cell.getY(), self);

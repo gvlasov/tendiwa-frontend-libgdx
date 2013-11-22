@@ -109,7 +109,7 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
 	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
-	if (cellX == gameScreen.PLAYER.getX() && cellY == gameScreen.PLAYER.getY()) {
+	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
 		return true;
 	}
 	final LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
@@ -119,7 +119,7 @@ public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 	currentTask = new Task() {
 		@Override
 		public boolean ended() {
-			return gameScreen.PLAYER.getX() == cellX && gameScreen.PLAYER.getY() == cellY;
+			return gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
 		}
 
 		@Override

@@ -2,9 +2,12 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import tendiwa.core.CardinalDirection;
 import tendiwa.core.RenderCell;
+import tendiwa.core.WallType;
 
 /**
  * This class renders walls and field of view transitions above walls. I separated it from other render code because
@@ -12,9 +15,31 @@ import tendiwa.core.RenderCell;
  */
 public class WallsLayer {
 final GameScreen gameScreen;
+final TransitionPregenerator fovEdgeOnWallToUnseen;
+final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
+final ShaderProgram writeOpaqueToDepthShader;
+final ShaderProgram drawOpaqueToDepth05Shader;
+final ShaderProgram drawWithDepth0Shader;
+final ShaderProgram drawWithRGB06Shader;
+final ShaderProgram opaque0Transparent05DepthShader;
+final private TextureAtlas atlasWalls;
+private final int[] wallHeights;
 
 WallsLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
+	fovEdgeOnWallToUnseen = new FovEdgeTransparent();
+	fovEdgeOnWallToNotYetSeen = new FovEdgeOpaque();
+	writeOpaqueToDepthShader = GameScreen.createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
+	drawOpaqueToDepth05Shader = new ShaderProgram(GameScreen.defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
+	drawWithDepth0Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
+	drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+	opaque0Transparent05DepthShader = GameScreen.createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
+	atlasWalls = new TextureAtlas(Gdx.files.internal("pack/walls.atlas"), true);
+	int numberOfWallTypes = WallType.getNumberOfWallTypes();
+	wallHeights = new int[numberOfWallTypes];
+	for (int i = 0; i < numberOfWallTypes; i++) {
+		wallHeights[i] = atlasWalls.findRegion(WallType.getById(i + 1).getName()).getRegionHeight();
+	}
 }
 
 void draw() {
@@ -33,7 +58,7 @@ void draw() {
 	// Draw visible walls.
 	// For each opaque fragment of a visible wall, we place a 0 to the depth buffer.
 	// This will later indicate a mask for drawing transitions on walls.
-	gameScreen.batch.setShader(gameScreen.writeOpaqueToDepthShader);
+	gameScreen.batch.setShader(writeOpaqueToDepthShader);
 	gameScreen.batch.begin();
 	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	// SpriteBatch disables depth buffer with glDepthMask(false) internally,
@@ -44,34 +69,34 @@ void draw() {
 			RenderCell cell = gameScreen.getCell(x, y);
 			if (cell != null && cell.isVisible()) {
 				if (cell.hasWall()) {
-					TextureRegion wall = gameScreen.getWallTextureByCell(x, y);
+					TextureRegion wall = getWallTextureByCell(x, y);
 					int wallTextureHeight = wall.getRegionHeight();
-					gameScreen.batch.draw(wall, x * gameScreen.TILE_SIZE, y * gameScreen.TILE_SIZE - (wallTextureHeight - gameScreen.TILE_SIZE));
+					gameScreen.batch.draw(wall, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE - (wallTextureHeight - GameScreen.TILE_SIZE));
 					RenderCell cellFromSouth = gameScreen.getCell(x, y + 1);
 					if (cellFromSouth != null && !cellFromSouth.isVisible()) {
 						if (cell.hasWall() && !cellFromSouth.hasWall()) {
 							// Draw shaded south front faces of unseen walls that don't have a wall neighbor from south.
 							// For that we'll need to update the depth mask from scratch, so we clear depth buffer to 1.0.
 							// It will consist only of rectangles covering those wall sides.
-							gameScreen.batch.setShader(gameScreen.drawOpaqueToDepth05Shader);
-							int wallSideHeight = wallTextureHeight - gameScreen.TILE_SIZE;
+							gameScreen.batch.setShader(drawOpaqueToDepth05Shader);
+							int wallSideHeight = wallTextureHeight - GameScreen.TILE_SIZE;
 							int origY = wall.getRegionY();
 							int origX = wall.getRegionX();
 							// For drawing the south side of a wall we temporarily set wall's texture region
 							// to cover only that part of wall...
-							wall.setRegion(origX, origY, gameScreen.TILE_SIZE, -wallSideHeight);
+							wall.setRegion(origX, origY, GameScreen.TILE_SIZE, -wallSideHeight);
 							Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
 							gameScreen.batch.draw(
 								wall,
-								x * gameScreen.TILE_SIZE,
-								y * gameScreen.TILE_SIZE + gameScreen.TILE_SIZE - wallTextureHeight + gameScreen.TILE_SIZE,
-								gameScreen.TILE_SIZE,
+								x * GameScreen.TILE_SIZE,
+								y * GameScreen.TILE_SIZE + GameScreen.TILE_SIZE - wallTextureHeight + gameScreen.TILE_SIZE,
+								GameScreen.TILE_SIZE,
 								wallSideHeight
 							);
 							Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 							// ...and then restore it back.
-							wall.setRegion(origX, origY, gameScreen.TILE_SIZE, -wallTextureHeight);
-							gameScreen.batch.setShader(gameScreen.writeOpaqueToDepthShader);
+							wall.setRegion(origX, origY, GameScreen.TILE_SIZE, -wallTextureHeight);
+							gameScreen.batch.setShader(writeOpaqueToDepthShader);
 						}
 					}
 				}
@@ -81,7 +106,7 @@ void draw() {
 	gameScreen.batch.end();
 
 	// Draw unseen walls
-	gameScreen.batch.setShader(gameScreen.drawWithDepth0Shader);
+	gameScreen.batch.setShader(drawWithDepth0Shader);
 	gameScreen.batch.begin();
 	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
@@ -89,8 +114,8 @@ void draw() {
 			RenderCell cell = gameScreen.getCell(x, y);
 			if (cell != null && !cell.isVisible()) {
 				if (cell.hasWall()) {
-					TextureRegion wall = gameScreen.getWallTextureByCell(x, y);
-					gameScreen.batch.draw(wall, x * gameScreen.TILE_SIZE, y * gameScreen.TILE_SIZE - (wall.getRegionHeight() - gameScreen.TILE_SIZE));
+					TextureRegion wall = getWallTextureByCell(x, y);
+					gameScreen.batch.draw(wall, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE - (wall.getRegionHeight() - GameScreen.TILE_SIZE));
 				}
 			}
 		}
@@ -99,7 +124,7 @@ void draw() {
 
 	// Create mask for FOV transitions above walls
 	Gdx.gl.glDepthFunc(GL10.GL_GREATER);
-	gameScreen.batch.setShader(gameScreen.drawOpaqueToDepth05Shader);
+	gameScreen.batch.setShader(drawOpaqueToDepth05Shader);
 	gameScreen.batch.begin();
 	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	Gdx.gl.glColorMask(false, false, false, false);
@@ -109,7 +134,7 @@ void draw() {
 			RenderCell cell = gameScreen.getCell(x, y);
 			if (cell != null) {
 				if (cell.hasWall()) {
-					gameScreen.wallsLayer.drawDepthMaskAndOpaqueTransitionOnWall(x, y, cell, gameScreen);
+					gameScreen.wallsLayer.drawDepthMaskAndOpaqueTransitionOnWall(x, y, cell);
 				}
 			}
 		}
@@ -119,16 +144,16 @@ void draw() {
 	// Draw seen walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
 	Gdx.gl.glColorMask(true, true, true, true);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
-	gameScreen.batch.setShader(gameScreen.drawWithRGB06Shader);
+	gameScreen.batch.setShader(drawWithRGB06Shader);
 	gameScreen.batch.begin();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
 			RenderCell cell = gameScreen.getCell(x, y);
 			if (cell != null && cell.isVisible()) {
 				if (cell.hasWall()) {
-					TextureRegion wall = gameScreen.getWallTextureByCell(x, y);
+					TextureRegion wall = getWallTextureByCell(x, y);
 					int wallTextureHeight = wall.getRegionHeight();
-					gameScreen.batch.draw(wall, x * gameScreen.TILE_SIZE, y * gameScreen.TILE_SIZE - (wallTextureHeight - gameScreen.TILE_SIZE));
+					gameScreen.batch.draw(wall, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE - (wallTextureHeight - GameScreen.TILE_SIZE));
 				}
 			}
 		}
@@ -157,10 +182,10 @@ void draw() {
  * @param y
  * 	Absolute y coordinate of a cell.
  * @param cell
- * @param gameScreen
+ * 	The cell to draw at.
  */
-void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell, GameScreen gameScreen) {
-	int wallHeight = gameScreen.getWallHeight(cell.getFloor());
+void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
+	int wallHeight = getWallHeight(cell.getFloor());
 	for (CardinalDirection dir : CardinalDirection.values()) {
 		// Here to get texture number shift we pass absolute coordinates x and y, because,
 		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
@@ -173,12 +198,12 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell, GameS
 			// (right into color buffer, hence trueing color mask).
 			Gdx.gl.glColorMask(true, true, true, true);
 			Gdx.gl.glDepthMask(false);
-			transition = gameScreen.fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y);
+			transition = fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y);
 		} else if (cell.isVisible() && !neighborCell.isVisible()) {
 			// Draw mask for transitions to unseen walls.
 			Gdx.gl.glColorMask(false, false, false, false);
 			Gdx.gl.glDepthMask(true);
-			transition = gameScreen.fovEdgeOnWallToUnseen.getTransition(dir, x, y);
+			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
 		} else if (dir.isHorizontal()
 			&& gameScreen.hasCell(x, y + 1)
 			&& !gameScreen.getCell(x, y + 1).hasWall()
@@ -193,20 +218,20 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell, GameS
 				) {
 				if (!gameScreen.getCell(x + d[0], y + 1).isVisible()) {
 					// Draw mask for transitions to unseen south wall sides.
-					gameScreen.batch.setShader(gameScreen.drawOpaqueToDepth05Shader);
+					gameScreen.batch.setShader(drawOpaqueToDepth05Shader);
 					Gdx.gl.glColorMask(false, false, false, false);
 					Gdx.gl.glDepthMask(true);
-					gameScreen.batch.draw(gameScreen.fovEdgeOnWallToUnseen.getTransition(dir, x, y), x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
-					gameScreen.batch.setShader(gameScreen.drawOpaqueToDepth05Shader);
+					gameScreen.batch.draw(fovEdgeOnWallToUnseen.getTransition(dir, x, y), x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
+					gameScreen.batch.setShader(drawOpaqueToDepth05Shader);
 				}
 			} else if (!gameScreen.isFloorUnderWallShouldBeDrawn(x + d[0], y)) {
 				// Draw black color for transitions to not yet seen south wall sides.
 				Gdx.gl.glColorMask(true, true, true, true);
 				Gdx.gl.glDepthMask(true);
 				Gdx.gl.glDepthFunc(GL10.GL_LESS);
-				gameScreen.batch.setShader(gameScreen.opaque0Transparent05DepthShader);
-				gameScreen.batch.draw(gameScreen.fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y), x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
-				gameScreen.batch.setShader(gameScreen.drawOpaqueToDepth05Shader);
+				gameScreen.batch.setShader(opaque0Transparent05DepthShader);
+				gameScreen.batch.draw(fovEdgeOnWallToNotYetSeen.getTransition(dir, x, y), x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
+				gameScreen.batch.setShader(drawOpaqueToDepth05Shader);
 				Gdx.gl.glDepthFunc(GL10.GL_GREATER);
 				Gdx.gl.glColorMask(false, false, false, false);
 				Gdx.gl.glDepthMask(true);
@@ -225,5 +250,33 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell, GameS
 			gameScreen.batch.begin();
 		}
 	}
+}
+
+TextureRegion getWallTextureByCell(int x, int y) {
+	short wallId = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + y).getWall();
+	WallType wallType = WallType.getById(wallId);
+	String name = wallType.getName();
+	int index = 0;
+	RenderCell neighborCell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + (y - 1));
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
+		index += 1000;
+	}
+	neighborCell = gameScreen.cells.get((x + 1) * gameScreen.backendWorld.getHeight() + y);
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
+		index += 100;
+	}
+	neighborCell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + (y + 1));
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
+		index += 10;
+	}
+	neighborCell = gameScreen.cells.get((x - 1) * gameScreen.backendWorld.getHeight() + y);
+	if (neighborCell == null || neighborCell.getWall() == wallId) {
+		index += 1;
+	}
+	return atlasWalls.findRegion(name, index);
+}
+
+int getWallHeight(short terrain) {
+	return wallHeights[terrain];
 }
 }
