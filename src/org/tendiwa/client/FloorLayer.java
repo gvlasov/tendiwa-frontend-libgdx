@@ -6,7 +6,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
+import tendiwa.core.CardinalDirection;
 import tendiwa.core.FloorType;
 import tendiwa.core.RenderCell;
 import tendiwa.core.Tendiwa;
@@ -17,10 +19,12 @@ import java.util.Map;
 public class FloorLayer {
 private final GameScreen gameScreen;
 private final TextureAtlas atlasFloors;
-private final SpriteBatch defaultBatch;
+private final SpriteBatch batch;
 private final int transitionsAtlasSize = 1024;
 private final FrameBuffer transitionsFrameBuffer;
 private final short[] floorsFrom4Sides = new short[4];
+private final ShaderProgram liquidFloorAnimateShader;
+private final int uWaveState;
 private Map<Integer, TextureRegion> floorRegions = new HashMap<>();
 private Map<Short, Integer> floorIndices = new HashMap<>();
 private TransitionsToFloor[] floorTransitionsProviders;
@@ -29,9 +33,11 @@ public FloorLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
 	atlasFloors = new TextureAtlas(Gdx.files.internal("pack/floors.atlas"), true);
 	cacheRegions();
-	defaultBatch = new SpriteBatch();
+	batch = new SpriteBatch();
 	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, gameScreen.windowWidth, gameScreen.windowHeight, false);
 	initFloorTransitionsProviders();
+	liquidFloorAnimateShader = GameScreen.createShader(Gdx.files.internal("shaders/liquidFloorAnimate.f.glsl"));
+	uWaveState = liquidFloorAnimateShader.getUniformLocation("waveState");
 }
 
 void initFloorTransitionsProviders() {
@@ -43,50 +49,64 @@ void initFloorTransitionsProviders() {
 }
 
 void draw() {
-	drawFloors();
-	drawTransitions();
+	liquidFloorAnimateShader.begin();
+	liquidFloorAnimateShader.setUniformf(
+		uWaveState, waveState(0.5f)
+	);
+	batch.setProjectionMatrix(gameScreen.camera.combined);
+	batch.begin();
+	drawFloors(false);
+	batch.setShader(liquidFloorAnimateShader);
+	drawFloors(true);
+	batch.setShader(GameScreen.defaultShader);
+	drawTransitions(false);
+	batch.setShader(liquidFloorAnimateShader);
+	drawTransitions(true);
+	batch.end();
+	batch.setShader(GameScreen.defaultShader);
 }
 
-private void drawFloors() {
+private float waveState(float frequency) {
+	return (float) ((Math.PI*2 /2000*frequency)*System.currentTimeMillis()%(Math.PI*2));
+}
+
+private void drawFloors(boolean liquid) {
 	int maxX = gameScreen.getMaxRenderCellX();
 	int maxY = gameScreen.getMaxRenderCellY();
-	gameScreen.batch.begin();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
 			RenderCell cell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + y);
-			if (cell != null) {
+			if (cell != null && FloorType.getById(cell.getFloor()).isLiquid() == liquid) {
 				drawFloor(cell.getFloor(), x, y);
 			}
 		}
 	}
-	gameScreen.batch.end();
 }
 
 void drawFloor(short floorId, int x, int y) {
 	if (!gameScreen.isFloorUnderWallShouldBeDrawn(x, y)) {
 		// Don't draw floor on cells that are right under a wall on the edge of field of view,
-		// because drawing one produces an unpleasant and unrealistic effect.
+		// because drawing one produces an unpleasant and unnatural effect.
 		return;
 	}
 	TextureRegion floor = getFloorTextureByCell(floorId, x, y);
-	gameScreen.batch.draw(floor, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
+	batch.draw(floor, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
 }
 
-private void drawTransitions() {
+private void drawTransitions(boolean liquid) {
 	// Draw transitions
-	defaultBatch.setProjectionMatrix(gameScreen.camera.combined);
-	defaultBatch.begin();
 	for (int x = 0; x < gameScreen.windowWidth / GameScreen.TILE_SIZE; x++) {
 		for (int y = 0; y < gameScreen.windowHeight / GameScreen.TILE_SIZE; y++) {
 			RenderCell cell = gameScreen.cells.get((gameScreen.startCellX + x) * gameScreen.backendWorld.getHeight() + (gameScreen.startCellY + y));
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
-			if (cell != null && (!cell.hasWall() || gameScreen.isFloorUnderWallShouldBeDrawn(gameScreen.startCellX + x, gameScreen.startCellY + y))) {
-				drawFloorTransitionsInCell(cell);
+			if (cell != null
+				&& (!cell.hasWall() || gameScreen.isFloorUnderWallShouldBeDrawn(gameScreen.startCellX + x, gameScreen.startCellY + y))
+				) {
+				drawFloorTransitionsInCell(cell, liquid);
 			}
 		}
 	}
-	defaultBatch.end();
 }
 
 private TextureRegion getFloorTextureByCell(short terrain, int x, int y) {
@@ -137,25 +157,7 @@ private TransitionsToFloor getFloorTransitionsProvider(short floorId) {
 	return floorTransitionsProviders[floorId];
 }
 
-private void drawCellWithTransitions(int x, int y, short self) {
-	// Get individual transition pixmap for each side
-	for (int i = 0; i < 4; i++) {
-		if (floorsFrom4Sides[i] != self) {
-			TransitionsToFloor floorTransitionsProvider = getFloorTransitionsProvider(floorsFrom4Sides[i]);
-			defaultBatch.draw(
-				floorTransitionsProvider.getTransition(
-					i,
-					x,
-					y
-				),
-				x * GameScreen.TILE_SIZE,
-				y * GameScreen.TILE_SIZE
-			);
-		}
-	}
-}
-
-void drawFloorTransitionsInCell(RenderCell cell) {
+void drawFloorTransitionsInCell(RenderCell cell, boolean liquid) {
 	short self = cell.getFloor();
 	RenderCell renderCell = gameScreen.cells.get(cell.getX() * gameScreen.backendWorld.getHeight() + (cell.getY() + 1));
 	// Indices 0 and 2 are swapped
@@ -167,7 +169,29 @@ void drawFloorTransitionsInCell(RenderCell cell) {
 	renderCell = gameScreen.cells.get((cell.getX() - 1) * gameScreen.backendWorld.getHeight() + cell.getY());
 	floorsFrom4Sides[3] = cell.getX() > 0 && renderCell != null ? renderCell.getFloor() : self;
 	if (floorsFrom4Sides[0] != self || floorsFrom4Sides[1] != self || floorsFrom4Sides[2] != self || floorsFrom4Sides[3] != self) {
-		drawCellWithTransitions(cell.getX(), cell.getY(), self);
+		drawCellWithTransitions(cell.getX(), cell.getY(), self, liquid);
+	}
+}
+
+private void drawCellWithTransitions(int x, int y, short self, boolean liquid) {
+	// Get individual transition pixmap for each side
+	for (CardinalDirection dir : CardinalDirection.values()) {
+		int[] d = dir.side2d();
+		int i = dir.getCardinalIndex();
+		if (floorsFrom4Sides[i] != self
+			&& FloorType.getById(gameScreen.getCell(x + d[0], y + d[1]).getFloor()).isLiquid() == liquid
+			) {
+			TransitionsToFloor floorTransitionsProvider = getFloorTransitionsProvider(floorsFrom4Sides[i]);
+			batch.draw(
+				floorTransitionsProvider.getTransition(
+					i,
+					x,
+					y
+				),
+				x * GameScreen.TILE_SIZE,
+				y * GameScreen.TILE_SIZE
+			);
+		}
 	}
 }
 }

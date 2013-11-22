@@ -188,14 +188,13 @@ public void render(float delta) {
 	floorFieldOfViewLayer.draw();
 	wallsLayer.draw();
 	cursor.updateCursorCoords();
-	cellNetLayer.draw();
+//	cellNetLayer.draw();
 	stage.draw();
 	drawObjects();
 }
 
 private void drawObjects() {
 	batch.begin();
-	// But first drawWorld cursor before drawing objects
 	batch.draw(cursor.getTexture(), cursor.getWorldX() * TILE_SIZE, cursor.getWorldY() * TILE_SIZE);
 	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
@@ -219,14 +218,14 @@ private void drawObjects() {
 	}
 	// Draw stats
 	RenderCell cellUnderCursor = cells.get(cursor.getWorldX() * backendWorld.getHeight() + cursor.getWorldY());
-	font.draw(
-		batch,
-		Gdx.graphics.getFramesPerSecond()
-			+ "; " + startCellX + ":" + startCellY + " "
-			+ (cellUnderCursor == null ? "" : FloorType.getById(cellUnderCursor.getFloor()).getName())
-			+ " cursor: " + cursor.getWorldX() + " " + cursor.getWorldY(),
-		startPixelX + 100,
-		startPixelY + 100);
+//	font.draw(
+//		batch,
+//		Gdx.graphics.getFramesPerSecond()
+//			+ "; " + startCellX + ":" + startCellY + " "
+//			+ (cellUnderCursor == null ? "" : FloorType.getById(cellUnderCursor.getFloor()).getName())
+//			+ " cursor: " + cursor.getWorldX() + " " + cursor.getWorldY(),
+//		startPixelX + 100,
+//		startPixelY + 100);
 	batch.end();
 }
 
