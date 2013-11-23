@@ -28,6 +28,7 @@ private final int uWaveState;
 private Map<Integer, TextureRegion> floorRegions = new HashMap<>();
 private Map<Short, Integer> floorIndices = new HashMap<>();
 private TransitionsToFloor[] floorTransitionsProviders;
+private boolean animateLiquidFloor = true;
 
 public FloorLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
@@ -56,18 +57,24 @@ void draw() {
 	batch.setProjectionMatrix(gameScreen.camera.combined);
 	batch.begin();
 	drawFloors(false);
-	batch.setShader(liquidFloorAnimateShader);
-	drawFloors(true);
-	batch.setShader(GameScreen.defaultShader);
+	if (animateLiquidFloor) {
+		batch.setShader(liquidFloorAnimateShader);
+		drawFloors(true);
+		batch.setShader(GameScreen.defaultShader);
+	}
 	drawTransitions(false);
-	batch.setShader(liquidFloorAnimateShader);
-	drawTransitions(true);
+	if (animateLiquidFloor) {
+		batch.setShader(liquidFloorAnimateShader);
+		drawTransitions(true);
+	}
 	batch.end();
-	batch.setShader(GameScreen.defaultShader);
+	if (animateLiquidFloor) {
+		batch.setShader(GameScreen.defaultShader);
+	}
 }
 
 private float waveState(float frequency) {
-	return (float) ((Math.PI*2 /2000*frequency)*System.currentTimeMillis()%(Math.PI*2));
+	return (float) ((Math.PI * 2 / 2000 * frequency) * System.currentTimeMillis() % (Math.PI * 2));
 }
 
 private void drawFloors(boolean liquid) {

@@ -61,10 +61,12 @@ public void startup() {
 	this.cfg = new LwjglApplicationConfiguration();
 	cfg.title = "Title";
 	cfg.useGL20 = true;
-	cfg.width = 1024;
+	cfg.width = 1280;
 	cfg.height = 768;
 	cfg.resizable = false;
-//	cfg.vSyncEnabled = false;
+	cfg.vSyncEnabled = false;
+	cfg.forceExit = true;
+	cfg.foregroundFPS = 10000;
 //  new LwjglApplication(new BookFun(), cfg);
 	new LwjglApplication(this, cfg);
 }

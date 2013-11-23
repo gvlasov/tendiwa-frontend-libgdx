@@ -71,6 +71,7 @@ private int maxPixelY;
  */
 private int maxPixelX;
 private Map<Integer, GameObject> objects = new HashMap<>();
+private boolean statusbarEnabled = false;
 
 public GameScreen(final TendiwaGame game) {
 	this.game = game;
@@ -218,14 +219,16 @@ private void drawObjects() {
 	}
 	// Draw stats
 	RenderCell cellUnderCursor = cells.get(cursor.getWorldX() * backendWorld.getHeight() + cursor.getWorldY());
-//	font.draw(
-//		batch,
-//		Gdx.graphics.getFramesPerSecond()
-//			+ "; " + startCellX + ":" + startCellY + " "
-//			+ (cellUnderCursor == null ? "" : FloorType.getById(cellUnderCursor.getFloor()).getName())
-//			+ " cursor: " + cursor.getWorldX() + " " + cursor.getWorldY(),
-//		startPixelX + 100,
-//		startPixelY + 100);
+	if (statusbarEnabled) {
+		font.draw(
+			batch,
+			Gdx.graphics.getFramesPerSecond()
+				+ "; " + startCellX + ":" + startCellY + " "
+				+ (cellUnderCursor == null ? "" : FloorType.getById(cellUnderCursor.getFloor()).getName())
+				+ " cursor: " + cursor.getWorldX() + " " + cursor.getWorldY(),
+			startPixelX + 100,
+			startPixelY + 100);
+	}
 	batch.end();
 }
 
@@ -321,5 +324,9 @@ public void dispose() {
 
 public TendiwaStage getStage() {
 	return stage;
+}
+
+public void toggleStatusbar() {
+	statusbarEnabled = !statusbarEnabled;
 }
 }

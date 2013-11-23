@@ -86,6 +86,8 @@ public boolean keyDown(int keycode) {
 		}
 	} else if (keycode == F10) {
 		TendiwaClientLibgdxEventManager.toggleAnimations();
+	} else if (keycode == F11) {
+		gameScreen.toggleStatusbar();
 	}
 	return true;
 }

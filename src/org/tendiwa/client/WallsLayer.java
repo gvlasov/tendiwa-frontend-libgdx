@@ -17,11 +17,11 @@ public class WallsLayer {
 final GameScreen gameScreen;
 final TransitionPregenerator fovEdgeOnWallToUnseen;
 final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
-final ShaderProgram writeOpaqueToDepthShader;
-final ShaderProgram drawOpaqueToDepth05Shader;
-final ShaderProgram drawWithDepth0Shader;
-final ShaderProgram drawWithRGB06Shader;
-final ShaderProgram opaque0Transparent05DepthShader;
+static final ShaderProgram writeOpaqueToDepthShader = GameScreen.createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
+static final ShaderProgram drawOpaqueToDepth05Shader = new ShaderProgram(GameScreen.defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
+static final ShaderProgram drawWithDepth0Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
+static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+static final ShaderProgram opaque0Transparent05DepthShader = GameScreen.createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
 final private TextureAtlas atlasWalls;
 private final int[] wallHeights;
 
@@ -29,11 +29,6 @@ WallsLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
 	fovEdgeOnWallToUnseen = new FovEdgeTransparent();
 	fovEdgeOnWallToNotYetSeen = new FovEdgeOpaque();
-	writeOpaqueToDepthShader = GameScreen.createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
-	drawOpaqueToDepth05Shader = new ShaderProgram(GameScreen.defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
-	drawWithDepth0Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
-	drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
-	opaque0Transparent05DepthShader = GameScreen.createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
 	atlasWalls = new TextureAtlas(Gdx.files.internal("pack/walls.atlas"), true);
 	int numberOfWallTypes = WallType.getNumberOfWallTypes();
 	wallHeights = new int[numberOfWallTypes];

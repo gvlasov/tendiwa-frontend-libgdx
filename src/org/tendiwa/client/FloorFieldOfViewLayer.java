@@ -1,21 +1,43 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import tendiwa.core.RenderCell;
 
 public class FloorFieldOfViewLayer {
 private final GameScreen gameScreen;
 private final FovEdgeOpaque fovEdgeOpaque;
-private ShapeRenderer shapeRen = new ShapeRenderer();
+private final Mesh fullScreenQuad;
+private final ShapeRenderer shapeRen = new ShapeRenderer();
+private final ShaderProgram notYetSeenShader;
+private final Texture blackOpaqueTexture;
+private int uNotYetSeenCellsAnimationState;
+private int uNotYetSeenCellsTime;
+private boolean renderNotYetSeenCells = true;
 
 FloorFieldOfViewLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
 	fovEdgeOpaque = new FovEdgeOpaque();
+	fullScreenQuad = createFullScreenQuad();
+	notYetSeenShader = new ShaderProgram(
+		Gdx.files.internal("shaders/noTransformation.v.glsl"),
+		Gdx.files.internal("shaders/notYetSeen.f.glsl")
+	);
+	blackOpaqueTexture = createBlackTexture();
+	uNotYetSeenCellsAnimationState = notYetSeenShader.getUniformLocation("u_state");
+	uNotYetSeenCellsTime = notYetSeenShader.getUniformLocation("time");
 }
-public void draw() {
 
+private Texture createBlackTexture() {
+	Pixmap pixmap = new Pixmap(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, Pixmap.Format.RGBA8888);
+	pixmap.setColor(0, 0, 0, 1.0f);
+	pixmap.fill();
+	return new Texture(pixmap);
+}
+
+public void draw() {
 	gameScreen.depthTestFrameBuffer.begin();
 
 	fovEdgeOpaque.batch.setProjectionMatrix(gameScreen.camera.combined);
@@ -78,9 +100,13 @@ public void draw() {
 	shapeRen.end();
 
 	// Draw transitions to not yet seen cells
-	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
-	fovEdgeOpaque.batch.setShader(GameScreen.defaultShader);
+	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	Gdx.gl.glClearDepthf(1.0f);
+	Gdx.gl.glClear(GL10.GL_DEPTH_BUFFER_BIT);
+	Gdx.gl.glDepthFunc(GL10.GL_LESS);
+	fovEdgeOpaque.batch.setShader(WallsLayer.writeOpaqueToDepthShader);
 	fovEdgeOpaque.batch.begin();
+	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxRenderCellX; x++) {
 		for (int y = gameScreen.startCellY; y < maxRenderCellY; y++) {
 			RenderCell cell = gameScreen.getCell(x, y);
@@ -101,17 +127,79 @@ public void draw() {
 					hashX,
 					hashY
 				);
+			} else {
+				fovEdgeOpaque.batch.draw(
+					blackOpaqueTexture,
+					x * GameScreen.TILE_SIZE,
+					y * GameScreen.TILE_SIZE,
+					GameScreen.TILE_SIZE,
+					GameScreen.TILE_SIZE
+				);
 			}
 		}
 	}
 	fovEdgeOpaque.batch.end();
 
+	// Render not yet seen cells
+//	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
+	if (renderNotYetSeenCells) {
+		Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
+		notYetSeenShader.begin();
+		notYetSeenShader.setUniformf(uNotYetSeenCellsAnimationState, computeNotYetSeenCellsAnimationState(1));
+		notYetSeenShader.setUniformf(uNotYetSeenCellsTime, (float) ((System.currentTimeMillis() % 10000000) / 10000f));
+		fullScreenQuad.render(notYetSeenShader, GL10.GL_TRIANGLE_FAN);
+		notYetSeenShader.end();
+	}
+
 	gameScreen.depthTestFrameBuffer.end();
 
+	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
 	gameScreen.batch.begin();
 	gameScreen.batch.draw(gameScreen.depthTestFrameBuffer.getColorBufferTexture(), gameScreen.startPixelX, gameScreen.startPixelY);
 	gameScreen.batch.end();
 }
+
+private float computeNotYetSeenCellsAnimationState(int frequency) {
+	return (float) ((Math.PI * 2 / 2000 * frequency) * System.currentTimeMillis() % (Math.PI * 2));
+}
+
+public Mesh createFullScreenQuad() {
+
+	float[] verts = new float[20];
+	int i = 0;
+
+	verts[i++] = -1; // x1
+	verts[i++] = -1; // y1
+	verts[i++] = 0;
+	verts[i++] = 0f; // u1
+	verts[i++] = 0f; // v1
+
+	verts[i++] = 1f; // x2
+	verts[i++] = -1; // y2
+	verts[i++] = 0;
+	verts[i++] = 1f; // u2
+	verts[i++] = 0f; // v2
+
+	verts[i++] = 1f; // x3
+	verts[i++] = 1f; // y2
+	verts[i++] = 0;
+	verts[i++] = 1f; // u3
+	verts[i++] = 1f; // v3
+
+	verts[i++] = -1; // x4
+	verts[i++] = 1f; // y4
+	verts[i++] = 0;
+	verts[i++] = 0f; // u4
+	verts[i++] = 1f; // v4
+
+	Mesh mesh = new Mesh(true, 4, 0,  // static mesh with 4 vertices and no indices
+		new VertexAttribute(VertexAttributes.Usage.Position, 3, ShaderProgram.POSITION_ATTRIBUTE),
+		new VertexAttribute(VertexAttributes.Usage.TextureCoordinates, 2, ShaderProgram.TEXCOORD_ATTRIBUTE + "0"));
+
+	mesh.setVertices(verts);
+	return mesh;
+}
+
 private boolean[] getHasNotYetSeenNeighbors(int x, int y) {
 	return new boolean[]{
 		!gameScreen.hasCell(x, y - 1),
