@@ -47,7 +47,11 @@ public void render(float delta) {
 	for (int x = 0; x < width; x++) {
 		for (int y = 0; y < height; y++) {
 			int color;
-			if (WallTypes.wall_grey_stone.containedIn(plane, x, y)) {
+			if (plane.hasCharacter(x, y)) {
+				color = Color.rgba8888(0.2f, 1.0f, 1.0f, 1);
+			} else if (plane.hasAnyItems(x, y)) {
+				color = Color.rgba8888(0.2f, 0.4f, 1.0f, 1);
+			} else if (WallTypes.wall_grey_stone.containedIn(plane, x, y)) {
 				color = Color.rgba8888(0.2f, 0.2f, 0.2f, 1);
 			} else if (FloorTypes.water.containedIn(plane, x, y)) {
 				color = Color.rgba8888(0.2f, 0.3f, 0.93f, 1);

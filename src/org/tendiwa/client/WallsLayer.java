@@ -84,7 +84,7 @@ void draw() {
 							gameScreen.batch.draw(
 								wall,
 								x * GameScreen.TILE_SIZE,
-								y * GameScreen.TILE_SIZE + GameScreen.TILE_SIZE - wallTextureHeight + gameScreen.TILE_SIZE,
+								y * GameScreen.TILE_SIZE + GameScreen.TILE_SIZE - wallTextureHeight + GameScreen.TILE_SIZE,
 								GameScreen.TILE_SIZE,
 								wallSideHeight
 							);
