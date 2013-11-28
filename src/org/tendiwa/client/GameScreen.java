@@ -23,6 +23,8 @@ public class GameScreen implements Screen {
 
 static final int TILE_SIZE = 32;
 static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
+static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+private static GameScreen INSTANCE;
 final int maxStartX;
 final int maxStartY;
 final SpriteBatch batch;
@@ -34,6 +36,7 @@ final FrameBuffer depthTestFrameBuffer;
 final WallsLayer wallsLayer;
 final int windowWidthCells;
 final int windowHeightCells;
+final RenderWorld renderWorld;
 private final TendiwaGame game;
 private final TextureAtlas atlasObjects;
 private final GameScreenInputProcessor controller;
@@ -42,6 +45,7 @@ private final FloorFieldOfViewLayer floorFieldOfViewLayer;
 private final TendiwaStage stage;
 private final CellNetLayer cellNetLayer;
 private final Cursor cursor;
+private final ItemsLayer itemsLayer;
 protected int startCellX;
 OrthographicCamera camera;
 /**
@@ -49,34 +53,34 @@ OrthographicCamera camera;
  * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.events.Event}s.
  */
 World backendWorld;
-RenderPlayer player;
+PlayerCharacter player;
 int startCellY;
 int centerPixelX;
 int centerPixelY;
 int cameraMoveStep = 1;
 int startPixelX;
 int startPixelY;
-Map<Integer, RenderCell> cells = new HashMap<>();
 private BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(20, "qwertyuiop[]asdfghjkl;'zxcvbnm,./1234567890-=!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?\\|", true);
 /**
  * Max index of each floor type's images.
  */
 private boolean eventResultProcessingIsGoing = false;
 /**
- * The greatest value of camera's center pixel on y axis.
+ * The greatest value of camera's center pixel on y axis in world coordinates.
  */
 private int maxPixelY;
 /**
- * The greatest value of camera's center pixel on x axis.
+ * The greatest value of camera's center pixel on x axis in world coordinates.
  */
 private int maxPixelX;
 private Map<Integer, GameObject> objects = new HashMap<>();
 private boolean statusbarEnabled = false;
 
 public GameScreen(final TendiwaGame game) {
+	INSTANCE = this;
 	this.game = game;
 	backendWorld = Tendiwa.getWorld();
-	player = new RenderPlayer(backendWorld.getPlayerCharacter());
+	player = Tendiwa.getPlayer();
 
 	worldWidthCells = Tendiwa.getWorld().getWidth();
 	worldHeightCells = Tendiwa.getWorld().getHeight();
@@ -111,10 +115,12 @@ public GameScreen(final TendiwaGame game) {
 
 	setRenderingMode();
 
+	renderWorld = new RenderWorld(backendWorld);
 	wallsLayer = new WallsLayer(this);
 	floorLayer = new FloorLayer(this);
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
+	itemsLayer = new ItemsLayer(this);
 	cursor = new Cursor(this);
 }
 
@@ -188,8 +194,9 @@ public void render(float delta) {
 	floorLayer.draw();
 	floorFieldOfViewLayer.draw();
 	wallsLayer.draw();
+	itemsLayer.draw();
 	cursor.updateCursorCoords();
-//	cellNetLayer.draw();
+	cellNetLayer.draw();
 	stage.draw();
 	drawObjects();
 }
@@ -200,7 +207,7 @@ private void drawObjects() {
 	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
 		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY || centerPixelY == maxPixelY - TILE_SIZE ? 0 : 2); y++) {
-			RenderCell cell = cells.get((startCellX + x) * backendWorld.getHeight() + (startCellY + y));
+			RenderCell cell = renderWorld.getCell(startCellX + x, startCellY + y);
 			if (cell != null) {
 				// If the frontend has already received this cell from backend
 				if (cell.isVisible()) {
@@ -211,14 +218,12 @@ private void drawObjects() {
 						int textureY = (startCellY + y) * TILE_SIZE - (objectTexture.getRegionHeight() - TILE_SIZE);
 						batch.draw(objectTexture, textureX, textureY);
 					}
-				} else {
-					// Draw shaded object
 				}
 			}
 		}
 	}
 	// Draw stats
-	RenderCell cellUnderCursor = cells.get(cursor.getWorldX() * backendWorld.getHeight() + cursor.getWorldY());
+	RenderCell cellUnderCursor = renderWorld.getCell(cursor.getWorldX(), cursor.getWorldY());
 	if (statusbarEnabled) {
 		font.draw(
 			batch,
@@ -232,10 +237,6 @@ private void drawObjects() {
 	batch.end();
 }
 
-boolean hasCell(int x, int y) {
-	return cells.containsKey(x * backendWorld.getHeight() + y);
-}
-
 /**
  * Checks if a floor tile should be drawn under certain cell.
  *
@@ -246,11 +247,7 @@ boolean hasCell(int x, int y) {
  * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seen, true otherwise.
  */
 boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
-	return !(getCell(x, y).hasWall() && !hasCell(x, y + 1));
-}
-
-RenderCell getCell(int x, int y) {
-	return cells.get(x * Tendiwa.getWorld().getHeight() + y);
+	return !(renderWorld.getCell(x, y).hasWall() && !renderWorld.hasCell(x, y + 1));
 }
 
 int getMaxRenderCellX() {
@@ -274,7 +271,7 @@ private void processEvents() {
 	}
 }
 
-void eventProcessingDone() {
+void signalEventProcessingDone() {
 	eventResultProcessingIsGoing = false;
 }
 
@@ -328,5 +325,9 @@ public TendiwaStage getStage() {
 
 public void toggleStatusbar() {
 	statusbarEnabled = !statusbarEnabled;
+}
+
+public static RenderWorld getRenderWorld() {
+	return INSTANCE.renderWorld;
 }
 }

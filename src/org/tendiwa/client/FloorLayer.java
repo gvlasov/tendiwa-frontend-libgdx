@@ -82,7 +82,7 @@ private void drawFloors(boolean liquid) {
 	int maxY = gameScreen.getMaxRenderCellY();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + y);
+			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
 			if (cell != null && FloorType.getById(cell.getFloor()).isLiquid() == liquid) {
 				drawFloor(cell.getFloor(), x, y);
 			}
@@ -104,7 +104,7 @@ private void drawTransitions(boolean liquid) {
 	// Draw transitions
 	for (int x = 0; x < gameScreen.windowWidth / GameScreen.TILE_SIZE; x++) {
 		for (int y = 0; y < gameScreen.windowHeight / GameScreen.TILE_SIZE; y++) {
-			RenderCell cell = gameScreen.cells.get((gameScreen.startCellX + x) * gameScreen.backendWorld.getHeight() + (gameScreen.startCellY + y));
+			RenderCell cell = gameScreen.renderWorld.getCell(gameScreen.startCellX + x, gameScreen.startCellY + y);
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
 			if (cell != null
@@ -166,14 +166,14 @@ private TransitionsToFloor getFloorTransitionsProvider(short floorId) {
 
 void drawFloorTransitionsInCell(RenderCell cell, boolean liquid) {
 	short self = cell.getFloor();
-	RenderCell renderCell = gameScreen.cells.get(cell.getX() * gameScreen.backendWorld.getHeight() + (cell.getY() + 1));
+	RenderCell renderCell = gameScreen.renderWorld.getCell(cell.getX(), cell.getY() + 1);
 	// Indices 0 and 2 are swapped
 	floorsFrom4Sides[2] = cell.getY() + 1 < gameScreen.worldHeightCells && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.cells.get((cell.getX() + 1) * gameScreen.backendWorld.getHeight() + cell.getY());
+	renderCell = gameScreen.renderWorld.getCell(cell.getX() + 1, cell.getY());
 	floorsFrom4Sides[1] = cell.getX() + 1 < gameScreen.worldWidthCells && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.cells.get(cell.getX() * gameScreen.backendWorld.getHeight() + (cell.getY() - 1));
+	renderCell = gameScreen.renderWorld.getCell(cell.getX(), cell.getY() - 1);
 	floorsFrom4Sides[0] = cell.getY() > 0 && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.cells.get((cell.getX() - 1) * gameScreen.backendWorld.getHeight() + cell.getY());
+	renderCell = gameScreen.renderWorld.getCell(cell.getX() - 1, cell.getY());
 	floorsFrom4Sides[3] = cell.getX() > 0 && renderCell != null ? renderCell.getFloor() : self;
 	if (floorsFrom4Sides[0] != self || floorsFrom4Sides[1] != self || floorsFrom4Sides[2] != self || floorsFrom4Sides[3] != self) {
 		drawCellWithTransitions(cell.getX(), cell.getY(), self, liquid);
@@ -186,7 +186,7 @@ private void drawCellWithTransitions(int x, int y, short self, boolean liquid) {
 		int[] d = dir.side2d();
 		int i = dir.getCardinalIndex();
 		if (floorsFrom4Sides[i] != self
-			&& FloorType.getById(gameScreen.getCell(x + d[0], y + d[1]).getFloor()).isLiquid() == liquid
+			&& FloorType.getById(gameScreen.renderWorld.getCell(x + d[0], y + d[1]).getFloor()).isLiquid() == liquid
 			) {
 			TransitionsToFloor floorTransitionsProvider = getFloorTransitionsProvider(floorsFrom4Sides[i]);
 			batch.draw(

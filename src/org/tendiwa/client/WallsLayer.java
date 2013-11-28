@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import tendiwa.core.CardinalDirection;
 import tendiwa.core.RenderCell;
+import tendiwa.core.RenderWorld;
 import tendiwa.core.WallType;
 
 /**
@@ -14,16 +15,16 @@ import tendiwa.core.WallType;
  * there is a lot of spaghetti code concerning walls and I don't know how to get rid of it.
  */
 public class WallsLayer {
-final GameScreen gameScreen;
-final TransitionPregenerator fovEdgeOnWallToUnseen;
-final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 static final ShaderProgram writeOpaqueToDepthShader = GameScreen.createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
 static final ShaderProgram drawOpaqueToDepth05Shader = new ShaderProgram(GameScreen.defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
 static final ShaderProgram drawWithDepth0Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
-static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
 static final ShaderProgram opaque0Transparent05DepthShader = GameScreen.createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
+final GameScreen gameScreen;
+final TransitionPregenerator fovEdgeOnWallToUnseen;
+final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 final private TextureAtlas atlasWalls;
 private final int[] wallHeights;
+private final RenderWorld renderWorld;
 
 WallsLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
@@ -35,6 +36,7 @@ WallsLayer(GameScreen gameScreen) {
 	for (int i = 0; i < numberOfWallTypes; i++) {
 		wallHeights[i] = atlasWalls.findRegion(WallType.getById(i + 1).getName()).getRegionHeight();
 	}
+	renderWorld = gameScreen.renderWorld;
 }
 
 void draw() {
@@ -61,13 +63,13 @@ void draw() {
 	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = renderWorld.getCell(x, y);
 			if (cell != null && cell.isVisible()) {
 				if (cell.hasWall()) {
 					TextureRegion wall = getWallTextureByCell(x, y);
 					int wallTextureHeight = wall.getRegionHeight();
 					gameScreen.batch.draw(wall, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE - (wallTextureHeight - GameScreen.TILE_SIZE));
-					RenderCell cellFromSouth = gameScreen.getCell(x, y + 1);
+					RenderCell cellFromSouth = renderWorld.getCell(x, y + 1);
 					if (cellFromSouth != null && !cellFromSouth.isVisible()) {
 						if (cell.hasWall() && !cellFromSouth.hasWall()) {
 							// Draw shaded south front faces of unseen walls that don't have a wall neighbor from south.
@@ -106,7 +108,7 @@ void draw() {
 	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = renderWorld.getCell(x, y);
 			if (cell != null && !cell.isVisible()) {
 				if (cell.hasWall()) {
 					TextureRegion wall = getWallTextureByCell(x, y);
@@ -126,7 +128,7 @@ void draw() {
 	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = renderWorld.getCell(x, y);
 			if (cell != null) {
 				if (cell.hasWall()) {
 					gameScreen.wallsLayer.drawDepthMaskAndOpaqueTransitionOnWall(x, y, cell);
@@ -139,11 +141,11 @@ void draw() {
 	// Draw seen walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
 	Gdx.gl.glColorMask(true, true, true, true);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
-	gameScreen.batch.setShader(drawWithRGB06Shader);
+	gameScreen.batch.setShader(GameScreen.drawWithRGB06Shader);
 	gameScreen.batch.begin();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = renderWorld.getCell(x, y);
 			if (cell != null && cell.isVisible()) {
 				if (cell.hasWall()) {
 					TextureRegion wall = getWallTextureByCell(x, y);
@@ -185,7 +187,7 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 		// Here to get texture number shift we pass absolute coordinates x and y, because,
 		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
 		int[] d = dir.side2d();
-		RenderCell neighborCell = gameScreen.getCell(x + d[0], y + d[1]);
+		RenderCell neighborCell = renderWorld.getCell(x + d[0], y + d[1]);
 		TextureRegion transition = null;
 		boolean noNeighbor = neighborCell == null;
 		if (noNeighbor) {
@@ -200,18 +202,18 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 			Gdx.gl.glDepthMask(true);
 			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
 		} else if (dir.isHorizontal()
-			&& gameScreen.hasCell(x, y + 1)
-			&& !gameScreen.getCell(x, y + 1).hasWall()
+			&& renderWorld.hasCell(x, y + 1)
+			&& !renderWorld.getCell(x, y + 1).hasWall()
 			) {
 			// Draw transitions just on south side of a wall in case where a neighbor wall is visible, but there should
 			// be a transition because a cell below it is not.
-			if (gameScreen.hasCell(x + d[0], y + 1)
+			if (renderWorld.hasCell(x + d[0], y + 1)
 				&& neighborCell.isVisible()
 				&& cell.isVisible()
-				&& gameScreen.hasCell(x - d[0], y)
-				&& !gameScreen.getCell(x - d[0], y).hasWall()
+				&& renderWorld.hasCell(x - d[0], y)
+				&& !renderWorld.getCell(x - d[0], y).hasWall()
 				) {
-				if (!gameScreen.getCell(x + d[0], y + 1).isVisible()) {
+				if (!renderWorld.getCell(x + d[0], y + 1).isVisible()) {
 					// Draw mask for transitions to unseen south wall sides.
 					gameScreen.batch.setShader(drawOpaqueToDepth05Shader);
 					Gdx.gl.glColorMask(false, false, false, false);
@@ -233,7 +235,7 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 			}
 		}
 		if (transition != null) {
-			if (dir.isHorizontal() && gameScreen.hasCell(x, y + 1) && !gameScreen.getCell(x, y + 1).hasWall()) {
+			if (dir.isHorizontal() && renderWorld.hasCell(x, y + 1) && !renderWorld.getCell(x, y + 1).hasWall()) {
 				// If this wall has a visible south side,
 				// draw transitions on the lower part of a wall too.
 				gameScreen.batch.draw(transition, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
@@ -248,23 +250,23 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 }
 
 TextureRegion getWallTextureByCell(int x, int y) {
-	short wallId = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + y).getWall();
+	short wallId = gameScreen.renderWorld.getCell(x, y).getWall();
 	WallType wallType = WallType.getById(wallId);
 	String name = wallType.getName();
 	int index = 0;
-	RenderCell neighborCell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + (y - 1));
+	RenderCell neighborCell = gameScreen.renderWorld.getCell(x, y - 1);
 	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 1000;
 	}
-	neighborCell = gameScreen.cells.get((x + 1) * gameScreen.backendWorld.getHeight() + y);
+	neighborCell = gameScreen.renderWorld.getCell(x + 1, y);
 	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 100;
 	}
-	neighborCell = gameScreen.cells.get(x * gameScreen.backendWorld.getHeight() + (y + 1));
+	neighborCell = gameScreen.renderWorld.getCell(x, y + 1);
 	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 10;
 	}
-	neighborCell = gameScreen.cells.get((x - 1) * gameScreen.backendWorld.getHeight() + y);
+	neighborCell = gameScreen.renderWorld.getCell(x - 1, y);
 	if (neighborCell == null || neighborCell.getWall() == wallId) {
 		index += 1;
 	}

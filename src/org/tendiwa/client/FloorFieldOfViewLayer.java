@@ -56,7 +56,7 @@ public void draw() {
 	int maxRenderCellY = gameScreen.getMaxRenderCellY();
 	for (int x = gameScreen.startCellX; x < maxRenderCellX; x++) {
 		for (int y = gameScreen.startCellY; y < maxRenderCellY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
 			if (cell != null) {
 				if (!cell.isVisible()) {
 					shapeRen.rect(x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
@@ -72,7 +72,7 @@ public void draw() {
 	fovEdgeOpaque.batch.begin();
 	for (int x = gameScreen.startCellX; x < maxRenderCellX; x++) {
 		for (int y = gameScreen.startCellY; y < maxRenderCellY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
 			if (cell != null && cell.isVisible()) {
 				boolean[] hasUnseenNeighbors = getHasUnseenNeighbors(x, y);
 				if (hasUnseenNeighbors[0] || hasUnseenNeighbors[1] || hasUnseenNeighbors[2] || hasUnseenNeighbors[3]) {
@@ -109,7 +109,7 @@ public void draw() {
 	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxRenderCellX; x++) {
 		for (int y = gameScreen.startCellY; y < maxRenderCellY; y++) {
-			RenderCell cell = gameScreen.getCell(x, y);
+			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
 			if (cell != null) {
 				int hashX, hashY;
 				if (cell.isVisible()) {
@@ -202,19 +202,19 @@ public Mesh createFullScreenQuad() {
 
 private boolean[] getHasNotYetSeenNeighbors(int x, int y) {
 	return new boolean[]{
-		!gameScreen.hasCell(x, y - 1),
-		!gameScreen.hasCell(x + 1, y),
-		!gameScreen.hasCell(x, y + 1),
-		!gameScreen.hasCell(x - 1, y)
+		!gameScreen.renderWorld.hasCell(x, y - 1),
+		!gameScreen.renderWorld.hasCell(x + 1, y),
+		!gameScreen.renderWorld.hasCell(x, y + 1),
+		!gameScreen.renderWorld.hasCell(x - 1, y)
 	};
 }
 
 private boolean[] getHasUnseenNeighbors(int x, int y) {
 	return new boolean[]{
-		gameScreen.hasCell(x, y - 1) && !gameScreen.getCell(x, y - 1).isVisible(),
-		gameScreen.hasCell(x + 1, y) && !gameScreen.getCell(x + 1, y).isVisible(),
-		gameScreen.hasCell(x, y + 1) && !gameScreen.getCell(x, y + 1).isVisible(),
-		gameScreen.hasCell(x - 1, y) && !gameScreen.getCell(x - 1, y).isVisible()
+		gameScreen.renderWorld.hasCell(x, y - 1) && !gameScreen.renderWorld.getCell(x, y - 1).isVisible(),
+		gameScreen.renderWorld.hasCell(x + 1, y) && !gameScreen.renderWorld.getCell(x + 1, y).isVisible(),
+		gameScreen.renderWorld.hasCell(x, y + 1) && !gameScreen.renderWorld.getCell(x, y + 1).isVisible(),
+		gameScreen.renderWorld.hasCell(x - 1, y) && !gameScreen.renderWorld.getCell(x - 1, y).isVisible()
 	};
 }
 }

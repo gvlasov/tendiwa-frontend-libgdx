@@ -1,6 +1,7 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.InputProcessor;
+import org.tendiwa.events.RequestPickUp;
 import tendiwa.core.*;
 
 import java.util.LinkedList;
@@ -29,24 +30,19 @@ public boolean keyDown(int keycode) {
 		if (gameScreen.startCellX > gameScreen.cameraMoveStep - 1) {
 			gameScreen.centerCamera(gameScreen.centerPixelX - GameScreen.TILE_SIZE, gameScreen.centerPixelY);
 		}
-	}
-	if (keycode == RIGHT) {
+	} else if (keycode == RIGHT) {
 		if (gameScreen.startCellX < gameScreen.maxStartX) {
 			gameScreen.centerCamera(gameScreen.centerPixelX + GameScreen.TILE_SIZE, gameScreen.centerPixelY);
 		}
-	}
-	if (keycode == UP) {
+	} else if (keycode == UP) {
 		if (gameScreen.startCellY > gameScreen.cameraMoveStep - 1) {
 			gameScreen.centerCamera(gameScreen.centerPixelX, gameScreen.centerPixelY - GameScreen.TILE_SIZE);
 		}
-	}
-	if (keycode == DOWN) {
+	} else if (keycode == DOWN) {
 		if (gameScreen.startCellY < gameScreen.maxStartY) {
 			gameScreen.centerCamera(gameScreen.centerPixelX, gameScreen.centerPixelY + GameScreen.TILE_SIZE);
 		}
-	}
-	// Movement
-	if (keycode == H || keycode == NUMPAD_4) {
+	} else if (keycode == H || keycode == NUMPAD_4) {
 		if (player.canStepOn(player.getX() - 1, player.getY())) {
 			Tendiwa.getServer().pushRequest(new RequestWalk(Directions.W));
 		}
@@ -88,6 +84,10 @@ public boolean keyDown(int keycode) {
 		TendiwaClientLibgdxEventManager.toggleAnimations();
 	} else if (keycode == F11) {
 		gameScreen.toggleStatusbar();
+	} else if (keycode == G) {
+		if (player.getPlane().hasAnyItems(player.getX(), player.getY())) {
+			Tendiwa.getServer().pushRequest(new RequestPickUp());
+		}
 	}
 	return true;
 }
