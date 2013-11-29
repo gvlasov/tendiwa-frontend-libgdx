@@ -96,7 +96,11 @@ public void draw() {
 	shapeRen.begin(ShapeRenderer.ShapeType.Filled);
 	shapeRen.setColor(0, 0, 0, 0.4f);
 	// Draw black transparent color above mask
-	shapeRen.rect(gameScreen.startCellX * GameScreen.TILE_SIZE, gameScreen.startCellY * GameScreen.TILE_SIZE, gameScreen.windowWidth + GameScreen.TILE_SIZE, gameScreen.windowHeight + GameScreen.TILE_SIZE);
+	shapeRen.rect(
+		gameScreen.startCellX * GameScreen.TILE_SIZE,
+		gameScreen.startCellY * GameScreen.TILE_SIZE,
+		(gameScreen.startCellX + gameScreen.getMaxRenderCellX()) * GameScreen.TILE_SIZE,
+		(gameScreen.startCellY + gameScreen.getMaxRenderCellY()) * GameScreen.TILE_SIZE);
 	shapeRen.end();
 
 	// Draw transitions to not yet seen cells

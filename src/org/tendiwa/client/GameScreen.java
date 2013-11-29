@@ -46,6 +46,7 @@ private final TendiwaStage stage;
 private final CellNetLayer cellNetLayer;
 private final Cursor cursor;
 private final ItemsLayer itemsLayer;
+private final TendiwaUiStage uiStage;
 protected int startCellX;
 OrthographicCamera camera;
 /**
@@ -89,7 +90,7 @@ public GameScreen(final TendiwaGame game) {
 	windowWidthCells = (int) Math.ceil(((float) windowWidth) / TILE_SIZE);
 	windowHeightCells = (int) Math.ceil(((float) windowHeight) / TILE_SIZE);
 
-	camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+	camera = new OrthographicCamera(windowWidth, windowHeight);
 	camera.setToOrtho(true, windowWidth, windowHeight);
 	centerCamera(player.getX() * TILE_SIZE, player.getY() * TILE_SIZE);
 	camera.update();
@@ -122,6 +123,7 @@ public GameScreen(final TendiwaGame game) {
 	cellNetLayer = new CellNetLayer(this);
 	itemsLayer = new ItemsLayer(this);
 	cursor = new Cursor(this);
+	uiStage = new TendiwaUiStage(this);
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -131,6 +133,10 @@ public static ShaderProgram createShader(FileHandle file) {
 		throw new RuntimeException("Could not compile a shader");
 	}
 	return shader;
+}
+
+public static RenderWorld getRenderWorld() {
+	return INSTANCE.renderWorld;
 }
 
 /**
@@ -156,8 +162,8 @@ void centerCamera(int x, int y) {
 	if (y > maxPixelY) {
 		y = maxPixelY;
 	}
-	startCellX = (x - x % TILE_SIZE) / TILE_SIZE - windowWidthCells / 2;
-	startCellY = (y - y % TILE_SIZE) / TILE_SIZE - windowHeightCells / 2;
+	startCellX = x / TILE_SIZE - windowWidthCells / 2 - windowWidthCells % 2;
+	startCellY = y / TILE_SIZE - windowHeightCells / 2 - windowHeightCells % 2;
 	centerPixelX = x;
 	centerPixelY = y;
 	startPixelX = centerPixelX - windowWidth / 2;
@@ -198,6 +204,8 @@ public void render(float delta) {
 	cursor.updateCursorCoords();
 	cellNetLayer.draw();
 	stage.draw();
+//	uiStage.draw();
+//	Table.drawDebug(uiStage);
 	drawObjects();
 }
 
@@ -251,11 +259,11 @@ boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
 }
 
 int getMaxRenderCellX() {
-	return startCellX + windowWidthCells + (startPixelX % TILE_SIZE == 0 ? 0 : 1);
+	return startCellX + windowWidthCells + (startPixelX % TILE_SIZE == 0 ? 0 : 1) + (windowWidthCells % 2 == 0 ? 0 : 1);
 }
 
 int getMaxRenderCellY() {
-	return startCellY + windowHeightCells + (startPixelY % TILE_SIZE == 0 ? 0 : 1);
+	return startCellY + windowHeightCells + (startPixelY % TILE_SIZE == 0 ? 0 : 1) + (windowHeightCells % 2 == 0 ? 0 : 1);
 }
 
 private void processEvents() {
@@ -325,9 +333,5 @@ public TendiwaStage getStage() {
 
 public void toggleStatusbar() {
 	statusbarEnabled = !statusbarEnabled;
-}
-
-public static RenderWorld getRenderWorld() {
-	return INSTANCE.renderWorld;
 }
 }

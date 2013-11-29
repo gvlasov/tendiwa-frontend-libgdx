@@ -18,7 +18,7 @@ private SpriteBatch batch;
 WorldMapScreen(final TendiwaGame game) {
 	this.game = game;
 	camera = new OrthographicCamera();
-	camera.setToOrtho(false, Tendiwa.getWorld().getWidth(), Tendiwa.getWorld().getHeight());
+	camera.setToOrtho(true, Tendiwa.getWorldWidth(), Tendiwa.getWorldHeight());
 
 	batch = new SpriteBatch();
 	setRenderOnce();
@@ -40,9 +40,7 @@ public void render(float delta) {
 	HorizontalPlane plane = world.getDefaultPlane();
 	int width = world.getWidth();
 	int height = world.getHeight();
-	int width1 = nearestPowerOf2(width);
-	int height1 = nearestPowerOf2(height);
-	Pixmap pixmap = new Pixmap(width1, height1, Pixmap.Format.RGBA8888);
+	Pixmap pixmap = new Pixmap(width, height, Pixmap.Format.RGBA8888);
 
 	for (int x = 0; x < width; x++) {
 		for (int y = 0; y < height; y++) {
@@ -61,7 +59,7 @@ public void render(float delta) {
 			pixmap.drawPixel(x, y, color);
 		}
 	}
-	batch.draw(new Texture(pixmap), 0, -424.0f);
+	batch.draw(new Texture(pixmap), 0, 0);
 	batch.end();
 
 }

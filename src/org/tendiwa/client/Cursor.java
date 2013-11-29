@@ -20,8 +20,8 @@ void updateCursorCoords() {
 	int cursorY = Gdx.input.getY();
 	int cursorScreenCoordX = (cursorX - cursorX % GameScreen.TILE_SIZE);
 	int cursorScreenCoordY = (cursorY - cursorY % GameScreen.TILE_SIZE);
-	worldX = gameScreen.startCellX + cursorScreenCoordX / GameScreen.TILE_SIZE;
-	worldY = gameScreen.startCellY + cursorScreenCoordY / GameScreen.TILE_SIZE;
+	worldX = (gameScreen.startPixelX + cursorX) / GameScreen.TILE_SIZE;
+	worldY = (gameScreen.startPixelY + cursorY) / GameScreen.TILE_SIZE;
 }
 
 public int getWorldY() {

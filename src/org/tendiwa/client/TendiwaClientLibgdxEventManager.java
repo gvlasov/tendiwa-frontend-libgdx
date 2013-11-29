@@ -4,6 +4,7 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import org.tendiwa.events.*;
 import tendiwa.core.*;
 
@@ -80,7 +81,6 @@ public void event(final EventFovChange eventFovChange) {
 					}
 				}
 			}
-			HorizontalPlane plane = gameScreen.player.getPlane();
 			for (RenderCell cell : eventFovChange.seen) {
 				GameScreen.getRenderWorld().seeCell(cell);
 				if (gameScreen.renderWorld.hasAnyUnseenItems(cell.x, cell.y)) {
@@ -110,18 +110,23 @@ public void event(final EventItemDisappear eventItemDisappear) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			ItemActor itemActor = gameScreen.getStage().getItemActor(eventItemDisappear.getItem());
+			ItemActor itemActor = gameScreen.getStage().obtainItemActor(
+				eventItemDisappear.getX(),
+				eventItemDisappear.getY(),
+				eventItemDisappear.getItem()
+			);
 			if (animationsEnabled) {
 				AlphaAction alphaAction = new AlphaAction();
 				alphaAction.setAlpha(0.0f);
 				alphaAction.setDuration(0.4f);
-				itemActor.addAction(sequence(alphaAction, run(new Runnable() {
+				Action sequence = sequence(alphaAction, run(new Runnable() {
 					@Override
 					public void run() {
 						gameScreen.getStage().removeItemActor(eventItemDisappear.getItem());
 						gameScreen.signalEventProcessingDone();
 					}
-				})));
+				}));
+				itemActor.addAction(sequence);
 			} else {
 				gameScreen.getStage().removeItemActor(eventItemDisappear.getItem());
 				gameScreen.signalEventProcessingDone();

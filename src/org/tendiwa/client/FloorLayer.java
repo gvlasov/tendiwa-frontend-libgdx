@@ -102,13 +102,13 @@ void drawFloor(short floorId, int x, int y) {
 
 private void drawTransitions(boolean liquid) {
 	// Draw transitions
-	for (int x = 0; x < gameScreen.windowWidth / GameScreen.TILE_SIZE; x++) {
-		for (int y = 0; y < gameScreen.windowHeight / GameScreen.TILE_SIZE; y++) {
-			RenderCell cell = gameScreen.renderWorld.getCell(gameScreen.startCellX + x, gameScreen.startCellY + y);
+	for (int x = gameScreen.startCellX; x < gameScreen.getMaxRenderCellX(); x++) {
+		for (int y = gameScreen.startCellY; y < gameScreen.getMaxRenderCellY(); y++) {
+			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
 			if (cell != null
-				&& (!cell.hasWall() || gameScreen.isFloorUnderWallShouldBeDrawn(gameScreen.startCellX + x, gameScreen.startCellY + y))
+				&& (!cell.hasWall() || gameScreen.isFloorUnderWallShouldBeDrawn(x, y))
 				) {
 				drawFloorTransitionsInCell(cell, liquid);
 			}

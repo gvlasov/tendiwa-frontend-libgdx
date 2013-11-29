@@ -3,8 +3,8 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import tendiwa.core.*;
 import tendiwa.core.Character;
+import tendiwa.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +14,7 @@ public class TendiwaStage extends Stage {
 private final GameScreen gameScreen;
 private Map<Character, Actor> characterActors = new HashMap<>();
 private Actor playerCharacterActor;
-private Map<RememberedItem, ItemActor> itemActors = new HashMap<>();
+private Map<Item, ItemActor> itemActors = new HashMap<>();
 
 TendiwaStage(GameScreen gameScreen) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
@@ -51,21 +51,31 @@ public Actor getPlayerCharacterActor() {
 	return playerCharacterActor;
 }
 
-public ItemActor getItemActor(Item item) {
-	assert itemActors.containsKey(item);
-	return itemActors.get(item);
-}
-
-public void createActorForItem(RememberedItem item) {
+/**
+ * Returns an existing ItemActor for a {@link RememberedItem}, or creates a new ItemActor for a RememberedItem and
+ * returns it.
+ *
+ * @param item
+ * 	A remembered item.
+ * @return An existing or a new ItemActor.
+ */
+public ItemActor obtainItemActor(int x, int y, Item item) {
 	if (itemActors.containsKey(item)) {
-		throw new UnsupportedOperationException("Actor for item " + item + " has already been created");
+		return itemActors.get(item);
+	} else {
+		ItemActor itemActor = new ItemActor(x, y, item);
+		addActor(itemActor);
+		itemActors.put(item, itemActor);
+		return itemActor;
 	}
-	ItemActor actor = new ItemActor(item);
-	itemActors.put(item, actor);
-	addActor(actor);
 }
 
 public void removeItemActor(Item item) {
+	getRoot().removeActor(itemActors.get(item));
 	itemActors.remove(item);
+}
+
+public boolean hasActorForItem(Item item) {
+	return itemActors.containsKey(item);
 }
 }
