@@ -4,7 +4,6 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
-import com.badlogic.gdx.scenes.scene2d.actions.SequenceAction;
 import org.tendiwa.events.*;
 import tendiwa.core.*;
 
@@ -137,7 +136,28 @@ public void event(final EventItemDisappear eventItemDisappear) {
 
 @Override
 public void event(final EventGetItem eventGetItem) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			TendiwaUiStage.getInventory().update();
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
 
+@Override
+public void event(EventLoseItem eventLoseItem) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			TendiwaUiStage.getInventory().update();
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(EventItemAppear eventItemAppear) {
 }
 
 public Queue<EventResult> getPendingOperations() {

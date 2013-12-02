@@ -61,8 +61,8 @@ public void startup() {
 	this.cfg = new LwjglApplicationConfiguration();
 	cfg.title = "The Tendiwa Erpoge";
 	cfg.useGL20 = true;
-	cfg.width = 800;
-	cfg.height = 600;
+	cfg.width = 1024;
+	cfg.height = 768;
 	cfg.resizable = false;
 	cfg.vSyncEnabled = false;
 	cfg.forceExit = true;

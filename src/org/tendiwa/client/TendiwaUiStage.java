@@ -1,9 +1,11 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
@@ -13,14 +15,45 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 
 public class TendiwaUiStage extends Stage {
-
+private static TendiwaUiStage INSTANCE;
+private static UiInventory inventory;
 private final GameScreen gameScreen;
 private Skin skin;
 
-public TendiwaUiStage(GameScreen gameScreen) {
-	super(gameScreen.windowWidth, gameScreen.windowHeight);
+private TendiwaUiStage(GameScreen gameScreen, SpriteBatch batch) {
+	super(gameScreen.windowWidth, gameScreen.windowHeight, true, batch);
 	this.gameScreen = gameScreen;
-	initializeActors();
+}
+
+public static TendiwaUiStage getInstance() {
+	if (INSTANCE == null) {
+		throw new UnsupportedOperationException("TendiwaUiStage has not yet been initiated");
+	}
+	return INSTANCE;
+}
+
+public static TendiwaUiStage init(GameScreen gameScreen) {
+	if (INSTANCE != null) {
+		throw new UnsupportedOperationException("TendiwaUiStage has already been initiated");
+	}
+	SpriteBatch batch = new SpriteBatch();
+	OrthographicCamera camera = new OrthographicCamera(gameScreen.windowWidth, gameScreen.windowHeight);
+	camera.setToOrtho(false, gameScreen.windowWidth, gameScreen.windowHeight);
+//	batch.setProjectionMatrix(camera.combined);
+	INSTANCE = new TendiwaUiStage(gameScreen, batch);
+	INSTANCE.setCamera(camera);
+	INSTANCE.initializeActors();
+	return INSTANCE;
+}
+
+static Image createImage(Color color) {
+	System.out.println(INSTANCE);
+	Image image = new Image(INSTANCE.skin.newDrawable("white", color));
+	return image;
+}
+
+public static UiInventory getInventory() {
+	return inventory;
 }
 
 private void initializeActors() {
@@ -28,13 +61,9 @@ private void initializeActors() {
 
 	Table table = createTable();
 	table.setSize(gameScreen.windowWidth, gameScreen.windowHeight);
-	TextButton button = createButton();
 	this.addActor(table);
-	table.add(createImage()).size(gameScreen.windowWidth, 400).colspan(2);
-	table.row();
-	table.add(button).size(100, 200).left().center();
-
-	table.add(createImage()).size(64).bottom();
+	inventory = new UiInventory();
+	table.add(inventory).expand().right().bottom();
 	table.layout();
 }
 
@@ -42,10 +71,6 @@ private Table createTable() {
 	Table table = new Table();
 	table.setFillParent(true);
 	return table;
-}
-
-private Image createImage() {
-	return new Image(skin.newDrawable("white", Color.RED));
 }
 
 private TextButton createButton() {
@@ -78,5 +103,4 @@ private void initializeStyles() {
 	textButtonStyle.font = skin.getFont("default");
 	skin.add("default", textButtonStyle);
 }
-
 }

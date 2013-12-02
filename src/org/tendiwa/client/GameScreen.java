@@ -1,6 +1,7 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
@@ -13,6 +14,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import tendiwa.core.*;
 
 import java.util.HashMap;
@@ -39,6 +41,7 @@ final int windowHeightCells;
 final RenderWorld renderWorld;
 private final TendiwaGame game;
 private final TextureAtlas atlasObjects;
+private final TextureAtlas atlasUi;
 private final GameScreenInputProcessor controller;
 private final FloorLayer floorLayer;
 private final FloorFieldOfViewLayer floorFieldOfViewLayer;
@@ -47,6 +50,8 @@ private final CellNetLayer cellNetLayer;
 private final Cursor cursor;
 private final ItemsLayer itemsLayer;
 private final TendiwaUiStage uiStage;
+private final InputMultiplexer inputMultiplexer;
+private final Server server;
 protected int startCellX;
 OrthographicCamera camera;
 /**
@@ -96,6 +101,7 @@ public GameScreen(final TendiwaGame game) {
 	camera.update();
 
 	atlasObjects = new TextureAtlas(Gdx.files.internal("pack/objects.atlas"), true);
+	atlasUi = new TextureAtlas(Gdx.files.internal("pack/ui.atlas"), true);
 
 	TransitionPregenerator.initTileTextureRegionProvider(100);
 
@@ -112,7 +118,6 @@ public GameScreen(final TendiwaGame game) {
 	stage = new TendiwaStage(this);
 
 	controller = new GameScreenInputProcessor(this);
-	Gdx.input.setInputProcessor(controller);
 
 	setRenderingMode();
 
@@ -123,7 +128,10 @@ public GameScreen(final TendiwaGame game) {
 	cellNetLayer = new CellNetLayer(this);
 	itemsLayer = new ItemsLayer(this);
 	cursor = new Cursor(this);
-	uiStage = new TendiwaUiStage(this);
+	uiStage = TendiwaUiStage.init(this);
+	inputMultiplexer = new InputMultiplexer(uiStage, controller);
+	Gdx.input.setInputProcessor(inputMultiplexer);
+	server = Tendiwa.getServer();
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -182,36 +190,38 @@ private void setRenderingMode() {
 
 @Override
 public void render(float delta) {
-	Actor characterActor = stage.getPlayerCharacterActor();
-	processEvents();
-	stage.act(Gdx.graphics.getDeltaTime());
-	centerCamera(
-		(int) (characterActor.getX() * TILE_SIZE),
-		(int) (characterActor.getY() * TILE_SIZE)
-	);
+	synchronized (server) {
+		Actor characterActor = stage.getPlayerCharacterActor();
+		processEvents();
+		stage.act(Gdx.graphics.getDeltaTime());
+		centerCamera(
+			(int) (characterActor.getX() * TILE_SIZE),
+			(int) (characterActor.getY() * TILE_SIZE)
+		);
 
-	camera.position.set(centerPixelX, centerPixelY, 0);
+		camera.position.set(centerPixelX, centerPixelY, 0);
 
-	Gdx.gl.glClearColor(0, 0, 0, 1);
-	Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-	camera.update();
-	batch.setProjectionMatrix(camera.combined);
+		Gdx.gl.glClearColor(0, 0, 0, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		camera.update();
+		batch.setProjectionMatrix(camera.combined);
 
-	floorLayer.draw();
-	floorFieldOfViewLayer.draw();
-	wallsLayer.draw();
-	itemsLayer.draw();
-	cursor.updateCursorCoords();
-	cellNetLayer.draw();
-	stage.draw();
-//	uiStage.draw();
-//	Table.drawDebug(uiStage);
-	drawObjects();
+		floorLayer.draw();
+		floorFieldOfViewLayer.draw();
+		wallsLayer.draw();
+		itemsLayer.draw();
+		cursor.updateCursorCoords();
+		cursor.draw();
+		cellNetLayer.draw();
+		drawObjects();
+		stage.draw();
+		uiStage.draw();
+		Table.drawDebug(uiStage);
+	}
 }
 
 private void drawObjects() {
 	batch.begin();
-	batch.draw(cursor.getTexture(), cursor.getWorldX() * TILE_SIZE, cursor.getWorldY() * TILE_SIZE);
 	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
 		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY || centerPixelY == maxPixelY - TILE_SIZE ? 0 : 2); y++) {
@@ -333,5 +343,9 @@ public TendiwaStage getStage() {
 
 public void toggleStatusbar() {
 	statusbarEnabled = !statusbarEnabled;
+}
+
+public TextureAtlas getAtlasUi() {
+	return atlasUi;
 }
 }

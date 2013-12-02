@@ -1,15 +1,19 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import tendiwa.core.*;
 
 public class ItemsLayer {
 private final GameScreen gameScreen;
 private final RenderWorld renderWorld;
+private final TextureRegion multipleItemsMarker;
 
 ItemsLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
-	this.renderWorld = gameScreen.getRenderWorld();
+	this.renderWorld = GameScreen.getRenderWorld();
+
+	multipleItemsMarker = gameScreen.getAtlasUi().findRegion("multiItem");
 }
 
 void draw() {
@@ -22,14 +26,17 @@ void draw() {
 			if (renderWorld.isCellVisible(x, y) && plane.hasAnyItems(x, y)) {
 				// Check for objective view (we could maintain character's own subjective view on items,
 				// but that's difficult and maybe will appear later.
-				for (Item item : plane.getItems(x, y)) {
-					if (Tendiwa.getPlayer().canSee(x, y)) {
-						gameScreen.batch.draw(
-							AtlasItems.getInstance().findRegion(item.getType().getName()),
-							x * GameScreen.TILE_SIZE,
-							y * GameScreen.TILE_SIZE
-						);
-					}
+				ItemCollection items = plane.getItems(x, y);
+				assert items.iterator().hasNext() : items.size();
+				Item item = items.iterator().next();
+				assert item != null;
+				gameScreen.batch.draw(
+					AtlasItems.getInstance().findRegion(item.getType().getName()),
+					x * GameScreen.TILE_SIZE,
+					y * GameScreen.TILE_SIZE
+				);
+				if (items.size() > 1) {
+					gameScreen.batch.draw(multipleItemsMarker, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
 				}
 			}
 		}

@@ -40,4 +40,9 @@ private Texture buildCursorTexture() {
 	pixmap.fillRectangle(0, 0, 31, 31);
 	return new Texture(pixmap);
 }
+public void draw() {
+	gameScreen.batch.begin();
+	gameScreen.batch.draw(getTexture(), getWorldX() * GameScreen.TILE_SIZE, getWorldY() * GameScreen.TILE_SIZE);
+	gameScreen.batch.end();
+}
 }

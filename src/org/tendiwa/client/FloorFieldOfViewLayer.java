@@ -117,9 +117,11 @@ public void draw() {
 			if (cell != null) {
 				int hashX, hashY;
 				if (cell.isVisible()) {
+					// For visible cells
 					hashX = x + gameScreen.windowWidthCells - gameScreen.player.getX();
 					hashY = y + gameScreen.windowHeightCells - gameScreen.player.getY();
 				} else {
+					// For unseen cells
 					hashX = x;
 					hashY = y;
 				}

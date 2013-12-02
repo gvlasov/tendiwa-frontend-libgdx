@@ -115,17 +115,20 @@ public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 		return true;
 	}
 	final LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
-	if (path == null) {
+	if (path == null || path.size() == 0) {
 		return true;
 	}
+//	System.out.println(path);
 	currentTask = new Task() {
 		@Override
 		public boolean ended() {
+//			System.out.println(gameScreen.player.getX()+" "+cellX+" "+gameScreen.player.getY()+" "+cellY);
 			return gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
 		}
 
 		@Override
 		public void execute() {
+//			System.out.println("inside " +path);
 			EnhancedPoint nextStep = path.removeFirst();
 			Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
 				nextStep.x - player.getX(),
