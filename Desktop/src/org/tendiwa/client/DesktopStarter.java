@@ -1,7 +1,6 @@
 package org.tendiwa.client;
 
-import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
-import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import tendiwa.core.Tendiwa;
 
 public class DesktopStarter {
 public static void main(String[] args) {
@@ -14,6 +13,7 @@ public static void main(String[] args) {
 
 public static void loadGame() {
 	TendiwaGame.getInstance().startup();
+	Tendiwa.getLogger().setLevel(org.apache.log4j.Level.DEBUG);
 }
 
 public static void buildResources() {

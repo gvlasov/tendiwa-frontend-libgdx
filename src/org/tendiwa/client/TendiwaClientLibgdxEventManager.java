@@ -160,7 +160,59 @@ public void event(EventLoseItem eventLoseItem) {
 public void event(EventItemAppear eventItemAppear) {
 }
 
+@Override
+public void event(final EventPutOn eventPutOn) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			if (eventPutOn.getCharacter().isPlayer()) {
+				TendiwaUiStage.getInventory().update();
+			}
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
 public Queue<EventResult> getPendingOperations() {
 	return pendingOperations;
+}
+
+@Override
+public void event(final EventWield eventWield) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			if (eventWield.getCharacter().isPlayer()) {
+				TendiwaUiStage.getInventory().update();
+			}
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventTakeOff eventTakeOff) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			if (eventTakeOff.getCharacter().isPlayer()) {
+				TendiwaUiStage.getInventory().update();
+			}
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventUnwield eventUnwield) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			if (eventUnwield.getCharacter().isPlayer()) {
+				TendiwaUiStage.getInventory().update();
+			}
+			gameScreen.signalEventProcessingDone();
+		}
+	});
 }
 }

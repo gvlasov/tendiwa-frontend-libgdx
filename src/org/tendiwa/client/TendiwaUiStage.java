@@ -63,7 +63,7 @@ private void initializeActors() {
 	table.setSize(gameScreen.windowWidth, gameScreen.windowHeight);
 	this.addActor(table);
 	inventory = new UiInventory();
-	table.add(inventory).expand().right().bottom();
+	table.add(inventory).expand().right().bottom().size(400, 300);
 	table.layout();
 }
 
