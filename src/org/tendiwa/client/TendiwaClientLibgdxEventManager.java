@@ -38,7 +38,7 @@ public void event(final EventMove e) {
 			Actor characterActor = gameScreen.getStage().getCharacterActor(e.getCharacter());
 			if (animationsEnabled) {
 				MoveToAction action = new MoveToAction();
-				action.setPosition(Tendiwa.getPlayer().getX(), Tendiwa.getPlayer().getY());
+				action.setPosition(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY());
 				action.setDuration(0.1f);
 				Action sequence = sequence(action, run(new Runnable() {
 					@Override
@@ -48,8 +48,8 @@ public void event(final EventMove e) {
 				}));
 				characterActor.addAction(sequence);
 			} else {
-				characterActor.setX(Tendiwa.getPlayer().getX());
-				characterActor.setY(Tendiwa.getPlayer().getY());
+				characterActor.setX(Tendiwa.getPlayerCharacter().getX());
+				characterActor.setY(Tendiwa.getPlayerCharacter().getY());
 				gameScreen.signalEventProcessingDone();
 			}
 		}
@@ -168,6 +168,9 @@ public void event(final EventPutOn eventPutOn) {
 			if (eventPutOn.getCharacter().isPlayer()) {
 				TendiwaUiStage.getInventory().update();
 			}
+			if (eventPutOn.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
+				gameScreen.getStage().getCharacterActor(eventPutOn.getCharacter()).updateTexture();
+			}
 			gameScreen.signalEventProcessingDone();
 		}
 	});
@@ -185,6 +188,9 @@ public void event(final EventWield eventWield) {
 			if (eventWield.getCharacter().isPlayer()) {
 				TendiwaUiStage.getInventory().update();
 			}
+			if (eventWield.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
+				gameScreen.getStage().getCharacterActor(eventWield.getCharacter()).updateTexture();
+			}
 			gameScreen.signalEventProcessingDone();
 		}
 	});
@@ -198,6 +204,9 @@ public void event(final EventTakeOff eventTakeOff) {
 			if (eventTakeOff.getCharacter().isPlayer()) {
 				TendiwaUiStage.getInventory().update();
 			}
+			if (eventTakeOff.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
+				gameScreen.getStage().getCharacterActor(eventTakeOff.getCharacter()).updateTexture();
+			}
 			gameScreen.signalEventProcessingDone();
 		}
 	});
@@ -210,6 +219,9 @@ public void event(final EventUnwield eventUnwield) {
 		public void process() {
 			if (eventUnwield.getCharacter().isPlayer()) {
 				TendiwaUiStage.getInventory().update();
+			}
+			if (eventUnwield.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
+				gameScreen.getStage().getCharacterActor(eventUnwield.getCharacter()).updateTexture();
 			}
 			gameScreen.signalEventProcessingDone();
 		}

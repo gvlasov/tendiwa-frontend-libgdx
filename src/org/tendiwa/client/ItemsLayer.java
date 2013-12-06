@@ -31,7 +31,7 @@ void draw() {
 				Item item = items.iterator().next();
 				assert item != null;
 				gameScreen.batch.draw(
-					AtlasItems.getInstance().findRegion(item.getType().getName()),
+					AtlasItems.getInstance().findRegion(item.getType().getResourceName()),
 					x * GameScreen.TILE_SIZE,
 					y * GameScreen.TILE_SIZE
 				);
@@ -60,7 +60,7 @@ void draw() {
 }
 
 private TextureAtlas.AtlasRegion getTexture(ItemType type) {
-	return AtlasItems.getInstance().findRegion(type.getName());
+	return AtlasItems.getInstance().findRegion(type.getResourceName());
 }
 
 }

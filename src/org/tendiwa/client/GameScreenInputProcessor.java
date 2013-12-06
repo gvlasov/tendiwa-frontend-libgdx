@@ -3,6 +3,7 @@ package org.tendiwa.client;
 import com.badlogic.gdx.InputProcessor;
 import org.tendiwa.events.RequestPickUp;
 import tendiwa.core.*;
+import tendiwa.core.Character;
 
 import java.util.LinkedList;
 
@@ -10,13 +11,13 @@ import static com.badlogic.gdx.Input.Keys.*;
 
 public class GameScreenInputProcessor implements InputProcessor {
 final GameScreen gameScreen;
-final PlayerCharacter player;
+final Character player;
 final World world;
 private Task currentTask;
 
 GameScreenInputProcessor(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
-	this.player = Tendiwa.getPlayer();
+	this.player = Tendiwa.getPlayerCharacter();
 	this.world = Tendiwa.getWorld();
 }
 

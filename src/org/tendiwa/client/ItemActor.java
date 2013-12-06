@@ -10,7 +10,7 @@ public class ItemActor extends Actor {
 private final TextureRegion texture;
 
 public ItemActor(int x, int y, Item item) {
-	texture = AtlasItems.getInstance().findRegion(item.getType().getName());
+	texture = AtlasItems.getInstance().findRegion(item.getType().getResourceName());
 	setX(x);
 	setY(y);
 }

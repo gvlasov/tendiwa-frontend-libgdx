@@ -16,6 +16,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import tendiwa.core.*;
+import tendiwa.core.Character;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -59,7 +60,7 @@ OrthographicCamera camera;
  * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.events.Event}s.
  */
 World backendWorld;
-PlayerCharacter player;
+Character player;
 int startCellY;
 int centerPixelX;
 int centerPixelY;
@@ -86,7 +87,7 @@ public GameScreen(final TendiwaGame game) {
 	INSTANCE = this;
 	this.game = game;
 	backendWorld = Tendiwa.getWorld();
-	player = Tendiwa.getPlayer();
+	player = Tendiwa.getPlayerCharacter();
 
 	worldWidthCells = Tendiwa.getWorld().getWidth();
 	worldHeightCells = Tendiwa.getWorld().getHeight();

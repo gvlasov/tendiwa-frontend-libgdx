@@ -10,7 +10,10 @@ import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import org.tendiwa.events.*;
-import tendiwa.core.*;
+import tendiwa.core.Equipment;
+import tendiwa.core.Item;
+import tendiwa.core.Tendiwa;
+import tendiwa.core.UniqueItem;
 
 public class UiInventory extends Table {
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
@@ -24,13 +27,13 @@ public UiInventory() {
 
 public void update() {
 	flowGroup.clearChildren();
-	for (final Item item : Tendiwa.getPlayer().getEquipment()) {
+	for (final Item item : Tendiwa.getPlayerCharacter().getEquipment()) {
 		Image itemIcon = createItemIcon(item);
 		itemIcon.setColor(Color.RED);
 		itemIcon.addListener(new InputListener() {
 			@Override
 			public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-				if (item.getType().hasAspect(AspectName.APPAREL)) {
+				if (item.getType().isWearable()) {
 					Tendiwa.getServer().pushRequest(new RequestTakeOff((UniqueItem) item));
 				} else {
 					Tendiwa.getServer().pushRequest(new RequestUnwield(item));
@@ -40,7 +43,7 @@ public void update() {
 		});
 		flowGroup.addActor(itemIcon);
 	}
-	for (final Item item : Tendiwa.getPlayer().getInventory()) {
+	for (final Item item : Tendiwa.getPlayerCharacter().getInventory()) {
 		Image itemIcon = createItemIcon(item);
 		itemIcon.addListener(new InputListener() {
 			@Override
@@ -48,12 +51,12 @@ public void update() {
 				if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
 					Tendiwa.getServer().pushRequest(new RequestDrop(item));
 				} else {
-					if (item.getType().hasAspect(AspectName.APPAREL)) {
-						if (Tendiwa.getPlayer().getEquipment().canPutOn((UniqueItem) item)) {
+					if (item.getType().isWearable()) {
+						if (Tendiwa.getPlayerCharacter().getEquipment().canPutOn((UniqueItem) item)) {
 							Tendiwa.getServer().pushRequest(new RequestPutOn((UniqueItem) item));
 						}
 					} else {
-						if (Tendiwa.getPlayer().getEquipment().canWield(item)) {
+						if (Tendiwa.getPlayerCharacter().getEquipment().canWield(item)) {
 							Tendiwa.getServer().pushRequest(new RequestWield(item));
 						}
 					}
@@ -67,11 +70,10 @@ public void update() {
 
 private Image createItemIcon(final Item item) {
 	assert item != Equipment.nullItem;
-	TextureAtlas.AtlasRegion region = AtlasItems.getInstance().findRegion(item.getType().getName());
+	TextureAtlas.AtlasRegion region = AtlasItems.getInstance().findRegion(item.getType().getResourceName());
 	TextureRegion newRegion = new TextureAtlas.AtlasRegion(region);
 	newRegion.flip(false, true);
-	Image image = new Image(newRegion);
-	return image;
+	return new Image(newRegion);
 }
 
 }

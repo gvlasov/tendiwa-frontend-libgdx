@@ -12,7 +12,7 @@ import java.util.Map;
 public class TendiwaStage extends Stage {
 
 private final GameScreen gameScreen;
-private Map<Character, Actor> characterActors = new HashMap<>();
+private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private Actor playerCharacterActor;
 private Map<Item, ItemActor> itemActors = new HashMap<>();
 
@@ -24,11 +24,11 @@ TendiwaStage(GameScreen gameScreen) {
 }
 
 private void initializeActors() {
-	TimeStream timeStream = gameScreen.backendWorld.getPlayerCharacter().getTimeStream();
+	TimeStream timeStream = gameScreen.backendWorld.getPlayer().getTimeStream();
 	for (Character character : timeStream.getCharacters()) {
-		Actor actor = createCharacterActor(character);
+		CharacterActor actor = createCharacterActor(character);
 		characterActors.put(character, actor);
-		if (character == Tendiwa.getPlayer()) {
+		if (character == Tendiwa.getPlayerCharacter()) {
 			playerCharacterActor = actor;
 		}
 	}
@@ -37,13 +37,13 @@ private void initializeActors() {
 	}
 }
 
-private Actor createCharacterActor(Character character) {
+private CharacterActor createCharacterActor(Character character) {
 	CharacterActor actor = new CharacterActor(character);
 	addActor(actor);
 	return actor;
 }
 
-public Actor getCharacterActor(Character character) {
+public CharacterActor getCharacterActor(Character character) {
 	return characterActors.get(character);
 }
 

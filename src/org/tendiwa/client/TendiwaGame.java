@@ -74,4 +74,7 @@ public void startup() {
 public TendiwaClientLibgdxEventManager getEventManager() {
 	return eventManager;
 }
+public GameScreen getGameScreen() {
+	return gameScreen;
+}
 }
