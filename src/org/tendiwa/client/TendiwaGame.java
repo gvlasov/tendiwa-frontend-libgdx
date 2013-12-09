@@ -10,6 +10,7 @@ import tendiwa.core.TendiwaClient;
 public class TendiwaGame extends Game implements TendiwaClient {
 
 private static TendiwaGame INSTANCE;
+private static ItemSelectionScreen itemSelectionScreen;
 public int WIDTH;
 public int HEIGHT;
 LwjglApplicationConfiguration cfg;
@@ -43,9 +44,22 @@ public static boolean isGameScreenActive() {
 	return INSTANCE.getScreen() == INSTANCE.gameScreen;
 }
 
+public static void switchToItemSelectionScreen() {
+	INSTANCE.setScreen(itemSelectionScreen);
+}
+
+public static ItemSelectionScreen getItemSelectionScreen() {
+	return itemSelectionScreen;
+}
+
+public static GameScreen getGameScreen() {
+	return INSTANCE.gameScreen;
+}
+
 @Override
 public void create() {
 	gameScreen = new GameScreen(this);
+	itemSelectionScreen = new ItemSelectionScreen();
 	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 	setScreen(gameScreen);
 	Tendiwa.getServer().pushRequest(new RequestInitialTerrain());
@@ -74,7 +88,9 @@ public void startup() {
 public TendiwaClientLibgdxEventManager getEventManager() {
 	return eventManager;
 }
-public GameScreen getGameScreen() {
-	return gameScreen;
+
+@Override
+public boolean isAnimationCompleted() {
+	return eventManager.getPendingOperations().isEmpty() && !gameScreen.isEventProcessingGoing();
 }
 }

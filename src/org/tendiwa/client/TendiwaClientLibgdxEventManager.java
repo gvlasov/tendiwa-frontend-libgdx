@@ -110,24 +110,24 @@ public void event(final EventItemDisappear eventItemDisappear) {
 		@Override
 		public void process() {
 			ItemActor itemActor = gameScreen.getStage().obtainItemActor(
-				eventItemDisappear.getX(),
-				eventItemDisappear.getY(),
-				eventItemDisappear.getItem()
+				eventItemDisappear.x,
+				eventItemDisappear.y,
+				eventItemDisappear.item
 			);
 			if (animationsEnabled) {
 				AlphaAction alphaAction = new AlphaAction();
 				alphaAction.setAlpha(0.0f);
-				alphaAction.setDuration(0.4f);
+				alphaAction.setDuration(0.1f);
 				Action sequence = sequence(alphaAction, run(new Runnable() {
 					@Override
 					public void run() {
-						gameScreen.getStage().removeItemActor(eventItemDisappear.getItem());
+						gameScreen.getStage().removeItemActor(eventItemDisappear.item);
 						gameScreen.signalEventProcessingDone();
 					}
 				}));
 				itemActor.addAction(sequence);
 			} else {
-				gameScreen.getStage().removeItemActor(eventItemDisappear.getItem());
+				gameScreen.getStage().removeItemActor(eventItemDisappear.item);
 				gameScreen.signalEventProcessingDone();
 			}
 		}
@@ -224,6 +224,24 @@ public void event(final EventUnwield eventUnwield) {
 				gameScreen.getStage().getCharacterActor(eventUnwield.getCharacter()).updateTexture();
 			}
 			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventItemFly eventItemFly) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			ItemActor itemActor = gameScreen.getStage().obtainFlyingItemActor(
+				eventItemFly.item,
+				eventItemFly.fromX,
+				eventItemFly.fromY,
+				eventItemFly.toX,
+				eventItemFly.toY
+			);
+			gameScreen.getStage().addActor(itemActor);
+
 		}
 	});
 }

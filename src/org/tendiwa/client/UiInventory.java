@@ -3,32 +3,54 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import org.tendiwa.events.*;
-import tendiwa.core.Equipment;
-import tendiwa.core.Item;
-import tendiwa.core.Tendiwa;
-import tendiwa.core.UniqueItem;
+import tendiwa.core.*;
 
 public class UiInventory extends Table {
+private static final BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(8, "1234567890", false);
+private static final Label.LabelStyle amountStyle = new Label.LabelStyle(font, Color.WHITE);
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 
 public UiInventory() {
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	setSize(400, 300);
 	add(flowGroup).expand().fill();
-	update();
+}
+
+public static Image createItemIcon(final Item item) {
+	assert item != Equipment.nullItem;
+	return new Image(TextureRegionFlipper.flip(AtlasItems.getInstance().findRegion(item.getType().getResourceName())));
+}
+
+/**
+ * Creates an item icon with amount number.
+ *
+ * @param item
+ * 	An item pile
+ * @return Icon with amount drawn on it.
+ */
+public static Table createItemPileIcon(ItemPile item) {
+	Table table = new Table();
+	table.setBackground(createItemIcon(item).getDrawable());
+	table.add(
+		new Label(Integer.toString(item.getAmount()), amountStyle)
+	).top().left().expand();
+	return table;
 }
 
 public void update() {
 	flowGroup.clearChildren();
 	for (final Item item : Tendiwa.getPlayerCharacter().getEquipment()) {
-		Image itemIcon = createItemIcon(item);
+		Widget itemIcon = createItemIcon(item);
 		itemIcon.setColor(Color.RED);
 		itemIcon.addListener(new InputListener() {
 			@Override
@@ -44,7 +66,12 @@ public void update() {
 		flowGroup.addActor(itemIcon);
 	}
 	for (final Item item : Tendiwa.getPlayerCharacter().getInventory()) {
-		Image itemIcon = createItemIcon(item);
+		Actor itemIcon;
+		if (item.getType().isStackable()) {
+			itemIcon = createItemPileIcon((ItemPile) item);
+		} else {
+			itemIcon = createItemIcon(item);
+		}
 		itemIcon.addListener(new InputListener() {
 			@Override
 			public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
@@ -66,14 +93,6 @@ public void update() {
 		});
 		flowGroup.addActor(itemIcon);
 	}
-}
-
-private Image createItemIcon(final Item item) {
-	assert item != Equipment.nullItem;
-	TextureAtlas.AtlasRegion region = AtlasItems.getInstance().findRegion(item.getType().getResourceName());
-	TextureRegion newRegion = new TextureAtlas.AtlasRegion(region);
-	newRegion.flip(false, true);
-	return new Image(newRegion);
 }
 
 }

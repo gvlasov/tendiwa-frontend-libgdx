@@ -58,6 +58,7 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="log4j-1.2-1.2.16" level="project" />
+    <orderEntry type="library" name="guava-15.0" level="project" />
   </component>
 </module>
 

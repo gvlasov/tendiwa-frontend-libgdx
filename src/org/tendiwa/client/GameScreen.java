@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
@@ -15,8 +16,8 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import tendiwa.core.*;
 import tendiwa.core.Character;
+import tendiwa.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +28,7 @@ public class GameScreen implements Screen {
 static final int TILE_SIZE = 32;
 static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+static BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(20, "\nqwertyuiop[]asdfghjkl;'zxcvbnm,./1234567890-=!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?\\|", true);
 private static GameScreen INSTANCE;
 final int maxStartX;
 final int maxStartY;
@@ -67,7 +69,6 @@ int centerPixelY;
 int cameraMoveStep = 1;
 int startPixelX;
 int startPixelY;
-private BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(20, "qwertyuiop[]asdfghjkl;'zxcvbnm,./1234567890-=!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?\\|", true);
 /**
  * Max index of each floor type's images.
  */
@@ -129,7 +130,7 @@ public GameScreen(final TendiwaGame game) {
 	cellNetLayer = new CellNetLayer(this);
 	itemsLayer = new ItemsLayer(this);
 	cursor = new Cursor(this);
-	uiStage = TendiwaUiStage.init(this);
+	uiStage = new TendiwaUiStage();
 	inputMultiplexer = new InputMultiplexer(uiStage, controller);
 	Gdx.input.setInputProcessor(inputMultiplexer);
 	server = Tendiwa.getServer();
@@ -211,9 +212,13 @@ public void render(float delta) {
 		floorFieldOfViewLayer.draw();
 		wallsLayer.draw();
 		itemsLayer.draw();
-		cursor.updateCursorCoords();
-		cursor.draw();
 		cellNetLayer.draw();
+		if (CellSelection.getInstance().isActive()) {
+			CellSelection.getInstance().draw();
+		} else {
+			cursor.updateCursorCoords();
+			cursor.draw();
+		}
 		drawObjects();
 		stage.draw();
 		uiStage.draw();
@@ -246,12 +251,22 @@ private void drawObjects() {
 	if (statusbarEnabled) {
 		font.draw(
 			batch,
-			Gdx.graphics.getFramesPerSecond()
-				+ "; " + startCellX + ":" + startCellY + " "
-				+ (cellUnderCursor == null ? "" : FloorType.getById(cellUnderCursor.getFloor()).getName())
-				+ " cursor: " + cursor.getWorldX() + " " + cursor.getWorldY(),
-			startPixelX + 100,
-			startPixelY + 100);
+			Gdx.graphics.getFramesPerSecond() + " FPS",
+			startPixelX + 20,
+			startPixelY + 20
+		);
+		font.draw(
+			batch,
+			"screen at " + startCellX + ":" + startCellY,
+			startPixelX + 20,
+			startPixelY + 20 + 18
+		);
+		font.draw(
+			batch,
+			"cursor at " + cursor.getWorldX() + ":" + cursor.getWorldY(),
+			startPixelX + 20,
+			startPixelY + 20 + 36
+		);
 	}
 	batch.end();
 }
@@ -283,15 +298,23 @@ private void processEvents() {
 		controller.executeCurrentTask();
 	}
 	// Loop variable will remain true if it is not set to true inside .process().
-	while (!eventResultProcessingIsGoing && !Server.isTurnComputing() && !queue.isEmpty()) {
+	while (!eventResultProcessingIsGoing && !queue.isEmpty()) {
 		EventResult result = queue.remove();
 		eventResultProcessingIsGoing = true;
 		result.process();
 	}
 }
 
+EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
+	return new EnhancedPoint(
+		(startPixelX + screenX) / GameScreen.TILE_SIZE,
+		(startPixelY + screenY) / GameScreen.TILE_SIZE
+	);
+}
+
 void signalEventProcessingDone() {
 	eventResultProcessingIsGoing = false;
+	Tendiwa.signalAnimationCompleted();
 }
 
 boolean isEventProcessingGoing() {
@@ -316,6 +339,7 @@ public void resize(int width, int height) {
 @Override
 public void show() {
 	setRenderingMode();
+	Gdx.input.setInputProcessor(inputMultiplexer);
 }
 
 @Override
@@ -348,5 +372,9 @@ public void toggleStatusbar() {
 
 public TextureAtlas getAtlasUi() {
 	return atlasUi;
+}
+
+public InputProcessor getInputProcessor() {
+	return inputMultiplexer;
 }
 }

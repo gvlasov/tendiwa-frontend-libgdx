@@ -1,13 +1,17 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 public class TendiwaStage extends Stage {
 
@@ -61,8 +65,10 @@ public Actor getPlayerCharacterActor() {
  */
 public ItemActor obtainItemActor(int x, int y, Item item) {
 	if (itemActors.containsKey(item)) {
+		assert getActors().contains(itemActors.get(item), true);
 		return itemActors.get(item);
 	} else {
+		assert !getActors().contains(itemActors.get(item), true);
 		ItemActor itemActor = new ItemActor(x, y, item);
 		addActor(itemActor);
 		itemActors.put(item, itemActor);
@@ -77,5 +83,37 @@ public void removeItemActor(Item item) {
 
 public boolean hasActorForItem(Item item) {
 	return itemActors.containsKey(item);
+}
+
+/**
+ * Creates an {@link ItemActor} with flying action already added to it.
+ *
+ * @param item
+ * 	Item to animate.
+ * @param fromX
+ * 	X coordinate of flight start cell in world coordinates.
+ * @param fromY
+ * 	Y coordinate of flight start cell in world coordinates.
+ * @param toX
+ * 	X coordinate of flight end cell in world coordinates.
+ * @param toY
+ * 	Y coordinate of flight end cell in world coordinates.
+ * @return A new ItemActor with MoveToAction and call to {@link org.tendiwa.client.GameScreen#signalEventProcessingDone()}
+ *         added to it.
+ */
+public ItemActor obtainFlyingItemActor(final Item item, int fromX, int fromY, int toX, int toY) {
+	final ItemActor actor = obtainItemActor(fromX, fromY, item);
+	MoveToAction moveToAction = new MoveToAction();
+	moveToAction.setPosition(toX, toY);
+	moveToAction.setDuration((float) (EnhancedPoint.distance(fromX, fromY, toX, toY) * 0.05));
+	Action action = sequence(parallel(moveToAction, rotateBy(360, moveToAction.getDuration())), run(new Runnable() {
+		@Override
+		public void run() {
+			TendiwaStage.this.removeItemActor(item);
+			gameScreen.signalEventProcessingDone();
+		}
+	}));
+	actor.addAction(action);
+	return actor;
 }
 }

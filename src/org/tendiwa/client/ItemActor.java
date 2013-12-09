@@ -10,9 +10,13 @@ public class ItemActor extends Actor {
 private final TextureRegion texture;
 
 public ItemActor(int x, int y, Item item) {
+	super();
 	texture = AtlasItems.getInstance().findRegion(item.getType().getResourceName());
 	setX(x);
 	setY(y);
+	// To rotate the Actor around its center
+	setOriginX(0.5f);
+	setOriginY(0.5f);
 }
 
 @Override
@@ -25,7 +29,18 @@ public void draw(SpriteBatch batch, float parentAlpha) {
 	}
 	Color bufColor = batch.getColor();
 	batch.setColor(getColor());
-	batch.draw(texture, getX() * GameScreen.TILE_SIZE, getY() * GameScreen.TILE_SIZE);
+	batch.draw(
+		texture,
+		getX() * GameScreen.TILE_SIZE,
+		getY() * GameScreen.TILE_SIZE,
+		getOriginX() * GameScreen.TILE_SIZE,
+		getOriginY() * GameScreen.TILE_SIZE,
+		GameScreen.TILE_SIZE,
+		GameScreen.TILE_SIZE,
+		1,
+		1,
+		getRotation()
+	);
 	if (shaderWasChanged) {
 		batch.setShader(GameScreen.defaultShader);
 	}

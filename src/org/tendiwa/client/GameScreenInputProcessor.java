@@ -2,8 +2,9 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.InputProcessor;
 import org.tendiwa.events.RequestPickUp;
-import tendiwa.core.*;
+import org.tendiwa.events.RequestThrowItem;
 import tendiwa.core.Character;
+import tendiwa.core.*;
 
 import java.util.LinkedList;
 
@@ -14,6 +15,7 @@ final GameScreen gameScreen;
 final Character player;
 final World world;
 private Task currentTask;
+private ItemToKeyMapper<Item> mapper = new ItemToKeyMapper<>();
 
 GameScreenInputProcessor(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
@@ -24,7 +26,7 @@ GameScreenInputProcessor(GameScreen gameScreen) {
 @Override
 public boolean keyDown(int keycode) {
 	// Process camera movement
-	if (gameScreen.isEventProcessingGoing()) {
+	if (gameScreen.isEventProcessingGoing() || Server.isTurnComputing()) {
 		return false;
 	}
 	if (keycode == LEFT) {
@@ -89,6 +91,24 @@ public boolean keyDown(int keycode) {
 		if (player.getPlane().hasAnyItems(player.getX(), player.getY())) {
 			Tendiwa.getServer().pushRequest(new RequestPickUp());
 		}
+	} else if (keycode == T) {
+		ItemSelectionScreen screen = TendiwaGame.getItemSelectionScreen();
+		screen.setItemsCollection(Tendiwa.getPlayerCharacter().getInventory());
+		screen.setItemToKeyMapper(mapper);
+//		screen.startEntitySelection(new EntitySelectionListener<Item>() {
+//			@Override
+//			public void execute(final Item item) {
+
+		final Item item = Tendiwa.getPlayerCharacter().getInventory().iterator().next();
+		CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+			@Override
+			public void execute(EnhancedPoint point) {
+				Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
+			}
+		});
+
+//			}
+//		});
 	}
 	return true;
 }
@@ -105,11 +125,6 @@ public boolean keyTyped(char character) {
 
 @Override
 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-	return false;
-}
-
-@Override
-public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
 	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
 	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
@@ -129,6 +144,7 @@ public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 		public void execute() {
 			if (!path.isEmpty()) {
 				EnhancedPoint nextStep = path.removeFirst();
+				System.out.println((nextStep.x - player.getX()) + " " + (nextStep.y - player.getY()));
 				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
 					nextStep.x - player.getX(),
 					nextStep.y - player.getY()
@@ -137,6 +153,11 @@ public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 		}
 	};
 	return true;
+}
+
+@Override
+public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+	return false;
 }
 
 @Override
