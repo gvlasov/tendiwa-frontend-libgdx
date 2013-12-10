@@ -294,7 +294,7 @@ int getMaxRenderCellY() {
 
 private void processEvents() {
 	Queue<EventResult> queue = game.getEventManager().getPendingOperations();
-	if (!eventResultProcessingIsGoing && queue.size() == 0) {
+	if (!eventResultProcessingIsGoing && !Server.isTurnComputing() && queue.size() == 0) {
 		controller.executeCurrentTask();
 	}
 	// Loop variable will remain true if it is not set to true inside .process().

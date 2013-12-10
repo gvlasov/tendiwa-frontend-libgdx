@@ -15,9 +15,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import org.tendiwa.events.*;
 import tendiwa.core.*;
 
-public class UiInventory extends Table {
-private static final BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(8, "1234567890", false);
-private static final Label.LabelStyle amountStyle = new Label.LabelStyle(font, Color.WHITE);
+public class UiInventory extends TendiwaWidget {
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 
 public UiInventory() {
@@ -26,26 +24,6 @@ public UiInventory() {
 	add(flowGroup).expand().fill();
 }
 
-public static Image createItemIcon(final Item item) {
-	assert item != Equipment.nullItem;
-	return new Image(TextureRegionFlipper.flip(AtlasItems.getInstance().findRegion(item.getType().getResourceName())));
-}
-
-/**
- * Creates an item icon with amount number.
- *
- * @param item
- * 	An item pile
- * @return Icon with amount drawn on it.
- */
-public static Table createItemPileIcon(ItemPile item) {
-	Table table = new Table();
-	table.setBackground(createItemIcon(item).getDrawable());
-	table.add(
-		new Label(Integer.toString(item.getAmount()), amountStyle)
-	).top().left().expand();
-	return table;
-}
 
 public void update() {
 	flowGroup.clearChildren();

@@ -15,7 +15,7 @@ private final ShaderProgram notYetSeenShader;
 private final Texture blackOpaqueTexture;
 private int uNotYetSeenCellsAnimationState;
 private int uNotYetSeenCellsTime;
-private boolean renderNotYetSeenCells = true;
+private boolean renderNotYetSeenCells = false;
 
 FloorFieldOfViewLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;

@@ -61,10 +61,17 @@ private void initializeActors() {
 	Table table = createTable();
 	table.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	this.addActor(table);
+	UiActions actions = UiActions.getInstance();
 	inventory = new UiInventory();
-	table.add(inventory).expand().right().bottom().size(200, 100);
+	table.add(new UiQuiver()).expand().right().bottom().pad(5).colspan(2);
+	table.row();
+	table.add(actions).left().bottom().pad(5).size(200, 100);
+	table.add(inventory).right().bottom().pad(5).size(200, 100);
 	inventory.update();
+	actions.update();
 	table.layout();
+
+	actions.setVisible(false);
 }
 
 private Table createTable() {
@@ -75,7 +82,6 @@ private Table createTable() {
 
 private TextButton createButton() {
 	final TextButton button = new TextButton("Click me", skin);
-
 	button.addListener(new ChangeListener() {
 		public void changed(ChangeListener.ChangeEvent event, Actor actor) {
 			button.setText("Good job!");

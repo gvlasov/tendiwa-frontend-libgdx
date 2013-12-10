@@ -1,10 +1,14 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import org.tendiwa.events.RequestPickUp;
+import org.tendiwa.events.RequestShoot;
 import org.tendiwa.events.RequestThrowItem;
+import org.tendiwa.events.RequestWield;
 import tendiwa.core.Character;
 import tendiwa.core.*;
+import tendiwa.core.meta.Condition;
 
 import java.util.LinkedList;
 
@@ -77,6 +81,9 @@ public boolean keyDown(int keycode) {
 		if (player.canStepOn(player.getX() + 1, player.getY() + 1)) {
 			Tendiwa.getServer().pushRequest(new RequestWalk(Directions.SE));
 		}
+	} else if (keycode == A) {
+		UiActions.getInstance().setVisible(true);
+		Gdx.input.setInputProcessor(UiActions.getInstance().getInputProcessor());
 	} else if (keycode == F9) {
 		if (TendiwaGame.isGameScreenActive()) {
 			TendiwaGame.switchToWorldMapScreen();
@@ -91,24 +98,56 @@ public boolean keyDown(int keycode) {
 		if (player.getPlane().hasAnyItems(player.getX(), player.getY())) {
 			Tendiwa.getServer().pushRequest(new RequestPickUp());
 		}
-	} else if (keycode == T) {
-		ItemSelectionScreen screen = TendiwaGame.getItemSelectionScreen();
-		screen.setItemsCollection(Tendiwa.getPlayerCharacter().getInventory());
-		screen.setItemToKeyMapper(mapper);
-//		screen.startEntitySelection(new EntitySelectionListener<Item>() {
-//			@Override
-//			public void execute(final Item item) {
-
-		final Item item = Tendiwa.getPlayerCharacter().getInventory().iterator().next();
-		CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+	} else if (keycode == Q && Gdx.input.isKeyPressed(SHIFT_LEFT)) {
+		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntitySelectionListener<Item>() {
 			@Override
-			public void execute(EnhancedPoint point) {
-				Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
+			public void execute(Item item) {
+				QuiveredItemHolder.setItem(item);
+				TendiwaGame.switchToGameScreen();
+			}
+		} );
+	} else if (keycode == F) {
+		final UniqueItem rangedWeapon = (UniqueItem) player.getEquipment().getWieldedWeaponThatIs(new Condition<Item>() {
+			@Override
+			public boolean check(Item item) {
+				return item.getType().isRangedWeapon();
 			}
 		});
-
-//			}
-//		});
+		final Item quiveredItem = QuiveredItemHolder.getItem();
+		if (rangedWeapon != null && quiveredItem != null && quiveredItem.getType().isShootable()) {
+			final Shootable shootable = (Shootable) quiveredItem.getType();
+			if (shootable.getAmmunitionType() == ((RangedWeapon) rangedWeapon.getType()).getAmmunitionType()) {
+				CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+					@Override
+					public void execute(EnhancedPoint point) {
+						Tendiwa.getServer().pushRequest(new RequestShoot(rangedWeapon, quiveredItem, point.x, point.y));
+					}
+				});
+			}
+		}
+	} else if (keycode == T) {
+		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntitySelectionListener<Item>() {
+			@Override
+			public void execute(final Item item) {
+				TendiwaGame.switchToGameScreen();
+				CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+					@Override
+					public void execute(EnhancedPoint point) {
+						Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
+					}
+				});
+			}
+		});
+	} else if (keycode == W) {
+		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntitySelectionListener<Item>() {
+			@Override
+			public void execute(Item item) {
+				Tendiwa.getServer().pushRequest(new RequestWield(item));
+			}
+		});
 	}
 	return true;
 }
@@ -125,6 +164,10 @@ public boolean keyTyped(char character) {
 
 @Override
 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+	if (currentTask != null) {
+		System.out.println("fuck that");
+		return false;
+	}
 	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
 	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
 	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
@@ -134,7 +177,7 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 	if (path == null || path.size() == 0) {
 		return true;
 	}
-	currentTask = new Task() {
+	trySettingTask(new Task() {
 		@Override
 		public boolean ended() {
 			return gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
@@ -144,15 +187,23 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		public void execute() {
 			if (!path.isEmpty()) {
 				EnhancedPoint nextStep = path.removeFirst();
-				System.out.println((nextStep.x - player.getX()) + " " + (nextStep.y - player.getY()));
 				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
 					nextStep.x - player.getX(),
 					nextStep.y - player.getY()
 				)));
 			}
 		}
-	};
+	});
 	return true;
+}
+
+private boolean trySettingTask(Task task) {
+	if (currentTask == null) {
+		currentTask = task;
+		return true;
+	} else {
+		return false;
+	}
 }
 
 @Override

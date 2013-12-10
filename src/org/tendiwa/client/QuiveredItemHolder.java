@@ -2,13 +2,25 @@ package org.tendiwa.client;
 
 import tendiwa.core.Item;
 
+import java.util.LinkedList;
+import java.util.List;
+
 public class QuiveredItemHolder {
-private static Item qItem;
+private static Item quiveredItem;
+private static List<EntitySelectionListener<Item>> listeners = new LinkedList<>();
+
+public static Item getItem() {
+	return quiveredItem;
+}
 
 public static void setItem(Item item) {
-	qItem = item;
+	quiveredItem = item;
+	for (EntitySelectionListener<Item> listener : listeners) {
+		listener.execute(item);
+	}
 }
-public static Item getItem() {
-	return qItem;
+
+public static void addListener(EntitySelectionListener<Item> listener) {
+	listeners.add(listener);
 }
 }

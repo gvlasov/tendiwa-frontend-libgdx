@@ -35,7 +35,7 @@ public void event(final EventMove e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			Actor characterActor = gameScreen.getStage().getCharacterActor(e.getCharacter());
+			Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			if (animationsEnabled) {
 				MoveToAction action = new MoveToAction();
 				action.setPosition(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY());
@@ -241,7 +241,21 @@ public void event(final EventItemFly eventItemFly) {
 				eventItemFly.toY
 			);
 			gameScreen.getStage().addActor(itemActor);
+		}
+	});
+}
 
+@Override
+public void event(final EventSound eventSound) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			Actor itemActor = gameScreen.getStage().obtainSoundActor(
+				eventSound.shout,
+				eventSound.x,
+				eventSound.y
+			);
+			gameScreen.getStage().addActor(itemActor);
 		}
 	});
 }

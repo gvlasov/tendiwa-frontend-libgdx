@@ -1,5 +1,6 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 
 /**
@@ -10,17 +11,34 @@ import com.badlogic.gdx.InputProcessor;
  * 	Type of entity. Common examples are {@link tendiwa.core.Item}s or Spells.
  */
 public class ItemSelectionInputProcessor<T> implements InputProcessor {
-private ItemToKeyMapper<T> itemToKeyMapper;
-private EntitySelectionListener<T> listener;
-private EntitySelectionListener<T> persistentListener;
+private final ItemToKeyMapper<T> itemToKeyMapper;
+private final EntitySelectionListener<T> onNextItemSelected;
+private final Runnable onComplete;
 
-void setMapper(ItemToKeyMapper<T> itemToKeyMapper) {
+/**
+ * Processes keypresses when user selects an item from a list of items each of which can be selected by pressing a
+ * [a-zA-Z] key.
+ *
+ * @param itemToKeyMapper
+ * 	A mapping from items to keys. If you need to update it, you should do that manually from outside this class.
+ * @param onNextItemSelected
+ * 	A listener that is executed once after an item was selected.
+ * @param onComplete
+ * 	A listener that is executed when selection was cancelled or done. If selection was successfully done (i.e. not
+ * 	cancelled), then it is executed <b>before</b> {@code onNextItemSelected}.
+ */
+public ItemSelectionInputProcessor(ItemToKeyMapper<T> itemToKeyMapper, EntitySelectionListener<T> onNextItemSelected, Runnable onComplete) {
 	this.itemToKeyMapper = itemToKeyMapper;
+	this.onNextItemSelected = onNextItemSelected;
+	this.onComplete = onComplete;
 }
 
 @Override
 public boolean keyDown(int keycode) {
-	return false;
+	if (keycode == Input.Keys.ESCAPE) {
+		onComplete.run();
+	}
+	return true;
 }
 
 @Override
@@ -30,23 +48,15 @@ public boolean keyUp(int keycode) {
 
 @Override
 public boolean keyTyped(char character) {
+	if (character == '-') {
+		onNextItemSelected.execute(null);
+	}
 	T itemForCharacter = itemToKeyMapper.getItemForCharacter(character);
 	if (itemForCharacter != null) {
-		persistentListener.execute(itemForCharacter);
-		listener.execute(itemForCharacter);
+		onComplete.run();
+		onNextItemSelected.execute(itemForCharacter);
 	}
 	return true;
-}
-
-/**
- * Sets a listener that is executed once after an entity was chosen, and then is removed from this
- * ItemSelectionInputProcessor.
- */
-public void setListener(EntitySelectionListener<T> listener) {
-	this.listener = listener;
-}
-void setPersistentListener(EntitySelectionListener<T> listener) {
-	this.persistentListener = listener;
 }
 
 @Override

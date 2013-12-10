@@ -116,4 +116,17 @@ public ItemActor obtainFlyingItemActor(final Item item, int fromX, int fromY, in
 	actor.addAction(action);
 	return actor;
 }
+
+public Actor obtainSoundActor(SoundType shout, int x, int y) {
+	final SoundActor sound = new SoundActor(shout);
+	sound.setPosition(x, y);
+	sound.addAction(sequence(scaleBy(4, 4, 0.8f), run(new Runnable() {
+		@Override
+		public void run() {
+			TendiwaStage.this.getRoot().removeActor(sound);
+			gameScreen.signalEventProcessingDone();
+		}
+	})));
+	return sound;
+}
 }
