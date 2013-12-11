@@ -1,22 +1,49 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
-import tendiwa.core.CharacterAction;
-import tendiwa.core.Tendiwa;
+import org.tendiwa.events.RequestActionToCell;
+import org.tendiwa.events.RequestActionWithoutTarget;
+import tendiwa.core.*;
 
 import java.util.Map;
 
 public class UiActions extends TendiwaWidget {
 private static UiActions INSTANCE;
+private static Runnable onComplete = new Runnable() {
+	@Override
+	public void run() {
+		UiActions.INSTANCE.setVisible(false);
+		Gdx.input.setInputProcessor(TendiwaGame.getGameScreen().getInputProcessor());
+	}
+};
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 ItemToKeyMapper<CharacterAction> mapper = new ItemToKeyMapper<>();
+private EntitySelectionListener<CharacterAction> onActionSelected = new EntitySelectionListener<CharacterAction>() {
+	@Override
+	public void execute(final CharacterAction action) {
+		if (action instanceof ActionToCell) {
+			CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+				@Override
+				public void execute(EnhancedPoint point) {
+					Tendiwa.getServer().pushRequest(new RequestActionToCell(
+						(ActionToCell) action,
+						point.x,
+						point.y
+					));
+				}
+			});
+		} else if (action instanceof ActionWithoutTarget) {
+			Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget((ActionWithoutTarget) action));
+		}
+	}
+};
 private Label.LabelStyle style = new Label.LabelStyle(TendiwaFonts.default14NonFlipped, Color.WHITE);
-private ItemSelectionInputProcessor<CharacterAction> inputProcessor = null;
 
 private UiActions() {
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
@@ -34,8 +61,9 @@ public static UiActions getInstance() {
 public void update() {
 	mapper.update(Tendiwa.getPlayerCharacter().getAvailableActions());
 	flowGroup.clearChildren();
-	for (Map.Entry<CharacterAction, Character> e : mapper)
+	for (Map.Entry<CharacterAction, java.lang.Character> e : mapper) {
 		flowGroup.addActor(createActionWidget(e.getKey(), e.getValue()));
+	}
 }
 
 private WidgetGroup createActionWidget(CharacterAction action, char character) {
@@ -51,6 +79,6 @@ private WidgetGroup createActionWidget(CharacterAction action, char character) {
 }
 
 public InputProcessor getInputProcessor() {
-	return inputProcessor;
+	return new ItemSelectionInputProcessor<>(mapper, onActionSelected, onComplete);
 }
 }

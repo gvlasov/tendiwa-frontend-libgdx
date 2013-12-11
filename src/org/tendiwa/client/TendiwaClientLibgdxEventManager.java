@@ -1,8 +1,10 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
+import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.*;
 import tendiwa.core.*;
@@ -10,15 +12,14 @@ import tendiwa.core.*;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.run;
-import static com.badlogic.gdx.scenes.scene2d.actions.Actions.sequence;
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 /**
  * On each received {@link Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
  * Each time the game is rendered, all EventResults are processed inside {@link GameScreen#render(float)}.
  */
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
-private static boolean animationsEnabled = false;
+private static boolean animationsEnabled = true;
 private GameScreen gameScreen;
 private Queue<EventResult> pendingOperations = new LinkedList<>();
 
@@ -37,9 +38,25 @@ public void event(final EventMove e) {
 		public void process() {
 			Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			if (animationsEnabled) {
-				MoveToAction action = new MoveToAction();
-				action.setPosition(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY());
-				action.setDuration(0.1f);
+				Action action;
+				if (e.movingStyle == MovingStyle.STEP) {
+					action = new MoveToAction();
+					((MoveToAction) action).setPosition(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY());
+					((MoveToAction) action).setDuration(0.1f);
+				} else if (e.movingStyle == MovingStyle.LEAP) {
+					MoveByAction moveTo = new MoveByAction();
+					moveTo.setAmount(Tendiwa.getPlayerCharacter().getX() - e.xPrev, Tendiwa.getPlayerCharacter().getY() - e.yPrev);
+					float lengthMovingDuration = 0.3f;
+					moveTo.setDuration(lengthMovingDuration);
+					MoveByAction moveUp = moveBy(0, -1, lengthMovingDuration / 2);
+					moveUp.setInterpolation(Interpolation.exp5Out);
+					MoveByAction moveDown = moveBy(0, 1, lengthMovingDuration / 2);
+					moveDown.setInterpolation(Interpolation.exp5In);
+					Action upAndDown = sequence(moveUp, moveDown);
+					action = parallel(moveTo, upAndDown);
+				} else {
+					throw new UnsupportedOperationException();
+				}
 				Action sequence = sequence(action, run(new Runnable() {
 					@Override
 					public void run() {

@@ -82,6 +82,7 @@ public boolean keyDown(int keycode) {
 			Tendiwa.getServer().pushRequest(new RequestWalk(Directions.SE));
 		}
 	} else if (keycode == A) {
+		UiActions.getInstance().update();
 		UiActions.getInstance().setVisible(true);
 		Gdx.input.setInputProcessor(UiActions.getInstance().getInputProcessor());
 	} else if (keycode == F9) {
