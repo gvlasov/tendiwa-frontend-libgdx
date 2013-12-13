@@ -23,10 +23,11 @@ private static Runnable onComplete = new Runnable() {
 	}
 };
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
-ItemToKeyMapper<CharacterAction> mapper = new ItemToKeyMapper<>();
-private EntitySelectionListener<CharacterAction> onActionSelected = new EntitySelectionListener<CharacterAction>() {
+ItemToKeyMapper<CharacterAbility> mapper = new ItemToKeyMapper<>();
+private EntitySelectionListener<CharacterAbility> onActionSelected = new EntitySelectionListener<CharacterAbility>() {
 	@Override
-	public void execute(final CharacterAction action) {
+	public void execute(final CharacterAbility characterAbility) {
+		final ActionTargetType action = characterAbility.getAction();
 		if (action instanceof ActionToCell) {
 			CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
 				@Override
@@ -39,7 +40,11 @@ private EntitySelectionListener<CharacterAction> onActionSelected = new EntitySe
 				}
 			});
 		} else if (action instanceof ActionWithoutTarget) {
-			Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget((ActionWithoutTarget) action));
+			Tendiwa.getServer().pushRequest(
+				new RequestActionWithoutTarget(
+					(ActionWithoutTarget) action
+				)
+			);
 		}
 	}
 };
@@ -61,12 +66,12 @@ public static UiActions getInstance() {
 public void update() {
 	mapper.update(Tendiwa.getPlayerCharacter().getAvailableActions());
 	flowGroup.clearChildren();
-	for (Map.Entry<CharacterAction, java.lang.Character> e : mapper) {
+	for (Map.Entry<CharacterAbility, java.lang.Character> e : mapper) {
 		flowGroup.addActor(createActionWidget(e.getKey(), e.getValue()));
 	}
 }
 
-private WidgetGroup createActionWidget(CharacterAction action, char character) {
+private WidgetGroup createActionWidget(CharacterAbility action, char character) {
 	Label actionNameLabel = new Label(action.getResourceName(), style);
 	Label characterLabel = new Label(String.valueOf(character), style);
 	Image image = new Image(AtlasItems.getInstance().findRegion("short_bow"));

@@ -18,11 +18,13 @@ public UiItemSelectionTable() {
 	labelStyle.font = TendiwaFonts.default14NonFlipped;
 }
 
-public void update(ItemToKeyMapper<Item> mappings) {
+public void update(ItemToKeyMapper<Item> mappings, EntityFilter<Item> filter) {
 	assert mappings != null;
 	flowGroup.clearChildren();
 	for (Map.Entry<Item, Character> e : mappings) {
-		flowGroup.addActor(createItemLetterMappingView(e.getKey(), e.getValue()));
+		if (filter.check(e.getKey())) {
+			flowGroup.addActor(createItemLetterMappingView(e.getKey(), e.getValue()));
+		}
 	}
 }
 

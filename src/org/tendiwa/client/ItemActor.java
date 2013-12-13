@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import tendiwa.core.Item;
 
-public class ItemActor extends Actor {
+public class ItemActor extends com.badlogic.gdx.scenes.scene2d.Actor {
 private final TextureRegion texture;
 
 public ItemActor(int x, int y, Item item) {
@@ -37,8 +37,8 @@ public void draw(SpriteBatch batch, float parentAlpha) {
 		getOriginY() * GameScreen.TILE_SIZE,
 		GameScreen.TILE_SIZE,
 		GameScreen.TILE_SIZE,
-		1,
-		1,
+		getScaleX(),
+		getScaleY(),
 		getRotation()
 	);
 	if (shaderWasChanged) {

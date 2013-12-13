@@ -10,6 +10,8 @@ public class TendiwaFonts {
  */
 public final static BitmapFont default14NonFlipped = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf"))
 	.generateFont(14, "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_.,-'\"", false);
+public final static BitmapFont default14Flipped = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf"))
+	.generateFont(14, "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_.,-'\"", true);
 protected static final BitmapFont default8NonFlipped = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf"))
 	.generateFont(8, "1234567890qwertyuiopasdfghjklzxcvbnm,.-QWERTYUIOPASDFGHJKLZXCVBNM", false);
 }

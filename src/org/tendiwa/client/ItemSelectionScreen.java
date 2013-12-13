@@ -67,9 +67,9 @@ public void dispose() {
 
 }
 
-public void startSelection(ItemToKeyMapper<Item> mapper, EntitySelectionListener<Item> onNextItemSelected) {
+public void startSelection(ItemToKeyMapper<Item> mapper, EntityFilter<Item> filter, EntitySelectionListener<Item> onNextItemSelected) {
 	inputProcessor = new ItemSelectionInputProcessor<>(mapper, onNextItemSelected, onComplete);
-	table.update(mapper);
+	table.update(mapper, filter);
 	TendiwaGame.switchToItemSelectionScreen();
 	Gdx.input.setInputProcessor(inputProcessor);
 }

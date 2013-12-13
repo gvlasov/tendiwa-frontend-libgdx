@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import org.tendiwa.events.EventProjectileFly;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
@@ -17,8 +18,8 @@ public class TendiwaStage extends Stage {
 
 private final GameScreen gameScreen;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
-private Actor playerCharacterActor;
-private Map<Item, ItemActor> itemActors = new HashMap<>();
+private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
+private Map<Item, Actor> itemActors = new HashMap<>();
 
 TendiwaStage(GameScreen gameScreen) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
@@ -51,7 +52,7 @@ public CharacterActor getCharacterActor(Character character) {
 	return characterActors.get(character);
 }
 
-public Actor getPlayerCharacterActor() {
+public com.badlogic.gdx.scenes.scene2d.Actor getPlayerCharacterActor() {
 	return playerCharacterActor;
 }
 
@@ -63,22 +64,13 @@ public Actor getPlayerCharacterActor() {
  * 	A remembered item.
  * @return An existing or a new ItemActor.
  */
-public ItemActor obtainItemActor(int x, int y, Item item) {
-	if (itemActors.containsKey(item)) {
-		assert getActors().contains(itemActors.get(item), true);
-		return itemActors.get(item);
-	} else {
-		assert !getActors().contains(itemActors.get(item), true);
-		ItemActor itemActor = new ItemActor(x, y, item);
-		addActor(itemActor);
-		itemActors.put(item, itemActor);
-		return itemActor;
-	}
+public Actor obtainItemActor(int x, int y, Item item) {
+	ItemActor actor = new ItemActor(x, y, item);
+	return actor;
 }
 
 public void removeItemActor(Item item) {
 	getRoot().removeActor(itemActors.get(item));
-	itemActors.remove(item);
 }
 
 public boolean hasActorForItem(Item item) {
@@ -86,7 +78,7 @@ public boolean hasActorForItem(Item item) {
 }
 
 /**
- * Creates an {@link ItemActor} with flying action already added to it.
+ * Creates an {@link Actor} with flying action already added to it.
  *
  * @param item
  * 	Item to animate.
@@ -101,15 +93,22 @@ public boolean hasActorForItem(Item item) {
  * @return A new ItemActor with MoveToAction and call to {@link org.tendiwa.client.GameScreen#signalEventProcessingDone()}
  *         added to it.
  */
-public ItemActor obtainFlyingItemActor(final Item item, int fromX, int fromY, int toX, int toY) {
-	final ItemActor actor = obtainItemActor(fromX, fromY, item);
+public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int fromY, int toX, int toY, EventProjectileFly.FlightStyle style) {
+	final Actor actor;
+	if (style == EventProjectileFly.FlightStyle.CAST && item instanceof Item) {
+		actor = obtainItemActor(fromX, fromY, (Item) item);
+	} else if (item instanceof SpellProjectile) {
+		actor = new SpellProjectileFireballActor(fromX, fromY);
+	} else {
+		throw new UnsupportedOperationException();
+	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
 	moveToAction.setDuration((float) (EnhancedPoint.distance(fromX, fromY, toX, toY) * 0.05));
 	Action action = sequence(parallel(moveToAction, rotateBy(360, moveToAction.getDuration())), run(new Runnable() {
 		@Override
 		public void run() {
-			TendiwaStage.this.removeItemActor(item);
+			TendiwaStage.this.getRoot().removeActor(actor);
 			gameScreen.signalEventProcessingDone();
 		}
 	}));
@@ -117,16 +116,19 @@ public ItemActor obtainFlyingItemActor(final Item item, int fromX, int fromY, in
 	return actor;
 }
 
-public Actor obtainSoundActor(SoundType shout, int x, int y) {
-	final SoundActor sound = new SoundActor(shout);
-	sound.setPosition(x, y);
-	sound.addAction(sequence(scaleBy(4, 4, 0.8f), run(new Runnable() {
+public com.badlogic.gdx.scenes.scene2d.Actor obtainSoundActor(SoundType soundType, int x, int y) {
+	final SoundActor actor = new SoundActor(soundType);
+	actor.setPosition(
+		x * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2,
+		y * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2
+	);
+	actor.addAction(sequence(rotateBy(90, 0.3f), run(new Runnable() {
 		@Override
 		public void run() {
-			TendiwaStage.this.getRoot().removeActor(sound);
+			TendiwaStage.this.getRoot().removeActor(actor);
 			gameScreen.signalEventProcessingDone();
 		}
 	})));
-	return sound;
+	return actor;
 }
 }

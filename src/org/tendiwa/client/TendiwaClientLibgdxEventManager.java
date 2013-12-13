@@ -36,7 +36,7 @@ public void event(final EventMove e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
+			com.badlogic.gdx.scenes.scene2d.Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			if (animationsEnabled) {
 				Action action;
 				if (e.movingStyle == MovingStyle.STEP) {
@@ -126,7 +126,7 @@ public void event(final EventItemDisappear eventItemDisappear) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			ItemActor itemActor = gameScreen.getStage().obtainItemActor(
+			Actor actor = gameScreen.getStage().obtainItemActor(
 				eventItemDisappear.x,
 				eventItemDisappear.y,
 				eventItemDisappear.item
@@ -142,7 +142,8 @@ public void event(final EventItemDisappear eventItemDisappear) {
 						gameScreen.signalEventProcessingDone();
 					}
 				}));
-				itemActor.addAction(sequence);
+				actor.addAction(sequence);
+				gameScreen.getStage().addActor(actor);
 			} else {
 				gameScreen.getStage().removeItemActor(eventItemDisappear.item);
 				gameScreen.signalEventProcessingDone();
@@ -246,18 +247,19 @@ public void event(final EventUnwield eventUnwield) {
 }
 
 @Override
-public void event(final EventItemFly eventItemFly) {
+public void event(final EventProjectileFly eventProjectileFly) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			ItemActor itemActor = gameScreen.getStage().obtainFlyingItemActor(
-				eventItemFly.item,
-				eventItemFly.fromX,
-				eventItemFly.fromY,
-				eventItemFly.toX,
-				eventItemFly.toY
+			com.badlogic.gdx.scenes.scene2d.Actor actor = gameScreen.getStage().obtainFlyingProjectileActor(
+				eventProjectileFly.item,
+				eventProjectileFly.fromX,
+				eventProjectileFly.fromY,
+				eventProjectileFly.toX,
+				eventProjectileFly.toY,
+				EventProjectileFly.FlightStyle.PROPELLED
 			);
-			gameScreen.getStage().addActor(itemActor);
+			gameScreen.getStage().addActor(actor);
 		}
 	});
 }
@@ -267,12 +269,28 @@ public void event(final EventSound eventSound) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			Actor itemActor = gameScreen.getStage().obtainSoundActor(
-				eventSound.shout,
+			com.badlogic.gdx.scenes.scene2d.Actor actor = gameScreen.getStage().obtainSoundActor(
+				eventSound.sound,
 				eventSound.x,
 				eventSound.y
 			);
-			gameScreen.getStage().addActor(itemActor);
+			gameScreen.getStage().addActor(actor);
+		}
+	});
+}
+
+@Override
+public void event(final EventExplosion e) {
+
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+//			com.badlogic.gdx.scenes.scene2d.Actor explosionActor = gameScreen.getStage().obtainExplosionActor(
+//				e.x,
+//				e.y
+//			);
+//			gameScreen.getStage().addActor(explosionActor);
+			gameScreen.signalEventProcessingDone();
 		}
 	});
 }

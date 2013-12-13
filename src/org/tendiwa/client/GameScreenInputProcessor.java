@@ -2,12 +2,10 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
-import org.tendiwa.events.RequestPickUp;
-import org.tendiwa.events.RequestShoot;
-import org.tendiwa.events.RequestThrowItem;
-import org.tendiwa.events.RequestWield;
-import tendiwa.core.Character;
+import org.tendiwa.entities.CharacterAbilities;
+import org.tendiwa.events.*;
 import tendiwa.core.*;
+import tendiwa.core.Character;
 import tendiwa.core.meta.Condition;
 
 import java.util.LinkedList;
@@ -101,13 +99,19 @@ public boolean keyDown(int keycode) {
 		}
 	} else if (keycode == Q && Gdx.input.isKeyPressed(SHIFT_LEFT)) {
 		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntitySelectionListener<Item>() {
-			@Override
-			public void execute(Item item) {
-				QuiveredItemHolder.setItem(item);
-				TendiwaGame.switchToGameScreen();
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
+				@Override
+				public boolean check(Item entity) {
+					return entity.getType() instanceof Shootable;
+				}
+			}, new EntitySelectionListener<Item>() {
+				@Override
+				public void execute(Item item) {
+					QuiveredItemHolder.setItem(item);
+					TendiwaGame.switchToGameScreen();
+				}
 			}
-		} );
+		);
 	} else if (keycode == F) {
 		final UniqueItem rangedWeapon = (UniqueItem) player.getEquipment().getWieldedWeaponThatIs(new Condition<Item>() {
 			@Override
@@ -129,26 +133,60 @@ public boolean keyDown(int keycode) {
 		}
 	} else if (keycode == T) {
 		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntitySelectionListener<Item>() {
-			@Override
-			public void execute(final Item item) {
-				TendiwaGame.switchToGameScreen();
-				CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
-					@Override
-					public void execute(EnhancedPoint point) {
-						Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
-					}
-				});
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper,
+			new EntityFilter<Item>() {
+				@Override
+				public boolean check(Item entity) {
+					return true;
+				}
+			},
+			new EntitySelectionListener<Item>() {
+				@Override
+				public void execute(final Item item) {
+					TendiwaGame.switchToGameScreen();
+					CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+						@Override
+						public void execute(EnhancedPoint point) {
+							Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
+						}
+					});
+				}
 			}
-		});
-	} else if (keycode == W) {
+		);
+	} else if (keycode == W && !Gdx.input.isKeyPressed(SHIFT_LEFT)) {
 		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntitySelectionListener<Item>() {
-			@Override
-			public void execute(Item item) {
-				Tendiwa.getServer().pushRequest(new RequestWield(item));
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper,
+			new EntityFilter<Item>() {
+				@Override
+				public boolean check(Item entity) {
+					return entity.getType() instanceof Wieldable;
+				}
+			},
+			new EntitySelectionListener<Item>() {
+				@Override
+				public void execute(Item item) {
+					Tendiwa.getServer().pushRequest(new RequestWield(item));
+				}
 			}
-		});
+		);
+	} else if (keycode == W && Gdx.input.isKeyPressed(SHIFT_LEFT)) {
+		mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+		TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
+				@Override
+				public boolean check(Item entity) {
+					return entity.getType() instanceof Wearable;
+				}
+			}, new EntitySelectionListener<Item>() {
+				@Override
+				public void execute(Item item) {
+					Tendiwa.getServer().pushRequest(new RequestPutOn((UniqueItem) item));
+				}
+			}
+		);
+	} else if (keycode == S) {
+		Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget(
+			(ActionWithoutTarget) CharacterAbilities.SHOUT.getAction()
+		));
 	}
 	return true;
 }
