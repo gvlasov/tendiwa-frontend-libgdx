@@ -116,11 +116,11 @@ public boolean keyDown(int keycode) {
 		final UniqueItem rangedWeapon = (UniqueItem) player.getEquipment().getWieldedWeaponThatIs(new Condition<Item>() {
 			@Override
 			public boolean check(Item item) {
-				return item.getType().isRangedWeapon();
+				return Items.isRangedWeapon(item.getType());
 			}
 		});
 		final Item quiveredItem = QuiveredItemHolder.getItem();
-		if (rangedWeapon != null && quiveredItem != null && quiveredItem.getType().isShootable()) {
+		if (rangedWeapon != null && quiveredItem != null && Items.isShootable(quiveredItem.getType())) {
 			final Shootable shootable = (Shootable) quiveredItem.getType();
 			if (shootable.getAmmunitionType() == ((RangedWeapon) rangedWeapon.getType()).getAmmunitionType()) {
 				CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {

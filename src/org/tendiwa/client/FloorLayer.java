@@ -8,6 +8,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
+import org.tendiwa.entities.FloorTypes;
 import tendiwa.core.CardinalDirection;
 import tendiwa.core.FloorType;
 import tendiwa.core.RenderCell;
@@ -22,12 +23,12 @@ private final TextureAtlas atlasFloors;
 private final SpriteBatch batch;
 private final int transitionsAtlasSize = 1024;
 private final FrameBuffer transitionsFrameBuffer;
-private final short[] floorsFrom4Sides = new short[4];
+private final FloorType[] floorsFrom4Sides = new FloorType[4];
 private final ShaderProgram liquidFloorAnimateShader;
 private final int uWaveState;
-private Map<Integer, TextureRegion> floorRegions = new HashMap<>();
-private Map<Short, Integer> floorIndices = new HashMap<>();
-private TransitionsToFloor[] floorTransitionsProviders;
+private Map<FloorType, Map<Integer, TextureRegion>> floorRegions = new HashMap<>();
+private Map<FloorType, Integer> floorIndices = new HashMap<>();
+private Map<FloorType, TransitionsToFloor> floorTransitionsProviders;
 private boolean animateLiquidFloor = true;
 
 public FloorLayer(GameScreen gameScreen) {
@@ -42,10 +43,9 @@ public FloorLayer(GameScreen gameScreen) {
 }
 
 void initFloorTransitionsProviders() {
-	int size = FloorType.getAll().size();
-	floorTransitionsProviders = new TransitionsToFloor[size];
-	for (short i = 0; i < size; i++) {
-		floorTransitionsProviders[i] = new TransitionsToFloor(i);
+	floorTransitionsProviders = new HashMap<>();
+	for (FloorType floorType : FloorTypes.values()) {
+		floorTransitionsProviders.put(floorType, new TransitionsToFloor(floorType));
 	}
 }
 
@@ -83,20 +83,20 @@ private void drawFloors(boolean liquid) {
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
 			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
-			if (cell != null && FloorType.getById(cell.getFloor()).isLiquid() == liquid) {
+			if (cell != null && cell.getFloor().isLiquid() == liquid) {
 				drawFloor(cell.getFloor(), x, y);
 			}
 		}
 	}
 }
 
-void drawFloor(short floorId, int x, int y) {
+void drawFloor(FloorType floorType, int x, int y) {
 	if (!gameScreen.isFloorUnderWallShouldBeDrawn(x, y)) {
 		// Don't draw floor on cells that are right under a wall on the edge of field of view,
 		// because drawing one produces an unpleasant and unnatural effect.
 		return;
 	}
-	TextureRegion floor = getFloorTextureByCell(floorId, x, y);
+	TextureRegion floor = getFloorTextureByCell(floorType, x, y);
 	batch.draw(floor, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
 }
 
@@ -116,32 +116,33 @@ private void drawTransitions(boolean liquid) {
 	}
 }
 
-private TextureRegion getFloorTextureByCell(short terrain, int x, int y) {
-	int floorId = (int) terrain;
-	int key = (int) ((floorId * (1 << 15)) + Math.round(Math.abs(Math.sin(x * y)) * floorIndices.get((short) floorId)));
-	return floorRegions.get(key);
+private TextureRegion getFloorTextureByCell(FloorType floor, int x, int y) {
+	int key = (int) (Math.round(Math.abs(Math.sin(x * y)) * floorIndices.get(floor)));
+	return floorRegions.get(floor).get(key);
 }
 
 private void cacheRegions() {
-	Map<String, Short> floorTypeName2id = new HashMap<>();
-	Map<String, Array<TextureAtlas.AtlasRegion>> name2regions = new HashMap<>();
-	for (Map.Entry<Short, FloorType> e : FloorType.getAll().entrySet()) {
-		floorTypeName2id.put(e.getValue().getName(), e.getKey());
+	Map<String, FloorType> name2Type = new HashMap<>();
+	Map<String, Array<TextureAtlas.AtlasRegion>> name2Regions = new HashMap<>();
+	for (FloorType floorType : FloorTypes.values()) {
+		name2Type.put(floorType.getResourceName(), floorType);
+		floorRegions.put(floorType, new HashMap<Integer, TextureRegion>());
+		assert atlasFloors.findRegion(floorType.getResourceName()) != null;
 	}
 	for (TextureAtlas.AtlasRegion region : atlasFloors.getRegions()) {
-		if (floorTypeName2id.containsKey(region.name)) {
-			floorRegions.put(floorTypeName2id.get(region.name) * (1 << 15) + region.index, region);
+		if (name2Type.containsKey(region.name)) {
+			floorRegions.get(name2Type.get(region.name)).put(region.index, region);
 		} else {
 			Tendiwa.getLogger().warn("Floor with name " + region.name + "_" + region.index + " has its sprite, but it is not declared in ontology");
 		}
 	}
-	for (Map.Entry<String, Short> e : floorTypeName2id.entrySet()) {
+	for (Map.Entry<String, FloorType> e : name2Type.entrySet()) {
 		Array<TextureAtlas.AtlasRegion> regions = atlasFloors.findRegions(e.getKey());
-		name2regions.put(e.getKey(), regions);
+		name2Regions.put(e.getKey(), regions);
 		floorIndices.put(e.getValue(), regions.size - 1);
 	}
 	// Validate that all images have indices from 0 to n without skips.
-	for (Map.Entry<String, Array<TextureAtlas.AtlasRegion>> e : name2regions.entrySet()) {
+	for (Map.Entry<String, Array<TextureAtlas.AtlasRegion>> e : name2Regions.entrySet()) {
 		boolean zeroIndexFound = false;
 		boolean lastIndexFound = false;
 		int size = e.getValue().size;
@@ -160,12 +161,12 @@ private void cacheRegions() {
 
 }
 
-private TransitionsToFloor getFloorTransitionsProvider(short floorId) {
-	return floorTransitionsProviders[floorId];
+private TransitionsToFloor getFloorTransitionsProvider(FloorType floorType) {
+	return floorTransitionsProviders.get(floorType);
 }
 
 void drawFloorTransitionsInCell(RenderCell cell, boolean liquid) {
-	short self = cell.getFloor();
+	FloorType self = cell.getFloor();
 	RenderCell renderCell = gameScreen.renderWorld.getCell(cell.getX(), cell.getY() + 1);
 	// Indices 0 and 2 are swapped
 	floorsFrom4Sides[2] = cell.getY() + 1 < gameScreen.worldHeightCells && renderCell != null ? renderCell.getFloor() : self;
@@ -180,13 +181,13 @@ void drawFloorTransitionsInCell(RenderCell cell, boolean liquid) {
 	}
 }
 
-private void drawCellWithTransitions(int x, int y, short self, boolean liquid) {
+private void drawCellWithTransitions(int x, int y, FloorType self, boolean liquid) {
 	// Get individual transition pixmap for each side
 	for (CardinalDirection dir : CardinalDirection.values()) {
 		int[] d = dir.side2d();
 		int i = dir.getCardinalIndex();
 		if (floorsFrom4Sides[i] != self
-			&& FloorType.getById(gameScreen.renderWorld.getCell(x + d[0], y + d[1]).getFloor()).isLiquid() == liquid
+			&& gameScreen.renderWorld.getCell(x + d[0], y + d[1]).getFloor().isLiquid() == liquid
 			) {
 			TransitionsToFloor floorTransitionsProvider = getFloorTransitionsProvider(floorsFrom4Sides[i]);
 			batch.draw(

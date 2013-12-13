@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import tendiwa.core.Character;
 import tendiwa.core.Item;
+import tendiwa.core.Items;
 
 public class CharacterActor extends Actor {
 private static final TextureAtlas atlasCharacters = new TextureAtlas(Gdx.files.internal("pack/characters.atlas"), true);
@@ -46,9 +47,9 @@ public void updateTexture() {
 	batch.begin();
 	batch.draw(atlasBodies.findRegion("human"), 0, 0, 32, 32);
 	for (Item item : character.getEquipment()) {
-		if (item.getType().isWearable()) {
+		if (Items.isWearable(item.getType())) {
 			batch.draw(atlasApparel.findRegion(item.getType().getResourceName()), 0, 0);
-		} else if (item.getType().isWieldable()) {
+		} else if (Items.isWieldable(item.getType())) {
 			batch.draw(atlasWielded.findRegion(item.getType().getResourceName()), 0, 0);
 		}
 	}

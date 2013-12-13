@@ -33,7 +33,7 @@ public void update() {
 		itemIcon.addListener(new InputListener() {
 			@Override
 			public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
-				if (item.getType().isWearable()) {
+				if (Items.isWearable(item.getType())) {
 					Tendiwa.getServer().pushRequest(new RequestTakeOff((UniqueItem) item));
 				} else {
 					Tendiwa.getServer().pushRequest(new RequestUnwield(item));
@@ -56,7 +56,7 @@ public void update() {
 				if (Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT)) {
 					Tendiwa.getServer().pushRequest(new RequestDrop(item));
 				} else {
-					if (item.getType().isWearable()) {
+					if (Items.isWearable(item.getType())) {
 						if (Tendiwa.getPlayerCharacter().getEquipment().canPutOn((UniqueItem) item)) {
 							Tendiwa.getServer().pushRequest(new RequestPutOn((UniqueItem) item));
 						}

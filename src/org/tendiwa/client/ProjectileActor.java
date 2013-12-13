@@ -2,23 +2,23 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import tendiwa.core.Item;
+import tendiwa.core.Projectile;
 
-public class ItemActor extends Actor {
-private final TextureRegion texture;
+public class ProjectileActor extends Actor {
+private final TextureAtlas.AtlasRegion texture;
 
-public ItemActor(int x, int y, Item item) {
+public ProjectileActor(Projectile projectile, int x, int y) {
 	super();
-	texture = AtlasItems.getInstance().findRegion(item.getType().getResourceName());
+	texture = AtlasProjectiles.getInstance().findRegion(projectile.getResourceName());
+	assert texture != null;
 	setX(x);
 	setY(y);
 	// To rotate the Actor around its center
 	setOriginX(0.5f);
 	setOriginY(0.5f);
 }
-
 @Override
 public void draw(SpriteBatch batch, float parentAlpha) {
 	super.draw(batch, parentAlpha);

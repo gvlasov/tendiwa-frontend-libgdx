@@ -327,7 +327,7 @@ private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {
 		return null;
 	}
 	return atlasObjects.findRegion(
-		gameObject.getType().getName()
+		gameObject.getType().getResourceName()
 	);
 }
 

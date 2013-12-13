@@ -100,7 +100,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 	} else if (item instanceof SpellProjectile) {
 		actor = new SpellProjectileFireballActor(fromX, fromY);
 	} else {
-		throw new UnsupportedOperationException();
+		actor = new ProjectileActor(item, fromX, fromY);
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);

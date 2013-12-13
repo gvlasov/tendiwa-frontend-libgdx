@@ -15,15 +15,15 @@ static {
 	pixmapTextureAtlasFloors = createPixmapTextureAtlas("floors");
 }
 
-private final short floorId;
+private final FloorType floorType;
 
 /**
- * @param floorId
- * 	Id of a floor whose pixels will be in transitions obtained from this object.
+ * @param floorType
+ * 	Type of a floor whose pixels will be in transitions obtained from this object.
  */
-TransitionsToFloor(short floorId) {
+TransitionsToFloor(FloorType floorType) {
 	super(4);
-	this.floorId = floorId;
+	this.floorType = floorType;
 	createTransitions();
 }
 
@@ -35,7 +35,7 @@ private static PixmapTextureAtlas createPixmapTextureAtlas(String name) {
 public Pixmap createTransition(CardinalDirection dir) {
 	int diffusionDepth = 13;
 	Pixmap.setBlending(Pixmap.Blending.None);
-	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(FloorType.getById(floorId).getName());
+	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(floorType.getResourceName());
 	CardinalDirection opposite = dir.opposite();
 	EnhancedRectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
 	EnhancedRectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);

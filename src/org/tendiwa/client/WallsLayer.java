@@ -5,10 +5,14 @@ import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.utils.Array;
 import tendiwa.core.CardinalDirection;
 import tendiwa.core.RenderCell;
 import tendiwa.core.RenderWorld;
 import tendiwa.core.WallType;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class renders walls and field of view transitions above walls. I separated it from other render code because
@@ -23,7 +27,7 @@ final GameScreen gameScreen;
 final TransitionPregenerator fovEdgeOnWallToUnseen;
 final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 final private TextureAtlas atlasWalls;
-private final int[] wallHeights;
+private final Map<String, Integer> wallHeights;
 private final RenderWorld renderWorld;
 
 WallsLayer(GameScreen gameScreen) {
@@ -31,10 +35,11 @@ WallsLayer(GameScreen gameScreen) {
 	fovEdgeOnWallToUnseen = new FovEdgeTransparent();
 	fovEdgeOnWallToNotYetSeen = new FovEdgeOpaque();
 	atlasWalls = new TextureAtlas(Gdx.files.internal("pack/walls.atlas"), true);
-	int numberOfWallTypes = WallType.getNumberOfWallTypes();
-	wallHeights = new int[numberOfWallTypes];
-	for (int i = 0; i < numberOfWallTypes; i++) {
-		wallHeights[i] = atlasWalls.findRegion(WallType.getById(i + 1).getName()).getRegionHeight();
+	Array<TextureAtlas.AtlasRegion> regions = atlasWalls.getRegions();
+	int numberOfWallTypes = regions.size;
+	wallHeights = new HashMap<>(numberOfWallTypes);
+	for (TextureAtlas.AtlasRegion region : regions) {
+		wallHeights.put(region.name, region.getRegionHeight());
 	}
 	renderWorld = gameScreen.renderWorld;
 }
@@ -182,7 +187,7 @@ void draw() {
  * 	The cell to draw at.
  */
 void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
-	int wallHeight = getWallHeight(cell.getFloor());
+	int wallHeight = getWallHeight(cell.getWall());
 	for (CardinalDirection dir : CardinalDirection.values()) {
 		// Here to get texture number shift we pass absolute coordinates x and y, because,
 		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
@@ -250,30 +255,29 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 }
 
 TextureRegion getWallTextureByCell(int x, int y) {
-	short wallId = gameScreen.renderWorld.getCell(x, y).getWall();
-	WallType wallType = WallType.getById(wallId);
-	String name = wallType.getName();
+	WallType wallType = gameScreen.renderWorld.getCell(x, y).getWall();
+	String name = wallType.getResourceName();
 	int index = 0;
 	RenderCell neighborCell = gameScreen.renderWorld.getCell(x, y - 1);
-	if (neighborCell == null || neighborCell.getWall() == wallId) {
+	if (neighborCell == null || neighborCell.getWall() == wallType) {
 		index += 1000;
 	}
 	neighborCell = gameScreen.renderWorld.getCell(x + 1, y);
-	if (neighborCell == null || neighborCell.getWall() == wallId) {
+	if (neighborCell == null || neighborCell.getWall() == wallType) {
 		index += 100;
 	}
 	neighborCell = gameScreen.renderWorld.getCell(x, y + 1);
-	if (neighborCell == null || neighborCell.getWall() == wallId) {
+	if (neighborCell == null || neighborCell.getWall() == wallType) {
 		index += 10;
 	}
 	neighborCell = gameScreen.renderWorld.getCell(x - 1, y);
-	if (neighborCell == null || neighborCell.getWall() == wallId) {
+	if (neighborCell == null || neighborCell.getWall() == wallType) {
 		index += 1;
 	}
 	return atlasWalls.findRegion(name, index);
 }
 
-int getWallHeight(short terrain) {
-	return wallHeights[terrain];
+int getWallHeight(WallType type) {
+	return wallHeights.get(type.getResourceName());
 }
 }
