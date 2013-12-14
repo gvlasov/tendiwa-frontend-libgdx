@@ -3,14 +3,15 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
 public class ParticleEffectActor extends Actor {
 ParticleEffect effect;
 
-public ParticleEffectActor(String particleEffect, String imagesDirectory) {
+public ParticleEffectActor(String particleEffect, TextureAtlas atlas) {
 	this.effect = new ParticleEffect();
-	effect.load(Gdx.files.internal(particleEffect), Gdx.files.absolute(imagesDirectory));
+	effect.load(Gdx.files.internal(particleEffect), atlas);
 }
 
 public void draw(SpriteBatch batch, float parentAlpha) {

@@ -5,6 +5,8 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import com.badlogic.gdx.scenes.scene2d.actions.ParallelAction;
+import com.badlogic.gdx.scenes.scene2d.actions.RunnableAction;
 import org.tendiwa.events.EventProjectileFly;
 import tendiwa.core.Character;
 import tendiwa.core.*;
@@ -95,23 +97,34 @@ public boolean hasActorForItem(Item item) {
  */
 public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int fromY, int toX, int toY, EventProjectileFly.FlightStyle style) {
 	final Actor actor;
+
+	Action action;
+	boolean rotating = false;
 	if (style == EventProjectileFly.FlightStyle.CAST && item instanceof Item) {
 		actor = obtainItemActor(fromX, fromY, (Item) item);
+		rotating = true;
 	} else if (item instanceof SpellProjectile) {
 		actor = new SpellProjectileFireballActor(fromX, fromY);
 	} else {
-		actor = new ProjectileActor(item, fromX, fromY);
+		actor = new ProjectileActor(item, fromX, fromY, toX, toY);
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
 	moveToAction.setDuration((float) (EnhancedPoint.distance(fromX, fromY, toX, toY) * 0.05));
-	Action action = sequence(parallel(moveToAction, rotateBy(360, moveToAction.getDuration())), run(new Runnable() {
+	ParallelAction movingAndRotating = parallel(moveToAction, rotateBy(360, moveToAction.getDuration()));
+	RunnableAction runnable = run(new Runnable() {
 		@Override
 		public void run() {
 			TendiwaStage.this.getRoot().removeActor(actor);
 			gameScreen.signalEventProcessingDone();
 		}
-	}));
+	});
+	if (rotating) {
+		action = sequence(movingAndRotating, runnable);
+	} else {
+		action = sequence(moveToAction, runnable);
+	}
+
 	actor.addAction(action);
 	return actor;
 }

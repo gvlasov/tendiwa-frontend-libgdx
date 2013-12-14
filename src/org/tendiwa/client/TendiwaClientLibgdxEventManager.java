@@ -55,7 +55,7 @@ public void event(final EventMove e) {
 					Action upAndDown = sequence(moveUp, moveDown);
 					action = parallel(moveTo, upAndDown);
 				} else {
-					throw new UnsupportedOperationException();
+					action = moveTo(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY(), 0.1f);
 				}
 				Action sequence = sequence(action, run(new Runnable() {
 					@Override
@@ -257,7 +257,7 @@ public void event(final EventProjectileFly eventProjectileFly) {
 				eventProjectileFly.fromY,
 				eventProjectileFly.toX,
 				eventProjectileFly.toY,
-				EventProjectileFly.FlightStyle.PROPELLED
+				eventProjectileFly.style
 			);
 			gameScreen.getStage().addActor(actor);
 		}

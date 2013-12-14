@@ -27,5 +27,6 @@ public static void buildResources() {
 	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/chardoll/apparel", "apparel");
 	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/chardoll/wielded", "wielded");
 	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/ranged", "projectiles");
+	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/spells", "spells");
 }
 }

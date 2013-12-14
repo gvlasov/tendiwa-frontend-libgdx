@@ -62,16 +62,18 @@ private void initializeActors() {
 	table.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	this.addActor(table);
 	UiActions actions = UiActions.getInstance();
+	UiSpells spells = UiSpells.getInstance();
 	inventory = new UiInventory();
 	table.add(new UiQuiver()).expand().right().bottom().pad(5).colspan(2);
 	table.row();
 	table.add(actions).left().bottom().pad(5).size(200, 100);
+	table.add(spells).pad(5).size(200, 100);
 	table.add(inventory).right().bottom().pad(5).size(200, 100);
 	inventory.update();
 	actions.update();
-	table.layout();
 
 	actions.setVisible(false);
+	spells.setVisible(false);
 }
 
 private Table createTable() {

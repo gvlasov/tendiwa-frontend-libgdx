@@ -187,6 +187,10 @@ public boolean keyDown(int keycode) {
 		Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget(
 			(ActionWithoutTarget) CharacterAbilities.SHOUT.getAction()
 		));
+	} else if (keycode == Z) {
+		UiSpells.getInstance().update();
+		UiSpells.getInstance().setVisible(true);
+		Gdx.input.setInputProcessor(UiSpells.getInstance().getInputProcessor());
 	}
 	return true;
 }

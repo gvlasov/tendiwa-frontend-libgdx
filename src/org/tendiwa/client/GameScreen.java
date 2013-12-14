@@ -192,7 +192,7 @@ private void setRenderingMode() {
 
 @Override
 public void render(float delta) {
-	synchronized (server) {
+	synchronized (Tendiwa.getLock()) {
 		Actor characterActor = stage.getPlayerCharacterActor();
 		processEvents();
 		stage.act(Gdx.graphics.getDeltaTime());

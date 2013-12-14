@@ -18,7 +18,7 @@ private static UiActions INSTANCE;
 private static Runnable onComplete = new Runnable() {
 	@Override
 	public void run() {
-		UiActions.INSTANCE.setVisible(false);
+		INSTANCE.setVisible(false);
 		Gdx.input.setInputProcessor(TendiwaGame.getGameScreen().getInputProcessor());
 	}
 };

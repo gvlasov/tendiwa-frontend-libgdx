@@ -14,7 +14,7 @@ import tendiwa.core.Item;
 import tendiwa.core.Items;
 
 public class CharacterActor extends Actor {
-private static final TextureAtlas atlasCharacters = new TextureAtlas(Gdx.files.internal("pack/characters.atlas"), true);
+private static final TextureAtlas atlasCharacters = AtlasCharacters.getInstance();
 private static final TextureAtlas atlasBodies = new TextureAtlas(Gdx.files.internal("pack/bodies.atlas"), true);
 private static final TextureAtlas atlasApparel = new TextureAtlas(Gdx.files.internal("pack/apparel.atlas"), true);
 private static final TextureAtlas atlasWielded = new TextureAtlas(Gdx.files.internal("pack/wielded.atlas"), true);

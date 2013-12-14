@@ -2,7 +2,6 @@ package org.tendiwa.client;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import com.google.common.collect.Lists;
 
 import java.util.*;
 
@@ -111,17 +110,6 @@ private char obtainNextFreeChar() {
  */
 public T getItemForCharacter(char ch) {
 	return itemsToChars.inverse().get(ch);
-}
-
-public String show() {
-	StringBuilder builder = new StringBuilder();
-	for (Map.Entry<T, Character> e : itemsToChars.entrySet()) {
-		builder.append(e.getKey());
-		builder.append(" -> ");
-		builder.append(e.getValue());
-		builder.append("\n");
-	}
-	return builder.toString();
 }
 
 @Override
