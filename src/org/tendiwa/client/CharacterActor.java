@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import tendiwa.core.Character;
+import tendiwa.core.CharacterAspect;
 import tendiwa.core.Item;
 import tendiwa.core.Items;
 
@@ -27,25 +28,31 @@ public CharacterActor(Character character) {
 	this.character = character;
 	setX(character.getX());
 	setY(character.getY());
-	String type = "player";
-//	if (character.getType().hasAspect(CharacterAspect.HUMANOID)) {
-	frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, true);
-	updateTexture();
-	texture = new TextureRegion(frameBuffer.getColorBufferTexture());
-//	} else {
-//		texture = atlasCharacters.findRegion(type);
-//	}
-	if (texture == null) {
-		throw new RuntimeException("No image for character type " + type);
+	if (character.getType().hasAspect(CharacterAspect.HUMANOID)) {
+		frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, true);
+		updateTexture();
+		texture = new TextureRegion(frameBuffer.getColorBufferTexture());
+	} else {
+		String typeName = character.getType().getResourceName();
+		texture = atlasCharacters.findRegion(typeName);
 	}
 }
 
+/**
+ * Updates texture of those characters that are constructed from several images: body, bodily features, apparel,
+ * weapons.
+ */
 public void updateTexture() {
 	frameBuffer.begin();
 	Gdx.gl.glClearColor(0, 0, 0, 0);
 	Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 	batch.begin();
-	batch.draw(atlasBodies.findRegion("human"), 0, 0, 32, 32);
+	String resourceName = character.getType().getResourceName();
+	TextureAtlas.AtlasRegion region = atlasBodies.findRegion(resourceName);
+	if (region == null) {
+		throw new RuntimeException("No image for character type " + character.getType().getResourceName());
+	}
+	batch.draw(region, 0, 0, 32, 32);
 	for (Item item : character.getEquipment()) {
 		if (Items.isWearable(item.getType())) {
 			batch.draw(atlasApparel.findRegion(item.getType().getResourceName()), 0, 0);

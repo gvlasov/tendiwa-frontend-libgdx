@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.*;
+import tendiwa.core.Character;
 import tendiwa.core.*;
 
 import java.util.LinkedList;
@@ -19,7 +20,7 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
  * Each time the game is rendered, all EventResults are processed inside {@link GameScreen#render(float)}.
  */
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
-private static boolean animationsEnabled = true;
+private static boolean animationsEnabled = false;
 private GameScreen gameScreen;
 private Queue<EventResult> pendingOperations = new LinkedList<>();
 
@@ -41,11 +42,11 @@ public void event(final EventMove e) {
 				Action action;
 				if (e.movingStyle == MovingStyle.STEP) {
 					action = new MoveToAction();
-					((MoveToAction) action).setPosition(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY());
+					((MoveToAction) action).setPosition(e.character.getX(), e.character.getY());
 					((MoveToAction) action).setDuration(0.1f);
 				} else if (e.movingStyle == MovingStyle.LEAP) {
 					MoveByAction moveTo = new MoveByAction();
-					moveTo.setAmount(Tendiwa.getPlayerCharacter().getX() - e.xPrev, Tendiwa.getPlayerCharacter().getY() - e.yPrev);
+					moveTo.setAmount(e.character.getX() - e.xPrev, e.character.getY() - e.yPrev);
 					float lengthMovingDuration = 0.3f;
 					moveTo.setDuration(lengthMovingDuration);
 					MoveByAction moveUp = moveBy(0, -1, lengthMovingDuration / 2);
@@ -55,18 +56,20 @@ public void event(final EventMove e) {
 					Action upAndDown = sequence(moveUp, moveDown);
 					action = parallel(moveTo, upAndDown);
 				} else {
-					action = moveTo(Tendiwa.getPlayerCharacter().getX(), Tendiwa.getPlayerCharacter().getY(), 0.1f);
+					action = moveTo(e.character.getX(), e.character.getY(), 0.1f);
 				}
 				Action sequence = sequence(action, run(new Runnable() {
 					@Override
 					public void run() {
+						gameScreen.getStage().updateCharactersVisibility();
 						gameScreen.signalEventProcessingDone();
 					}
 				}));
 				characterActor.addAction(sequence);
 			} else {
-				characterActor.setX(Tendiwa.getPlayerCharacter().getX());
-				characterActor.setY(Tendiwa.getPlayerCharacter().getY());
+				characterActor.setX(e.character.getX());
+				characterActor.setY(e.character.getY());
+				gameScreen.getStage().updateCharactersVisibility();
 				gameScreen.signalEventProcessingDone();
 			}
 		}

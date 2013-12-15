@@ -183,7 +183,7 @@ public boolean keyDown(int keycode) {
 				}
 			}
 		);
-	} else if (keycode == S) {
+	} else if (keycode == S && Gdx.input.isKeyPressed(SHIFT_LEFT)) {
 		Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget(
 			(ActionWithoutTarget) CharacterAbilities.SHOUT.getAction()
 		));
@@ -191,6 +191,8 @@ public boolean keyDown(int keycode) {
 		UiSpells.getInstance().update();
 		UiSpells.getInstance().setVisible(true);
 		Gdx.input.setInputProcessor(UiSpells.getInstance().getInputProcessor());
+	} else if (keycode == S) {
+		Tendiwa.getServer().pushRequest(new RequestIdle());
 	}
 	return true;
 }

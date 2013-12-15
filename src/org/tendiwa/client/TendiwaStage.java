@@ -46,6 +46,11 @@ private void initializeActors() {
 
 private CharacterActor createCharacterActor(Character character) {
 	CharacterActor actor = new CharacterActor(character);
+	if (Tendiwa.getPlayerCharacter().canSee(character.getX(), character.getY())) {
+		actor.setVisible(true);
+	} else {
+		actor.setVisible(false);
+	}
 	addActor(actor);
 	return actor;
 }
@@ -143,5 +148,21 @@ public com.badlogic.gdx.scenes.scene2d.Actor obtainSoundActor(SoundType soundTyp
 		}
 	})));
 	return actor;
+}
+public void updateCharactersVisibility() {
+	Character player = Tendiwa.getPlayerCharacter();
+	for (Character character : player.getTimeStream().getCharacters()) {
+		CharacterActor actor = gameScreen.getStage().getCharacterActor(character);
+		if (actor != null) {
+			if (player.canSee(character.getX(), character.getY())
+				&& !actor.isVisible()) {
+				actor.setVisible(true);
+			} else if (!player.canSee(character.getX(), character.getY())
+				&& actor.isVisible()) {
+				actor.setVisible(false);
+			}
+
+		}
+	}
 }
 }
