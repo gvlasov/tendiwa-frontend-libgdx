@@ -19,6 +19,7 @@ public class UiInventory extends TendiwaWidget {
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 
 public UiInventory() {
+	super();
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	setSize(400, 300);
 	add(flowGroup).expand().fill();

@@ -90,7 +90,8 @@ public boolean keyDown(int keycode) {
 			TendiwaGame.switchToGameScreen();
 		}
 	} else if (keycode == F10) {
-		TendiwaClientLibgdxEventManager.toggleAnimations();
+		gameScreen.getConfig().toggleAnimations();
+		UiLog.getInstance().pushText("Animations " + (gameScreen.getConfig().animationsEnabled ? "enabled" : "disabled")+".");
 	} else if (keycode == F11) {
 		gameScreen.toggleStatusbar();
 	} else if (keycode == G) {
@@ -210,7 +211,7 @@ public boolean keyTyped(char character) {
 @Override
 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 	if (currentTask != null) {
-		System.out.println("fuck that");
+		System.out.println("fuck that " + currentTask.ended());
 		return false;
 	}
 	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
@@ -218,18 +219,25 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
 		return true;
 	}
-	final LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
+	LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
 	if (path == null || path.size() == 0) {
 		return true;
 	}
 	trySettingTask(new Task() {
+		public boolean forcedEnd = false;
+
 		@Override
 		public boolean ended() {
-			return gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
+			return forcedEnd || gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
 		}
 
 		@Override
 		public void execute() {
+			LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
+			if (path == null) {
+				forcedEnd = true;
+				return;
+			}
 			if (!path.isEmpty()) {
 				EnhancedPoint nextStep = path.removeFirst();
 				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(

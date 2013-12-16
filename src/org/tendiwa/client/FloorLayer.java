@@ -29,7 +29,7 @@ private final int uWaveState;
 private Map<FloorType, Map<Integer, TextureRegion>> floorRegions = new HashMap<>();
 private Map<FloorType, Integer> floorIndices = new HashMap<>();
 private Map<FloorType, TransitionsToFloor> floorTransitionsProviders;
-private boolean animateLiquidFloor = true;
+private boolean animateLiquidFloor;
 
 public FloorLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
@@ -50,10 +50,17 @@ void initFloorTransitionsProviders() {
 }
 
 void draw() {
-	liquidFloorAnimateShader.begin();
-	liquidFloorAnimateShader.setUniformf(
-		uWaveState, waveState(0.5f)
-	);
+	// Config is read once per frame
+	animateLiquidFloor = gameScreen.getConfig().animateLiquidFloor;
+	if (animateLiquidFloor) {
+		liquidFloorAnimateShader.begin();
+		liquidFloorAnimateShader.setUniformf(
+			uWaveState, waveState(0.5f)
+		);
+		liquidFloorAnimateShader.end();
+	} else {
+		batch.setShader(GameScreen.defaultShader);
+	}
 	batch.setProjectionMatrix(gameScreen.camera.combined);
 	batch.begin();
 	drawFloors(false);
@@ -83,7 +90,7 @@ private void drawFloors(boolean liquid) {
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
 			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
-			if (cell != null && cell.getFloor().isLiquid() == liquid) {
+			if (cell != null && (cell.getFloor().isLiquid() == liquid || !animateLiquidFloor)) {
 				drawFloor(cell.getFloor(), x, y);
 			}
 		}
@@ -187,7 +194,7 @@ private void drawCellWithTransitions(int x, int y, FloorType self, boolean liqui
 		int[] d = dir.side2d();
 		int i = dir.getCardinalIndex();
 		if (floorsFrom4Sides[i] != self
-			&& gameScreen.renderWorld.getCell(x + d[0], y + d[1]).getFloor().isLiquid() == liquid
+			&& (!animateLiquidFloor || gameScreen.renderWorld.getCell(x + d[0], y + d[1]).getFloor().isLiquid() == liquid)
 			) {
 			TransitionsToFloor floorTransitionsProvider = getFloorTransitionsProvider(floorsFrom4Sides[i]);
 			batch.draw(

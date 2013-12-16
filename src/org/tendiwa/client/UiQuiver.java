@@ -11,6 +11,7 @@ private final Label label;
 private Image itemIcon;
 
 public UiQuiver() {
+	super();
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	label = new Label("quiver", amountStyle);
 	itemIcon = new Image();

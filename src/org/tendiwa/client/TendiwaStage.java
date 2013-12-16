@@ -149,6 +149,7 @@ public com.badlogic.gdx.scenes.scene2d.Actor obtainSoundActor(SoundType soundTyp
 	})));
 	return actor;
 }
+
 public void updateCharactersVisibility() {
 	Character player = Tendiwa.getPlayerCharacter();
 	for (Character character : player.getTimeStream().getCharacters()) {

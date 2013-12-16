@@ -58,7 +58,7 @@ public static GameScreen getGameScreen() {
 
 @Override
 public void create() {
-	gameScreen = new GameScreen(this);
+	gameScreen = new GameScreen(this, new ClientConfig());
 	itemSelectionScreen = new ItemSelectionScreen();
 	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 	setScreen(gameScreen);

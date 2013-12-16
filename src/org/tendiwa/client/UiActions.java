@@ -51,6 +51,7 @@ private EntitySelectionListener<CharacterAbility> onActionSelected = new EntityS
 private Label.LabelStyle style = new Label.LabelStyle(TendiwaFonts.default14NonFlipped, Color.WHITE);
 
 private UiActions() {
+	super();
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	add(flowGroup).expand().fill();
 }

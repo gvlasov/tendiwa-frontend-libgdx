@@ -53,6 +53,7 @@ private EntitySelectionListener<Spell> onActionSelected = new EntitySelectionLis
 private Label.LabelStyle style = new Label.LabelStyle(TendiwaFonts.default14NonFlipped, Color.WHITE);
 
 public UiSpells() {
+	super();
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	add(flowGroup).expand().fill();
 }

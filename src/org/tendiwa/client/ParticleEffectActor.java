@@ -1,8 +1,8 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.ParticleEffect;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 
@@ -14,7 +14,8 @@ public ParticleEffectActor(String particleEffect, TextureAtlas atlas) {
 	effect.load(Gdx.files.internal(particleEffect), atlas);
 }
 
-public void draw(SpriteBatch batch, float parentAlpha) {
+@Override
+public void draw(Batch batch, float parentAlpha) {
 	effect.draw(batch);
 }
 

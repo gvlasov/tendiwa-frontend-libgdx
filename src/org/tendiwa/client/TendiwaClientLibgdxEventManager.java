@@ -7,7 +7,6 @@ import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.*;
-import tendiwa.core.Character;
 import tendiwa.core.*;
 
 import java.util.LinkedList;
@@ -20,7 +19,6 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
  * Each time the game is rendered, all EventResults are processed inside {@link GameScreen#render(float)}.
  */
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
-private static boolean animationsEnabled = false;
 private GameScreen gameScreen;
 private Queue<EventResult> pendingOperations = new LinkedList<>();
 
@@ -28,8 +26,8 @@ TendiwaClientLibgdxEventManager(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
 }
 
-public static void toggleAnimations() {
-	animationsEnabled = !animationsEnabled;
+public void toggleAnimations() {
+	gameScreen.getConfig().toggleAnimations();
 }
 
 @Override
@@ -38,7 +36,7 @@ public void event(final EventMove e) {
 		@Override
 		public void process() {
 			com.badlogic.gdx.scenes.scene2d.Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
-			if (animationsEnabled) {
+			if (gameScreen.getConfig().animationsEnabled) {
 				Action action;
 				if (e.movingStyle == MovingStyle.STEP) {
 					action = new MoveToAction();
@@ -134,7 +132,7 @@ public void event(final EventItemDisappear eventItemDisappear) {
 				eventItemDisappear.y,
 				eventItemDisappear.item
 			);
-			if (animationsEnabled) {
+			if (gameScreen.getConfig().animationsEnabled) {
 				AlphaAction alphaAction = new AlphaAction();
 				alphaAction.setAlpha(0.0f);
 				alphaAction.setDuration(0.1f);
@@ -284,7 +282,6 @@ public void event(final EventSound eventSound) {
 
 @Override
 public void event(final EventExplosion e) {
-
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
@@ -293,6 +290,25 @@ public void event(final EventExplosion e) {
 //				e.y
 //			);
 //			gameScreen.getStage().addActor(explosionActor);
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventGetDamage e) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+//			Actor explosionActor = gameScreen.getStage().obtainDamageActor(
+//				e.character.getX(),
+//				e.character.getY(),
+//				e.amount
+//			);
+			if (e.character.isPlayer()) {
+				UiHealthBar.getInstance().update();
+			}
+			UiLog.getInstance().pushText(e.damageSource + " is damaged by " + e.character + " for " + e.amount);
 			gameScreen.signalEventProcessingDone();
 		}
 	});

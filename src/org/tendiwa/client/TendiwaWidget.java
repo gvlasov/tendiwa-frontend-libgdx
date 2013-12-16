@@ -10,6 +10,9 @@ import tendiwa.core.Item;
 import tendiwa.core.ItemPile;
 
 public abstract class TendiwaWidget extends Table {
+protected TendiwaWidget() {
+	debug();
+}
 
 protected static final Label.LabelStyle amountStyle = new Label.LabelStyle(TendiwaFonts.default8NonFlipped, Color.WHITE);
 

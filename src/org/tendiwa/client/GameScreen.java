@@ -8,10 +8,8 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -28,7 +26,6 @@ public class GameScreen implements Screen {
 static final int TILE_SIZE = 32;
 static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
-static BitmapFont font = new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf")).generateFont(20, "\nqwertyuiop[]asdfghjkl;'zxcvbnm,./1234567890-=!@#$%^&*()_+QWERTYUIOP{}ASDFGHJKL:\"ZXCVBNM<>?\\|", true);
 private static GameScreen INSTANCE;
 final int maxStartX;
 final int maxStartY;
@@ -55,6 +52,8 @@ private final ItemsLayer itemsLayer;
 private final TendiwaUiStage uiStage;
 private final InputMultiplexer inputMultiplexer;
 private final Server server;
+private final StatusLayer statusLayer;
+private final ClientConfig config;
 protected int startCellX;
 OrthographicCamera camera;
 /**
@@ -82,9 +81,9 @@ private int maxPixelY;
  */
 private int maxPixelX;
 private Map<Integer, GameObject> objects = new HashMap<>();
-private boolean statusbarEnabled = false;
 
-public GameScreen(final TendiwaGame game) {
+public GameScreen(final TendiwaGame game, ClientConfig config) {
+	this.config = config;
 	INSTANCE = this;
 	this.game = game;
 	backendWorld = Tendiwa.getWorld();
@@ -129,11 +128,13 @@ public GameScreen(final TendiwaGame game) {
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
 	itemsLayer = new ItemsLayer(this);
+	statusLayer = new StatusLayer(this);
 	cursor = new Cursor(this);
 	uiStage = new TendiwaUiStage();
 	inputMultiplexer = new InputMultiplexer(uiStage, controller);
 	Gdx.input.setInputProcessor(inputMultiplexer);
 	server = Tendiwa.getServer();
+
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -221,8 +222,12 @@ public void render(float delta) {
 		}
 		drawObjects();
 		stage.draw();
+		uiStage.act();
 		uiStage.draw();
-		Table.drawDebug(uiStage);
+//		Table.drawDebug(uiStage);
+		if (config.statusbarEnabled) {
+			statusLayer.draw();
+		}
 	}
 }
 
@@ -248,26 +253,6 @@ private void drawObjects() {
 	}
 	// Draw stats
 	RenderCell cellUnderCursor = renderWorld.getCell(cursor.getWorldX(), cursor.getWorldY());
-	if (statusbarEnabled) {
-		font.draw(
-			batch,
-			Gdx.graphics.getFramesPerSecond() + " FPS",
-			startPixelX + 20,
-			startPixelY + 20
-		);
-		font.draw(
-			batch,
-			"screen at " + startCellX + ":" + startCellY,
-			startPixelX + 20,
-			startPixelY + 20 + 18
-		);
-		font.draw(
-			batch,
-			"cursor at " + cursor.getWorldX() + ":" + cursor.getWorldY(),
-			startPixelX + 20,
-			startPixelY + 20 + 36
-		);
-	}
 	batch.end();
 }
 
@@ -367,7 +352,7 @@ public TendiwaStage getStage() {
 }
 
 public void toggleStatusbar() {
-	statusbarEnabled = !statusbarEnabled;
+	config.statusbarEnabled = !config.statusbarEnabled;
 }
 
 public TextureAtlas getAtlasUi() {
@@ -376,5 +361,17 @@ public TextureAtlas getAtlasUi() {
 
 public InputProcessor getInputProcessor() {
 	return inputMultiplexer;
+}
+
+public TendiwaUiStage getUiStage() {
+	return uiStage;
+}
+
+public ClientConfig getConfig() {
+	return config;
+}
+
+public Cursor getCursor() {
+	return cursor;
 }
 }

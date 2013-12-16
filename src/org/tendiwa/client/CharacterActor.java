@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -19,7 +20,7 @@ private static final TextureAtlas atlasCharacters = AtlasCharacters.getInstance(
 private static final TextureAtlas atlasBodies = new TextureAtlas(Gdx.files.internal("pack/bodies.atlas"), true);
 private static final TextureAtlas atlasApparel = new TextureAtlas(Gdx.files.internal("pack/apparel.atlas"), true);
 private static final TextureAtlas atlasWielded = new TextureAtlas(Gdx.files.internal("pack/wielded.atlas"), true);
-private static final SpriteBatch batch = new Batch();
+private static final SpriteBatch batch = new OrthoBatch();
 private final Character character;
 private final TextureRegion texture;
 private FrameBuffer frameBuffer;
@@ -65,7 +66,7 @@ public void updateTexture() {
 }
 
 @Override
-public void draw(SpriteBatch batch, float parentAlpha) {
+public void draw(Batch batch, float parentAlpha) {
 	batch.draw(
 		texture,
 		(int) (getX() * GameScreen.TILE_SIZE),
@@ -80,8 +81,8 @@ public void draw(SpriteBatch batch, float parentAlpha) {
 	);
 }
 
-private static class Batch extends SpriteBatch {
-	private Batch() {
+private static class OrthoBatch extends SpriteBatch {
+	private OrthoBatch() {
 		OrthographicCamera camera = new OrthographicCamera(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
 		camera.setToOrtho(true, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
 		setProjectionMatrix(camera.combined);
