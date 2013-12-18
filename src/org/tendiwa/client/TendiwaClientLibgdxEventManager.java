@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.events.*;
+import org.tendiwa.lexeme.Language;
 import tendiwa.core.*;
 
 import java.util.LinkedList;
@@ -308,7 +309,9 @@ public void event(final EventGetDamage e) {
 			if (e.character.isPlayer()) {
 				UiHealthBar.getInstance().update();
 			}
-			UiLog.getInstance().pushText(e.damageSource + " is damaged by " + e.character + " for " + e.amount);
+			UiLog.getInstance().pushText(
+				TendiwaGame.getInstance().getLanguage().getLocalizedText("log.get_damage", e.damageSource, e.damageType, e.character)
+			);
 			gameScreen.signalEventProcessingDone();
 		}
 	});

@@ -3,9 +3,15 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import com.google.common.io.Resources;
+import org.tendiwa.lexeme.Language;
+import org.tendiwa.lexeme.implementations.Russian;
 import tendiwa.core.RequestInitialTerrain;
 import tendiwa.core.Tendiwa;
 import tendiwa.core.TendiwaClient;
+import tendiwa.modules.MainModule;
+
+import java.net.URL;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 
@@ -17,6 +23,7 @@ LwjglApplicationConfiguration cfg;
 private TendiwaClientLibgdxEventManager eventManager;
 private GameScreen gameScreen;
 private WorldMapScreen worldMapScreen;
+private Language currentLanguage;
 
 public TendiwaGame() {
 	if (INSTANCE != null) {
@@ -56,6 +63,10 @@ public static GameScreen getGameScreen() {
 	return INSTANCE.gameScreen;
 }
 
+public Language getLanguage() {
+	return currentLanguage;
+}
+
 @Override
 public void create() {
 	gameScreen = new GameScreen(this, new ClientConfig());
@@ -82,6 +93,15 @@ public void startup() {
 	cfg.forceExit = true;
 	cfg.foregroundFPS = 10000;
 	new LwjglApplication(this, cfg);
+	languageSetup();
+}
+
+private void languageSetup() {
+	currentLanguage = new Russian();
+	currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/messages.ru_RU.texts"));
+	currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/actions.ru_RU.words"));
+	currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/characters.ru_RU.words"));
+	System.out.println(currentLanguage.getLoadedWords());
 }
 
 @Override

@@ -13,10 +13,10 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
