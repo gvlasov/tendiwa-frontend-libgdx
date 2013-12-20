@@ -120,7 +120,9 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 	RunnableAction runnable = run(new Runnable() {
 		@Override
 		public void run() {
+			((ParticleEffectActor) actor).effect.allowCompletion();
 			TendiwaStage.this.getRoot().removeActor(actor);
+
 			gameScreen.signalEventProcessingDone();
 		}
 	});

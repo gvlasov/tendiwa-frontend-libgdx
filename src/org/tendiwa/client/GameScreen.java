@@ -16,7 +16,6 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
-import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
@@ -42,7 +41,7 @@ final RenderWorld renderWorld;
 private final TendiwaGame game;
 private final TextureAtlas atlasObjects;
 private final TextureAtlas atlasUi;
-private final GameScreenInputProcessor controller;
+private final TendiwaInputProcessor controller;
 private final FloorLayer floorLayer;
 private final FloorFieldOfViewLayer floorFieldOfViewLayer;
 private final TendiwaStage stage;
@@ -118,7 +117,7 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 
 	stage = new TendiwaStage(this);
 
-	controller = new GameScreenInputProcessor(this);
+	controller = new TendiwaInputProcessor(this);
 
 	setRenderingMode();
 
