@@ -118,6 +118,7 @@ public void event(final EventInitialTerrain eventInitialTerrain) {
 			for (RenderCell cell : eventInitialTerrain.seen) {
 				GameScreen.getRenderWorld().seeCell(cell);
 			}
+			gameScreen.getUiStage().getQuiver().update();
 			gameScreen.signalEventProcessingDone();
 		}
 	});
@@ -276,6 +277,19 @@ public void event(final EventSound eventSound) {
 				eventSound.x,
 				eventSound.y
 			);
+			if (eventSound.source == null) {
+				UiLog.getInstance().pushText(
+					Languages.getText("events.sound_from_cell", eventSound.sound)
+				);
+			} else if (eventSound.source == Tendiwa.getPlayerCharacter()) {
+				UiLog.getInstance().pushText(
+					Languages.getText("events.sound_from_player", eventSound.sound)
+				);
+			} else {
+				UiLog.getInstance().pushText(
+					Languages.getText("events.sound_from_source", eventSound.source, eventSound.sound)
+				);
+			}
 			gameScreen.getStage().addActor(actor);
 		}
 	});
@@ -310,7 +324,7 @@ public void event(final EventGetDamage e) {
 				UiHealthBar.getInstance().update();
 			}
 			UiLog.getInstance().pushText(
-				TendiwaGame.getInstance().getLanguage().getLocalizedText("log.get_damage", e.damageSource, e.damageType, e.character)
+				Languages.getText("log.get_damage", e.damageSource, e.damageType, e.character)
 			);
 			gameScreen.signalEventProcessingDone();
 		}

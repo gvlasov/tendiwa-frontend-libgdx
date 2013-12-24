@@ -117,7 +117,7 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 
 	stage = new TendiwaStage(this);
 
-	controller = new TendiwaInputProcessor(this);
+	controller = new GameScreenInputProcessor(this);
 
 	setRenderingMode();
 
@@ -133,6 +133,7 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 	inputMultiplexer = new InputMultiplexer(uiStage, controller);
 	Gdx.input.setInputProcessor(inputMultiplexer);
 	server = Tendiwa.getServer();
+	UiKeyHints.getInstance().update();
 
 }
 

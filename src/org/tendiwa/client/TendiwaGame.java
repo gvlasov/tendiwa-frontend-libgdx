@@ -23,7 +23,7 @@ LwjglApplicationConfiguration cfg;
 private TendiwaClientLibgdxEventManager eventManager;
 private GameScreen gameScreen;
 private WorldMapScreen worldMapScreen;
-private Language currentLanguage;
+private ClientConfig config;
 
 public TendiwaGame() {
 	if (INSTANCE != null) {
@@ -63,13 +63,10 @@ public static GameScreen getGameScreen() {
 	return INSTANCE.gameScreen;
 }
 
-public Language getLanguage() {
-	return currentLanguage;
-}
-
 @Override
 public void create() {
-	gameScreen = new GameScreen(this, new ClientConfig());
+	Languages.init();
+	gameScreen = new GameScreen(this, config);
 	itemSelectionScreen = new ItemSelectionScreen();
 	eventManager = new TendiwaClientLibgdxEventManager(gameScreen);
 	setScreen(gameScreen);
@@ -83,6 +80,7 @@ public void render() {
 
 @Override
 public void startup() {
+	this.config = new ClientConfig();
 	this.cfg = new LwjglApplicationConfiguration();
 	cfg.title = "The Tendiwa Erpoge";
 	cfg.useGL20 = true;
@@ -91,18 +89,10 @@ public void startup() {
 	cfg.resizable = false;
 	cfg.vSyncEnabled = false;
 	cfg.forceExit = true;
-	cfg.foregroundFPS = 10000;
+	cfg.foregroundFPS = config.limitFps ? 60 : 10000;
 	new LwjglApplication(this, cfg);
-	languageSetup();
 }
 
-private void languageSetup() {
-	currentLanguage = new Russian();
-	currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/messages.ru_RU.texts"));
-	currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/actions.ru_RU.words"));
-	currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/characters.ru_RU.words"));
-	System.out.println(currentLanguage.getLoadedWords());
-}
 
 @Override
 public TendiwaClientLibgdxEventManager getEventManager() {

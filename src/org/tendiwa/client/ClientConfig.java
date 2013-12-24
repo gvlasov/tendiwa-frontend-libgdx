@@ -4,6 +4,7 @@ public class ClientConfig {
 public boolean statusbarEnabled = false;
 public boolean animationsEnabled = false;
 public boolean animateLiquidFloor = false;
+public boolean limitFps = true;
 
 public void toggleAnimations() {
 	animationsEnabled = !animationsEnabled;

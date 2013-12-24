@@ -18,6 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 public class TendiwaUiStage extends Stage {
 private static UiInventory inventory;
 private static Skin skin;
+private UiQuiver uiQuiver;
 
 TendiwaUiStage() {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, new SpriteBatch());
@@ -68,7 +69,8 @@ private void initializeActors() {
 	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
 	table.add(UiHealthBar.getInstance()).expand().right().top().pad(5).colspan(1);
 	table.row();
-	table.add(new UiQuiver()).expand().right().bottom().pad(5).colspan(3);
+	uiQuiver = new UiQuiver();
+	table.add(uiQuiver).expand().right().bottom().pad(5).colspan(3);
 	table.row();
 	table.add(actions).left().bottom().pad(5).size(200, 100);
 	table.add(spells).pad(5).size(200, 100);
@@ -77,6 +79,10 @@ private void initializeActors() {
 	actions.update();
 	log.update();
 	UiHealthBar.getInstance().update();
+
+	this.addActor(UiKeyHints.getInstance());
+
+	UiKeyHints.getInstance().setVisible(false);
 
 	actions.setVisible(false);
 	spells.setVisible(false);
@@ -96,5 +102,9 @@ private TextButton createButton() {
 		}
 	});
 	return button;
+}
+
+public UiQuiver getQuiver() {
+	return uiQuiver;
 }
 }

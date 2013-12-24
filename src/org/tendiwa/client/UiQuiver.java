@@ -13,7 +13,10 @@ private Image itemIcon;
 public UiQuiver() {
 	super();
 	setBackground(TendiwaUiStage.createImage(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
-	label = new Label("quiver", amountStyle);
+	label = new Label(
+		Languages.getText("ui.quiver"),
+		amountStyle
+	);
 	itemIcon = new Image();
 	add(label).pad(5);
 	add(itemIcon).pad(5);
@@ -29,11 +32,11 @@ public UiQuiver() {
 public void update() {
 	Item item = QuiveredItemHolder.getItem();
 	if (item == null) {
-		label.setText("quiver is empty");
+		label.setText(Languages.getText("ui.quiver_is_empty"));
 		itemIcon.setDrawable(null);
 	} else {
 		itemIcon.setDrawable(new TextureRegionDrawable(getItemImage(item)));
-		label.setText("quiver");
+		label.setText(Languages.getText("ui.quiver"));
 	}
 }
 }
