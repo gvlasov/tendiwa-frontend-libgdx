@@ -6,7 +6,7 @@ public class SpellProjectileFireballActor extends ParticleEffectActor {
 public SpellProjectileFireballActor(int x, int y) {
 	super("assets/test.p", AtlasProjectiles.getInstance());
 	effect = createParticleEffect();
-	setPosition(x, y);
+	setPosition(x+0.5f, y+0.5f);
 }
 
 private ParticleEffect createParticleEffect() {

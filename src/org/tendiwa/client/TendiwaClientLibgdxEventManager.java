@@ -6,8 +6,8 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import org.tendiwa.client.effects.Blood;
 import org.tendiwa.events.*;
-import org.tendiwa.lexeme.Language;
 import tendiwa.core.*;
 
 import java.util.LinkedList;
@@ -315,18 +315,44 @@ public void event(final EventGetDamage e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-//			Actor explosionActor = gameScreen.getStage().obtainDamageActor(
-//				e.character.getX(),
-//				e.character.getY(),
-//				e.amount
-//			);
+
 			if (e.character.isPlayer()) {
 				UiHealthBar.getInstance().update();
 			}
 			UiLog.getInstance().pushText(
 				Languages.getText("log.get_damage", e.damageSource, e.damageType, e.character)
 			);
+			final Actor blood = new Blood(e.character.getX(), e.character.getY());
+			blood.addAction(sequence(delay(0.3f), run(new Runnable() {
+				@Override
+				public void run() {
+					gameScreen.getStage().getRoot().removeActor(blood);
+				}
+			})));
+			gameScreen.getStage().addActor(blood);
 			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventAttack e) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			CharacterActor characterActor = gameScreen.getStage().getCharacterActor(e.attacker);
+			float dx = e.aim.getX() - e.attacker.getX();
+			float dy = e.aim.getY() - e.attacker.getY();
+			characterActor.addAction(sequence(
+				moveBy(-dx * 0.2f, -dy * 0.2f, 0.1f),
+				moveBy(dx * 0.7f, dy * 0.7f, 0.1f),
+				moveBy(-dx * 0.5f, -dy * 0.5f, 0.2f),
+				run(new Runnable() {
+					@Override
+					public void run() {
+						gameScreen.signalEventProcessingDone();
+					}
+				})));
 		}
 	});
 }
