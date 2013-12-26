@@ -71,6 +71,7 @@ public void putAction(int combination, UiAction action) {
 
 @Override
 public boolean keyDown(int keycode) {
+//	System.out.println(gameScreen.isEventProcessingGoing()+" "+Server.isTurnComputing());
 	if (gameScreen.isEventProcessingGoing() || Server.isTurnComputing()) {
 		return false;
 	}

@@ -35,6 +35,11 @@ public void toggleAnimations() {
 public void event(final EventMove e) {
 	pendingOperations.add(new EventResult() {
 		@Override
+		public String toString() {
+			return "result move";
+		}
+
+		@Override
 		public void process() {
 			com.badlogic.gdx.scenes.scene2d.Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			if (gameScreen.getConfig().animationsEnabled) {
@@ -69,10 +74,17 @@ public void event(final EventMove e) {
 				characterActor.setX(e.character.getX());
 				characterActor.setY(e.character.getY());
 				gameScreen.getStage().updateCharactersVisibility();
+				if (e.character.isPlayer()) {
+					// If this is player moving, then the next event will be
+					// EventFovChange, and to prevent flickering we make the current event
+					// render in the same frame as the previous event.
+					gameScreen.processOneMoreEventInCurrentFrame();
+				}
 				gameScreen.signalEventProcessingDone();
 			}
 		}
 	});
+	System.out.println("added pending event move");
 }
 
 @Override
@@ -88,6 +100,11 @@ public void event(final EventSay e) {
 @Override
 public void event(final EventFovChange eventFovChange) {
 	pendingOperations.add(new EventResult() {
+		@Override
+		public String toString() {
+			return "result fov change";
+		}
+
 		@Override
 		public void process() {
 			for (Integer coord : eventFovChange.unseen) {
@@ -105,14 +122,21 @@ public void event(final EventFovChange eventFovChange) {
 					gameScreen.renderWorld.removeUnseenItems(cell.x, cell.y);
 				}
 			}
+//			gameScreen.processOneMoreEventInCurrentFrame();
 			gameScreen.signalEventProcessingDone();
 		}
 	});
+	System.out.println("added pending event fov change");
 }
 
 @Override
 public void event(final EventInitialTerrain eventInitialTerrain) {
 	pendingOperations.add(new EventResult() {
+		@Override
+		public String toString() {
+			return "result initial terrain";
+		}
+
 		@Override
 		public void process() {
 			for (RenderCell cell : eventInitialTerrain.seen) {
@@ -346,13 +370,14 @@ public void event(final EventAttack e) {
 			characterActor.addAction(sequence(
 				moveBy(-dx * 0.2f, -dy * 0.2f, 0.1f),
 				moveBy(dx * 0.7f, dy * 0.7f, 0.1f),
-				moveBy(-dx * 0.5f, -dy * 0.5f, 0.2f),
 				run(new Runnable() {
 					@Override
 					public void run() {
 						gameScreen.signalEventProcessingDone();
 					}
-				})));
+				}),
+				moveBy(-dx * 0.5f, -dy * 0.5f, 0.2f)
+			));
 		}
 	});
 }

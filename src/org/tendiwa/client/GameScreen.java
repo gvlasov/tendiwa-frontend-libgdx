@@ -80,6 +80,8 @@ private int maxPixelY;
  */
 private int maxPixelX;
 private Map<Integer, GameObject> objects = new HashMap<>();
+private boolean lastEventEndsFrame;
+private int eventsProcessed;
 
 public GameScreen(final TendiwaGame game, ClientConfig config) {
 	this.config = config;
@@ -193,9 +195,34 @@ private void setRenderingMode() {
 
 @Override
 public void render(float delta) {
+	eventsProcessed = 0;
+	do {
+		synchronized (Tendiwa.getLock()) {
+			processEvents();
+			// If at least one event was processed during this frame,
+			// then be ready to process more events that come from the last request
+			if (eventsProcessed > 0) {
+				// If the next event after the last event is supposed to be rendered in current frame,
+				// then wait until a pending operation comes to client.
+				while (game.getEventManager().getPendingOperations().isEmpty() && !lastEventEndsFrame) {
+					System.out.println(game.getEventManager().getPendingOperations().isEmpty() + " " + lastEventEndsFrame);
+					try {
+						// While this thread waits, a new pending operation may be created.
+						System.out.println("wait " + eventsProcessed);
+						Tendiwa.getLock().wait();
+						System.out.println("wait " + eventsProcessed + " end");
+					} catch (InterruptedException e) {
+					}
+				}
+				System.out.println(game.getEventManager().getPendingOperations().isEmpty());
+			}
+		}
+	} while (!lastEventEndsFrame && !game.getEventManager().getPendingOperations().isEmpty());
+	if (eventsProcessed > 0) {
+		System.out.println("--- events sequence end ---");
+	}
 	synchronized (Tendiwa.getLock()) {
 		Actor characterActor = stage.getPlayerCharacterActor();
-		processEvents();
 		stage.act(Gdx.graphics.getDeltaTime());
 		centerCamera(
 			(int) (characterActor.getX() * TILE_SIZE),
@@ -286,8 +313,16 @@ private void processEvents() {
 	while (!eventResultProcessingIsGoing && !queue.isEmpty()) {
 		EventResult result = queue.remove();
 		eventResultProcessingIsGoing = true;
+		// lastEventEndsFrame will remain true under the same condition
+		lastEventEndsFrame = true;
+		System.out.println(result);
 		result.process();
+		eventsProcessed++;
 	}
+}
+
+void processOneMoreEventInCurrentFrame() {
+	lastEventEndsFrame = false;
 }
 
 EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
