@@ -205,22 +205,15 @@ public void render(float delta) {
 				// If the next event after the last event is supposed to be rendered in current frame,
 				// then wait until a pending operation comes to client.
 				while (game.getEventManager().getPendingOperations().isEmpty() && !lastEventEndsFrame) {
-					System.out.println(game.getEventManager().getPendingOperations().isEmpty() + " " + lastEventEndsFrame);
 					try {
 						// While this thread waits, a new pending operation may be created.
-						System.out.println("wait " + eventsProcessed);
 						Tendiwa.getLock().wait();
-						System.out.println("wait " + eventsProcessed + " end");
 					} catch (InterruptedException e) {
 					}
 				}
-				System.out.println(game.getEventManager().getPendingOperations().isEmpty());
 			}
 		}
 	} while (!lastEventEndsFrame && !game.getEventManager().getPendingOperations().isEmpty());
-	if (eventsProcessed > 0) {
-		System.out.println("--- events sequence end ---");
-	}
 	synchronized (Tendiwa.getLock()) {
 		Actor characterActor = stage.getPlayerCharacterActor();
 		stage.act(Gdx.graphics.getDeltaTime());
@@ -315,7 +308,6 @@ private void processEvents() {
 		eventResultProcessingIsGoing = true;
 		// lastEventEndsFrame will remain true under the same condition
 		lastEventEndsFrame = true;
-		System.out.println(result);
 		result.process();
 		eventsProcessed++;
 	}

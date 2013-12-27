@@ -84,7 +84,6 @@ public void event(final EventMove e) {
 			}
 		}
 	});
-	System.out.println("added pending event move");
 }
 
 @Override
@@ -126,7 +125,6 @@ public void event(final EventFovChange eventFovChange) {
 			gameScreen.signalEventProcessingDone();
 		}
 	});
-	System.out.println("added pending event fov change");
 }
 
 @Override

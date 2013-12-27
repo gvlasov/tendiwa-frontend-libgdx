@@ -4,7 +4,10 @@ import com.badlogic.gdx.Gdx;
 import org.tendiwa.entities.CharacterAbilities;
 import org.tendiwa.events.*;
 import tendiwa.core.*;
+import tendiwa.core.Character;
 import tendiwa.core.meta.Condition;
+
+import java.util.LinkedList;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
@@ -49,67 +52,51 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 	putAction(H, new UiAction("action.stepWest") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX() - 1, player.getY())) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.W));
-			}
+			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY());
 		}
 	});
 	putAction(L, new UiAction("action.stepEast") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX() + 1, player.getY())) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.E));
-			}
+			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY());
 		}
 	});
 	putAction(J, new UiAction("action.stepSouth") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX(), player.getY() + 1)) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.S));
-			}
+			moveToOrAttackCharacterInCell(player.getX(), player.getY() + 1);
 		}
 
 	});
 	putAction(K, new UiAction("action.stepNorth") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX(), player.getY() - 1)) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.N));
-			}
+			moveToOrAttackCharacterInCell(player.getX(), player.getY() - 1);
 		}
 
 	});
 	putAction(Y, new UiAction("action.stepNorthWest") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX() - 1, player.getY() - 1)) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.NW));
-			}
+			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY() - 1);
 		}
 	});
 	putAction(U, new UiAction("action.stepNorthEast") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX() + 1, player.getY() - 1)) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.NE));
-			}
+			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY() - 1);
 		}
 	});
 	putAction(B, new UiAction("action.stepSouthWest") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX() - 1, player.getY() + 1)) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.SW));
-			}
+			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY() + 1);
 		}
 	});
 	putAction(N, new UiAction("action.stepSouthEast") {
 		@Override
 		public void act() {
-			if (player.canStepOn(player.getX() + 1, player.getY() + 1)) {
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.SE));
-			}
+			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY() + 1);
 		}
 	});
 	putAction(A, new UiAction("action.actionsMenu") {
@@ -185,7 +172,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 					@Override
 					public void execute(final Item item) {
 						TendiwaGame.switchToGameScreen();
-						CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+						CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 							@Override
 							public void execute(EnhancedPoint point) {
 								Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
@@ -209,7 +196,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 			if (rangedWeapon != null && quiveredItem != null && Items.isShootable(quiveredItem.getType())) {
 				final Shootable shootable = (Shootable) quiveredItem.getType();
 				if (shootable.getAmmunitionType() == ((RangedWeapon) rangedWeapon.getType()).getAmmunitionType()) {
-					CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+					CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 						@Override
 						public void execute(EnhancedPoint point) {
 							Tendiwa.getServer().pushRequest(new RequestShoot(rangedWeapon, quiveredItem, point.x, point.y));
@@ -290,7 +277,85 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 }
 
 @Override
-public void keyDown(KeyCombination combination) {
+public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+	if (currentTask != null) {
+		return false;
+	}
+	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
+	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
+	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
+		return true;
+	}
+	LinkedList<EnhancedPoint> path = Paths.getPath(
+		player.getX(), player.getY(),
+		cellX, cellY,
+		player.getPathWalkerOverCharacters(),
+		100
+	);
+	if (path == null || path.size() == 0) {
+		return true;
+	}
+	trySettingTask(new Task() {
+		public boolean forcedEnd = false;
 
+		@Override
+		public boolean ended() {
+			return forcedEnd || gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
+		}
+
+		@Override
+		public void execute() {
+			LinkedList<EnhancedPoint> path = Paths.getPath(
+				player.getX(), player.getY(),
+				cellX, cellY,
+				player.getPathWalkerOverCharacters(),
+				100
+			);
+			if (path == null) {
+				forcedEnd = true;
+				return;
+			}
+			if (!path.isEmpty()) {
+				EnhancedPoint nextStep = path.removeFirst();
+				moveToOrAttackCharacterInCell(nextStep.x, nextStep.y);
+//				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
+//					nextStep.x - player.getX(),
+//					nextStep.y - player.getY()
+//				)));
+			}
+		}
+	});
+	return true;
+}
+
+/**
+ * Is there is an enemy in a cell x:y, then this method will push a request to attack that enemy, otherwise this method
+ * will push a request to move to that cell.
+ *
+ * @param x
+ * 	X coordinate in world coordinates of a cell to move-attack to.
+ * @param y
+ * 	Y coordinate in world coordinates of a cell to move-attack to.
+ * @return true if player attacked someone in that cell, false if it moved to that cell.
+ */
+private void moveToOrAttackCharacterInCell(int x, int y) {
+	// Only neighbor cells are allowed here
+	int dx = player.getX() - x;
+	int dy = player.getY() - y;
+	assert Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
+	if (player.canStepOn(x, y)) {
+		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(-dx, -dy)));
+	} else {
+		Character aim = gameScreen.backendWorld.getDefaultPlane().getCharacter(x, y);
+		boolean isCharacterPresent = aim != null;
+		if (isCharacterPresent) {
+			boolean isHeAnEnemy = aim.isEnemy(player);
+			if (isHeAnEnemy) {
+				Tendiwa.getServer().pushRequest(new RequestAttack(aim));
+			} else {
+				assert false : "This should not happen";
+			}
+		}
+	}
 }
 }

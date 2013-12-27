@@ -12,7 +12,6 @@ import org.tendiwa.events.RequestActionWithoutTarget;
 import tendiwa.core.*;
 
 import java.lang.Character;
-import java.security.MessageDigest;
 import java.util.Map;
 
 public class UiSpells extends TendiwaWidget {
@@ -31,7 +30,7 @@ private EntitySelectionListener<Spell> onActionSelected = new EntitySelectionLis
 	public void execute(final Spell characterAbility) {
 		final ActionTargetType action = characterAbility.getAction();
 		if (action instanceof ActionToCell) {
-			CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+			CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 				@Override
 				public void execute(EnhancedPoint point) {
 					Tendiwa.getServer().pushRequest(new RequestActionToCell(

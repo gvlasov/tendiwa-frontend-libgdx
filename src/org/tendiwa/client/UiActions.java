@@ -29,7 +29,7 @@ private EntitySelectionListener<CharacterAbility> onActionSelected = new EntityS
 	public void execute(final CharacterAbility characterAbility) {
 		final ActionTargetType action = characterAbility.getAction();
 		if (action instanceof ActionToCell) {
-			CellSelection.getInstance().startCellSelection(new EntitySelectionListener<EnhancedPoint>() {
+			CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 				@Override
 				public void execute(EnhancedPoint point) {
 					Tendiwa.getServer().pushRequest(new RequestActionToCell(

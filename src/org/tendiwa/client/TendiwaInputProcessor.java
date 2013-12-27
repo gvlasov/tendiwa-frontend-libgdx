@@ -6,7 +6,9 @@ import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.google.common.collect.ImmutableList;
 import tendiwa.core.Character;
-import tendiwa.core.*;
+import tendiwa.core.Server;
+import tendiwa.core.Tendiwa;
+import tendiwa.core.World;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -22,13 +24,13 @@ protected static final int shift = 1 << 10;
 final GameScreen gameScreen;
 final Character player;
 final World world;
-private Task currentTask;
 private Map<KeyCombination, UiAction> combinationToAction = new HashMap<>();
 /**
  * Contains same data as {@link TendiwaInputProcessor#combinationToAction}, but in form of list (so it has a defined
  * order and in generally easier to iterate over).
  */
 private List<Mapping> mappings = new LinkedList<>();
+Task currentTask;
 
 public TendiwaInputProcessor(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
@@ -54,8 +56,6 @@ public static ImmutableList<Mapping> getCurrentMappings() {
 	}
 }
 
-public abstract void keyDown(KeyCombination combination);
-
 /**
  * Maps a key combination to an action so action will be executed when that key combination is pressed.
  *
@@ -72,6 +72,10 @@ public void putAction(int combination, UiAction action) {
 @Override
 public boolean keyDown(int keycode) {
 //	System.out.println(gameScreen.isEventProcessingGoing()+" "+Server.isTurnComputing());
+	if (keycode == ESCAPE && currentTask != null) {
+		System.out.println("undo");
+		currentTask = null;
+	}
 	if (gameScreen.isEventProcessingGoing() || Server.isTurnComputing()) {
 		return false;
 	}
@@ -109,48 +113,7 @@ public boolean keyTyped(char character) {
 	return false;
 }
 
-@Override
-public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-	if (currentTask != null) {
-		return false;
-	}
-	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
-	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
-	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
-		return true;
-	}
-	LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
-	if (path == null || path.size() == 0) {
-		return true;
-	}
-	trySettingTask(new Task() {
-		public boolean forcedEnd = false;
-
-		@Override
-		public boolean ended() {
-			return forcedEnd || gameScreen.player.getX() == cellX && gameScreen.player.getY() == cellY;
-		}
-
-		@Override
-		public void execute() {
-			LinkedList<EnhancedPoint> path = Paths.getPath(player.getX(), player.getY(), cellX, cellY, player, 100);
-			if (path == null) {
-				forcedEnd = true;
-				return;
-			}
-			if (!path.isEmpty()) {
-				EnhancedPoint nextStep = path.removeFirst();
-				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
-					nextStep.x - player.getX(),
-					nextStep.y - player.getY()
-				)));
-			}
-		}
-	});
-	return true;
-}
-
-private boolean trySettingTask(Task task) {
+boolean trySettingTask(Task task) {
 	if (currentTask == null) {
 		currentTask = task;
 		return true;
@@ -185,6 +148,9 @@ public void executeCurrentTask() {
 			currentTask = null;
 		} else {
 			currentTask.execute();
+			if (Tendiwa.getPlayerCharacter().isUnderAnyThreat()) {
+				currentTask = null;
+			}
 		}
 	}
 }

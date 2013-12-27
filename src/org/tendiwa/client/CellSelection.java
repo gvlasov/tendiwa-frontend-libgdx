@@ -1,6 +1,7 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -14,6 +15,9 @@ private final GameScreen gameScreen;
 private InputProcessor cellSelectionInputProcessor = new InputProcessor() {
 	@Override
 	public boolean keyDown(int keycode) {
+		if (keycode == Input.Keys.ESCAPE) {
+			disable();
+		}
 		return true;
 	}
 
@@ -95,8 +99,21 @@ public static CellSelection getInstance() {
 	return INSTANCE;
 }
 
+/**
+ * Passes a cell that is currently under cursor to the listener that was assigned at {@link
+ * CellSelection#start(EntitySelectionListener)}
+ */
 private void selectCurrentCell() {
 	entitySelectionListener.execute(new EnhancedPoint(x, y));
+	disable();
+}
+
+/**
+ * Disables cell selection without actually selecting any cell. Sets current InputProcessor back to default {@link
+ * org.tendiwa.client.GameScreen#inputMultiplexer}.
+ */
+private void disable() {
+	entitySelectionListener = null;
 	isActive = false;
 	Gdx.input.setInputProcessor(TendiwaGame.getGameScreen().getInputProcessor());
 }
@@ -111,11 +128,18 @@ private void moveCursorTo(int x, int y) {
 	this.y = y;
 }
 
-void startCellSelection(EntitySelectionListener<EnhancedPoint> entitySelectionListener) {
+/**
+ * Enters cell selection mode, changes current InputProcessor to cell selection mode processor, and adds a listener that
+ * will wait for a cell to be selected with {@link org.tendiwa.client.CellSelection#selectCurrentCell()}.
+ *
+ * @param entitySelectionListener
+ * 	A listener that will wait for a cell to be selected.
+ */
+void start(EntitySelectionListener<EnhancedPoint> entitySelectionListener) {
 	isActive = true;
 	this.entitySelectionListener = entitySelectionListener;
 	Gdx.input.setInputProcessor(cellSelectionInputProcessor);
-	moveCursorTo(gameScreen.player.getX(), gameScreen.player.getY());
+	moveCursorTo(gameScreen.getCursor().getWorldX(), gameScreen.getCursor().getWorldY());
 }
 
 boolean isActive() {
