@@ -38,6 +38,7 @@ private Texture createBlackTexture() {
 }
 
 public void draw() {
+	gameScreen.postProcessor.captureEnd();
 	gameScreen.depthTestFrameBuffer.begin();
 
 	fovEdgeOpaque.batch.setProjectionMatrix(gameScreen.camera.combined);
@@ -158,6 +159,7 @@ public void draw() {
 	}
 
 	gameScreen.depthTestFrameBuffer.end();
+	gameScreen.postProcessor.captureNoClear();
 
 	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
 	gameScreen.batch.begin();

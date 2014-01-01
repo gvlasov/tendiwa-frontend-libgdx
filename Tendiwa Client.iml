@@ -71,6 +71,18 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="artemis" level="project" />
+    <orderEntry type="module-library">
+      <library name="libgdx-contrib">
+        <CLASSES />
+        <JAVADOC />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../libs/libgdx-contribs/utils/src/main/java" />
+          <root url="file://$MODULE_DIR$/../libs/libgdx-contribs/postprocessing/src/main/java" />
+          <root url="file://$MODULE_DIR$/../libs/libgdx-contribs/postprocessing-demo/src/main/java" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="library" name="libgdx-contribs" level="project" />
   </component>
 </module>
 

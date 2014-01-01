@@ -45,6 +45,7 @@ WallsLayer(GameScreen gameScreen) {
 }
 
 void draw() {
+	gameScreen.postProcessor.captureEnd();
 	// There is a complexity in drawing walls: drawing transitions above walls.
 	// These transitions mostly go on the "roof" of a wall, i.e. higher than floor transitions.
 	gameScreen.depthTestFrameBuffer.begin();
@@ -168,6 +169,7 @@ void draw() {
 	gameScreen.batch.setShader(GameScreen.defaultShader);
 
 	gameScreen.depthTestFrameBuffer.end();
+	gameScreen.postProcessor.captureNoClear();
 
 	gameScreen.batch.begin();
 	gameScreen.batch.draw(gameScreen.depthTestFrameBuffer.getColorBufferTexture(), gameScreen.startPixelX, gameScreen.startPixelY);

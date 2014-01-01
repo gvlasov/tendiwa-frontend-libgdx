@@ -13,6 +13,11 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.bitfire.postprocessing.PostProcessor;
+import com.bitfire.postprocessing.demo.PostProcessing;
+import com.bitfire.postprocessing.effects.CrtMonitor;
+import com.bitfire.postprocessing.filters.CrtScreen;
+import com.bitfire.utils.ShaderLoader;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
@@ -82,6 +87,7 @@ private int maxPixelX;
 private Map<Integer, GameObject> objects = new HashMap<>();
 private boolean lastEventEndsFrame;
 private int eventsProcessed;
+PostProcessor postProcessor;
 
 public GameScreen(final TendiwaGame game, ClientConfig config) {
 	this.config = config;
@@ -136,7 +142,24 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 	Gdx.input.setInputProcessor(inputMultiplexer);
 	server = Tendiwa.getServer();
 	UiKeyHints.getInstance().update();
+	initPostProcessor();
 
+}
+private void initPostProcessor() {
+	ShaderLoader.BasePath = "shaders/postprocessing/";
+	ShaderLoader.Pedantic = false;
+	postProcessor = new PostProcessor(false, false, true);
+//	CrtMonitor effect = new CrtMonitor(1024, 768, true, true, CrtScreen.RgbMode.ChromaticAberrations, 0);
+
+//	Bloom bloom = new Bloom(1024, 768);
+//	Curvature curve = new Curvature();
+//	curve.setDistortion(0.5f);
+//	bloom.setBloomIntesity(1.0f);
+//	postProcessor.addEffect(curve);
+//	postProcessor.addEffect(bloom);
+	CrtMonitor effect1 = new CrtMonitor(1024, 768, false, true, CrtScreen.RgbMode.ChromaticAberrations, 8);
+	effect1.setTime(1);
+	postProcessor.addEffect(effect1);
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -181,7 +204,6 @@ void centerCamera(int x, int y) {
 	centerPixelY = y;
 	startPixelX = centerPixelX - windowWidth / 2;
 	startPixelY = centerPixelY - windowHeight / 2;
-
 }
 
 /**
@@ -229,6 +251,7 @@ public void render(float delta) {
 		camera.update();
 		batch.setProjectionMatrix(camera.combined);
 
+		postProcessor.capture();
 		floorLayer.draw();
 		floorFieldOfViewLayer.draw();
 		wallsLayer.draw();
@@ -248,8 +271,10 @@ public void render(float delta) {
 		if (config.statusbarEnabled) {
 			statusLayer.draw();
 		}
+		postProcessor.render();
 	}
 }
+
 
 private void drawObjects() {
 	batch.begin();

@@ -73,7 +73,6 @@ public void putAction(int combination, UiAction action) {
 public boolean keyDown(int keycode) {
 //	System.out.println(gameScreen.isEventProcessingGoing()+" "+Server.isTurnComputing());
 	if (keycode == ESCAPE && currentTask != null) {
-		System.out.println("undo");
 		currentTask = null;
 	}
 	if (gameScreen.isEventProcessingGoing() || Server.isTurnComputing()) {

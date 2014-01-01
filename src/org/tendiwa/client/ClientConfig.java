@@ -1,7 +1,7 @@
 package org.tendiwa.client;
 
 public class ClientConfig {
-public boolean statusbarEnabled = false;
+public boolean statusbarEnabled = true;
 public boolean animationsEnabled = false;
 public boolean animateLiquidFloor = true;
 public boolean limitFps = true;

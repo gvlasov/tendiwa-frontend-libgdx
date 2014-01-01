@@ -256,15 +256,15 @@ public void event(final EventTakeOff eventTakeOff) {
 }
 
 @Override
-public void event(final EventUnwield eventUnwield) {
+public void event(final EventUnwield e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
-			if (eventUnwield.getCharacter().isPlayer()) {
+			if (e.getCharacter().isPlayer()) {
 				TendiwaUiStage.getInventory().update();
 			}
-			if (eventUnwield.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
-				gameScreen.getStage().getCharacterActor(eventUnwield.getCharacter()).updateTexture();
+			if (e.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
+				gameScreen.getStage().getCharacterActor(e.getCharacter()).updateTexture();
 			}
 			gameScreen.signalEventProcessingDone();
 		}
@@ -272,17 +272,17 @@ public void event(final EventUnwield eventUnwield) {
 }
 
 @Override
-public void event(final EventProjectileFly eventProjectileFly) {
+public void event(final EventProjectileFly e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public void process() {
 			com.badlogic.gdx.scenes.scene2d.Actor actor = gameScreen.getStage().obtainFlyingProjectileActor(
-				eventProjectileFly.item,
-				eventProjectileFly.fromX,
-				eventProjectileFly.fromY,
-				eventProjectileFly.toX,
-				eventProjectileFly.toY,
-				eventProjectileFly.style
+				e.item,
+				e.fromX,
+				e.fromY,
+				e.toX,
+				e.toY,
+				e.style
 			);
 			gameScreen.getStage().addActor(actor);
 		}
@@ -376,6 +376,21 @@ public void event(final EventAttack e) {
 				}),
 				moveBy(-dx * 0.5f, -dy * 0.5f, 0.2f)
 			));
+		}
+	});
+}
+
+@Override
+public void event(final EventDie e) {
+	pendingOperations.add(new EventResult() {
+		@Override
+		public void process() {
+			CharacterActor characterActor = gameScreen.getStage().getCharacterActor(e.character);
+			gameScreen.getStage().getRoot().removeActor(characterActor);
+			UiLog.getInstance().pushText(
+				Languages.getText("log.death", e.character)
+			);
+			gameScreen.signalEventProcessingDone();
 		}
 	});
 }
