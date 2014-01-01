@@ -137,6 +137,7 @@ public void event(final EventInitialTerrain eventInitialTerrain) {
 
 		@Override
 		public void process() {
+			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(eventInitialTerrain.currentPlaneLevel));
 			for (RenderCell cell : eventInitialTerrain.seen) {
 				GameScreen.getRenderWorld().seeCell(cell);
 			}

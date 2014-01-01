@@ -88,6 +88,7 @@ private Map<Integer, GameObject> objects = new HashMap<>();
 private boolean lastEventEndsFrame;
 private int eventsProcessed;
 PostProcessor postProcessor;
+private HorizontalPlane currentPlane;
 
 public GameScreen(final TendiwaGame game, ClientConfig config) {
 	this.config = config;
@@ -157,9 +158,9 @@ private void initPostProcessor() {
 //	bloom.setBloomIntesity(1.0f);
 //	postProcessor.addEffect(curve);
 //	postProcessor.addEffect(bloom);
-	CrtMonitor effect1 = new CrtMonitor(1024, 768, false, true, CrtScreen.RgbMode.ChromaticAberrations, 8);
-	effect1.setTime(1);
-	postProcessor.addEffect(effect1);
+//	CrtMonitor effect1 = new CrtMonitor(1024, 768, false, true, CrtScreen.RgbMode.ChromaticAberrations, 8);
+//	effect1.setTime(1);
+//	postProcessor.addEffect(effect1);
 }
 
 public static ShaderProgram createShader(FileHandle file) {
@@ -425,5 +426,13 @@ public ClientConfig getConfig() {
 
 public Cursor getCursor() {
 	return cursor;
+}
+
+public HorizontalPlane getCurrentBackendPlane() {
+	return currentPlane;
+}
+
+public void setCurrentPlane(HorizontalPlane plane) {
+	currentPlane = plane;
 }
 }

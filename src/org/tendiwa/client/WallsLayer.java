@@ -257,7 +257,7 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 }
 
 TextureRegion getWallTextureByCell(int x, int y) {
-	WallType wallType = gameScreen.renderWorld.getCell(x, y).getWall();
+	WallType wallType = gameScreen.getCurrentBackendPlane().getWall(x, y);
 	String name = wallType.getResourceName();
 	int index = 0;
 	RenderCell neighborCell = gameScreen.renderWorld.getCell(x, y - 1);
