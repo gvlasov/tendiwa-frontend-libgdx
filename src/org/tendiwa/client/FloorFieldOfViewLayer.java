@@ -109,7 +109,7 @@ public void draw() {
 	Gdx.gl.glClearDepthf(1.0f);
 	Gdx.gl.glClear(GL10.GL_DEPTH_BUFFER_BIT);
 	Gdx.gl.glDepthFunc(GL10.GL_LESS);
-	fovEdgeOpaque.batch.setShader(WallsLayer.writeOpaqueToDepthShader);
+	fovEdgeOpaque.batch.setShader(WallActor.writeOpaqueToDepthShader);
 	fovEdgeOpaque.batch.begin();
 	Gdx.gl.glDepthMask(true);
 	for (int x = gameScreen.startCellX; x < maxRenderCellX; x++) {

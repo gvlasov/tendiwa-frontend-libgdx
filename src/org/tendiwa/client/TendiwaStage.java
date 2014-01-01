@@ -22,6 +22,7 @@ private final GameScreen gameScreen;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
 private Map<Item, Actor> itemActors = new HashMap<>();
+private HashMap<Integer, WallActor> wallActors = new HashMap<>();
 
 TendiwaStage(GameScreen gameScreen) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
@@ -165,5 +166,51 @@ public void updateCharactersVisibility() {
 
 		}
 	}
+}
+
+/**
+ * Creates a new WallActor and puts it in this Stage.
+ *
+ * @param x
+ * 	X coordinate of an actor in world coordinates.
+ * @param y
+ * 	Y coordinate of an actor in world coordinates.
+ */
+public void addWallActor(int x, int y) {
+	WallActor actor = new WallActor(gameScreen, x, y, gameScreen.getCurrentBackendPlane().getWall(x, y));
+	wallActors.put(getWallActorKey(x, y), actor);
+	addActor(actor);
+}
+
+public void removeWallActor(int x, int y) {
+	WallActor actor = wallActors.get(getWallActorKey(x, y));
+	assert actor != null;
+	getRoot().removeActor(actor);
+}
+
+/**
+ * Returns a key under which a WallActor in a particular cell will be stored in {@link TendiwaStage#wallActors}.
+ *
+ * @param x
+ * 	X coordinate of a wall in world coordinates.
+ * @param y
+ * 	Y coordinate of a wall in world coordinates.
+ * @return A key which is a hash of 2 coordinates.
+ */
+private int getWallActorKey(int x, int y) {
+	return x * gameScreen.backendWorld.getHeight() + y;
+}
+
+/**
+ * Checks if there is an actor for a wall in a particular cell.
+ *
+ * @param x
+ * 	X coordinate of a wall in world coordinates.
+ * @param y
+ * 	Y coordinate of a wall in world coordinates.
+ * @return true if there is one, false otherwise.
+ */
+public boolean hasWallActor(int x, int y) {
+	return wallActors.containsKey(getWallActorKey(x, y));
 }
 }

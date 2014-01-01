@@ -14,9 +14,6 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
-import com.bitfire.postprocessing.demo.PostProcessing;
-import com.bitfire.postprocessing.effects.CrtMonitor;
-import com.bitfire.postprocessing.filters.CrtScreen;
 import com.bitfire.utils.ShaderLoader;
 import tendiwa.core.Character;
 import tendiwa.core.*;
@@ -39,7 +36,6 @@ final int windowWidth;
 final int worldWidthCells;
 final int worldHeightCells;
 final FrameBuffer depthTestFrameBuffer;
-final WallsLayer wallsLayer;
 final int windowWidthCells;
 final int windowHeightCells;
 final RenderWorld renderWorld;
@@ -72,6 +68,7 @@ int centerPixelY;
 int cameraMoveStep = 1;
 int startPixelX;
 int startPixelY;
+PostProcessor postProcessor;
 /**
  * Max index of each floor type's images.
  */
@@ -87,7 +84,6 @@ private int maxPixelX;
 private Map<Integer, GameObject> objects = new HashMap<>();
 private boolean lastEventEndsFrame;
 private int eventsProcessed;
-PostProcessor postProcessor;
 private HorizontalPlane currentPlane;
 
 public GameScreen(final TendiwaGame game, ClientConfig config) {
@@ -131,7 +127,6 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 	setRenderingMode();
 
 	renderWorld = new RenderWorld(backendWorld);
-	wallsLayer = new WallsLayer(this);
 	floorLayer = new FloorLayer(this);
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
@@ -146,6 +141,20 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 	initPostProcessor();
 
 }
+
+public static ShaderProgram createShader(FileHandle file) {
+	ShaderProgram shader = new ShaderProgram(defaultShader.getVertexShaderSource(), file.readString());
+	if (!shader.isCompiled()) {
+		Tendiwa.getLogger().error(shader.getLog());
+		throw new RuntimeException("Could not compile a shader");
+	}
+	return shader;
+}
+
+public static RenderWorld getRenderWorld() {
+	return INSTANCE.renderWorld;
+}
+
 private void initPostProcessor() {
 	ShaderLoader.BasePath = "shaders/postprocessing/";
 	ShaderLoader.Pedantic = false;
@@ -161,19 +170,6 @@ private void initPostProcessor() {
 //	CrtMonitor effect1 = new CrtMonitor(1024, 768, false, true, CrtScreen.RgbMode.ChromaticAberrations, 8);
 //	effect1.setTime(1);
 //	postProcessor.addEffect(effect1);
-}
-
-public static ShaderProgram createShader(FileHandle file) {
-	ShaderProgram shader = new ShaderProgram(defaultShader.getVertexShaderSource(), file.readString());
-	if (!shader.isCompiled()) {
-		Tendiwa.getLogger().error(shader.getLog());
-		throw new RuntimeException("Could not compile a shader");
-	}
-	return shader;
-}
-
-public static RenderWorld getRenderWorld() {
-	return INSTANCE.renderWorld;
 }
 
 /**
@@ -255,7 +251,6 @@ public void render(float delta) {
 		postProcessor.capture();
 		floorLayer.draw();
 		floorFieldOfViewLayer.draw();
-		wallsLayer.draw();
 		itemsLayer.draw();
 		cellNetLayer.draw();
 		if (CellSelection.getInstance().isActive()) {
@@ -269,13 +264,12 @@ public void render(float delta) {
 		uiStage.act();
 		uiStage.draw();
 //		Table.drawDebug(uiStage);
-		if (config.statusbarEnabled) {
+		if (config.fpsCounter) {
 			statusLayer.draw();
 		}
 		postProcessor.render();
 	}
 }
-
 
 private void drawObjects() {
 	batch.begin();
@@ -405,7 +399,7 @@ public TendiwaStage getStage() {
 }
 
 public void toggleStatusbar() {
-	config.statusbarEnabled = !config.statusbarEnabled;
+	config.fpsCounter = !config.fpsCounter;
 }
 
 public TextureAtlas getAtlasUi() {
@@ -434,5 +428,9 @@ public HorizontalPlane getCurrentBackendPlane() {
 
 public void setCurrentPlane(HorizontalPlane plane) {
 	currentPlane = plane;
+}
+
+public boolean isOnScreen(int x, int y) {
+	return x >= startCellX && x < startCellX + windowWidthCells && y >= startCellY && y < startCellY + windowHeightCells;
 }
 }

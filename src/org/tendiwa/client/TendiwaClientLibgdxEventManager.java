@@ -41,7 +41,7 @@ public void event(final EventMove e) {
 
 		@Override
 		public void process() {
-			com.badlogic.gdx.scenes.scene2d.Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
+			Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			if (gameScreen.getConfig().animationsEnabled) {
 				Action action;
 				if (e.movingStyle == MovingStyle.STEP) {
@@ -97,7 +97,7 @@ public void event(final EventSay e) {
 }
 
 @Override
-public void event(final EventFovChange eventFovChange) {
+public void event(final EventFovChange e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public String toString() {
@@ -106,7 +106,7 @@ public void event(final EventFovChange eventFovChange) {
 
 		@Override
 		public void process() {
-			for (Integer coord : eventFovChange.unseen) {
+			for (Integer coord : e.unseen) {
 				RenderCell cell = GameScreen.getRenderWorld().getCell(coord);
 				cell.setVisible(false);
 				if (gameScreen.player.getPlane().hasAnyItems(cell.x, cell.y)) {
@@ -114,11 +114,19 @@ public void event(final EventFovChange eventFovChange) {
 						gameScreen.renderWorld.addUnseenItem(cell.x, cell.y, item);
 					}
 				}
+//				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
+//					gameScreen.getStage().removeWallActor(cell.x, cell.y);
+//				}
 			}
-			for (RenderCell cell : eventFovChange.seen) {
+			for (RenderCell cell : e.seen) {
 				GameScreen.getRenderWorld().seeCell(cell);
 				if (gameScreen.renderWorld.hasAnyUnseenItems(cell.x, cell.y)) {
 					gameScreen.renderWorld.removeUnseenItems(cell.x, cell.y);
+				}
+				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
+					if (!gameScreen.getStage().hasWallActor(cell.x, cell.y)) {
+					gameScreen.getStage().addWallActor(cell.x, cell.y);
+					}
 				}
 			}
 //			gameScreen.processOneMoreEventInCurrentFrame();
@@ -140,6 +148,10 @@ public void event(final EventInitialTerrain eventInitialTerrain) {
 			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(eventInitialTerrain.currentPlaneLevel));
 			for (RenderCell cell : eventInitialTerrain.seen) {
 				GameScreen.getRenderWorld().seeCell(cell);
+				HorizontalPlane plane = Tendiwa.getWorld().getPlayer().getPlane();
+				if (plane.hasWall(cell.x, cell.y)) {
+					gameScreen.getStage().addWallActor(cell.x, cell.y);
+				}
 			}
 			gameScreen.getUiStage().getQuiver().update();
 			gameScreen.signalEventProcessingDone();

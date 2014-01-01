@@ -27,7 +27,7 @@ public TransitionPregenerator(int variationsPerTransition) {
 
 static void initTileTextureRegionProvider(int numberOfPlaces) {
 	if (regionProvider == null) {
-		regionProvider = new TileTextureRegionProvider(numberOfPlaces, TILE_SIZE);
+		regionProvider = new TileTextureRegionProvider(numberOfPlaces, TILE_SIZE, TILE_SIZE);
 	}
 }
 

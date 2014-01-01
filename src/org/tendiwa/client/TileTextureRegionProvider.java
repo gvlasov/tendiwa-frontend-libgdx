@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.MathUtils;
@@ -19,15 +20,17 @@ final SpriteBatch textureDrawingBatch = new SpriteBatch();
 private final int regionsPerRow;
 private final FrameBuffer fbo;
 private final Texture fboTexture;
-private final int tileSize;
+private final int tileSizeX;
+private final int tileSizeY;
 private final int maxNumber;
 
-public TileTextureRegionProvider(int numberOfPlaces, int tileSize) {
+public TileTextureRegionProvider(int numberOfPlaces, int tileSizeX, int tileSizeY) {
 	int fboDimension = MathUtils.nextPowerOfTwo(
-		(int) Math.ceil(Math.sqrt(numberOfPlaces * tileSize * tileSize))
+		(int) Math.ceil(Math.sqrt(numberOfPlaces * tileSizeX * tileSizeY))
 	);
-	this.tileSize = tileSize;
-	regionsPerRow = fboDimension / tileSize;
+	this.tileSizeX = tileSizeX;
+	this.tileSizeY = tileSizeY;
+	regionsPerRow = fboDimension / tileSizeX;
 	fbo = new FrameBuffer(Pixmap.Format.RGBA8888, fboDimension, fboDimension, false);
 	fboTexture = fbo.getColorBufferTexture();
 	OrthographicCamera camera = new OrthographicCamera(fboDimension, fboDimension);
@@ -40,8 +43,8 @@ TextureRegion obtainFboTextureRegion() {
 	if (lastClaimedRegionNumber >= maxNumber) {
 		throw new RuntimeException("Maximum number of generated textures ("+maxNumber+") exceeded");
 	}
-	int startX = (lastClaimedRegionNumber % regionsPerRow) * tileSize;
-	int startY = (lastClaimedRegionNumber / regionsPerRow) * tileSize;
+	int startX = (lastClaimedRegionNumber % regionsPerRow) * tileSizeX;
+	int startY = (lastClaimedRegionNumber / regionsPerRow) * tileSizeY;
 	TileTextureRegionProvider.lastClaimedRegionNumber++;
 	return new TextureRegion(
 		fboTexture,

@@ -1,7 +1,7 @@
 package org.tendiwa.client;
 
 public class ClientConfig {
-public boolean statusbarEnabled = true;
+public boolean fpsCounter = true;
 public boolean animationsEnabled = false;
 public boolean animateLiquidFloor = true;
 public boolean limitFps = true;
@@ -11,6 +11,6 @@ public void toggleAnimations() {
 }
 
 public void toggleStatusBar() {
-	statusbarEnabled = !statusbarEnabled;
+	fpsCounter = !fpsCounter;
 }
 }
