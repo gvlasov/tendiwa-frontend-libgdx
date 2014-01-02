@@ -10,17 +10,15 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import tendiwa.core.*;
 import tendiwa.core.Character;
-import tendiwa.core.CharacterAspect;
-import tendiwa.core.Item;
-import tendiwa.core.Items;
 
 public class CharacterActor extends Actor {
 private static final TextureAtlas atlasCharacters = AtlasCharacters.getInstance();
 private static final TextureAtlas atlasBodies = new TextureAtlas(Gdx.files.internal("pack/bodies.atlas"), true);
 private static final TextureAtlas atlasApparel = new TextureAtlas(Gdx.files.internal("pack/apparel.atlas"), true);
 private static final TextureAtlas atlasWielded = new TextureAtlas(Gdx.files.internal("pack/wielded.atlas"), true);
-private static final SpriteBatch batch = new OrthoBatch();
+private static final SpriteBatch batch = new OrthoBatch(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
 private final Character character;
 private final TextureRegion texture;
 private FrameBuffer frameBuffer;
@@ -37,6 +35,7 @@ public CharacterActor(Character character) {
 		String typeName = character.getType().getResourceName();
 		texture = atlasCharacters.findRegion(typeName);
 	}
+	setZIndex(character.getY()* Tendiwa.getWorldWidth()+character.getX());
 }
 
 /**
@@ -70,7 +69,7 @@ public void draw(Batch batch, float parentAlpha) {
 	batch.draw(
 		texture,
 		(int) (getX() * GameScreen.TILE_SIZE),
-		(int) (getY() * GameScreen.TILE_SIZE),
+		(int) (getY() * GameScreen.TILE_SIZE)-GameScreen.TILE_SIZE/3,
 		getOriginX() * GameScreen.TILE_SIZE,
 		getOriginY() * GameScreen.TILE_SIZE,
 		GameScreen.TILE_SIZE,
@@ -81,11 +80,4 @@ public void draw(Batch batch, float parentAlpha) {
 	);
 }
 
-private static class OrthoBatch extends SpriteBatch {
-	private OrthoBatch() {
-		OrthographicCamera camera = new OrthographicCamera(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
-		camera.setToOrtho(true, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
-		setProjectionMatrix(camera.combined);
-	}
-}
 }

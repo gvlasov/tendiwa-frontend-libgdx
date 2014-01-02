@@ -42,6 +42,11 @@ public void event(final EventMove e) {
 		@Override
 		public void process() {
 			Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
+			int index = e.character.getY() * Tendiwa.getWorldWidth() + e.character.getX();
+			System.out.println("before " + characterActor.getZIndex());
+			gameScreen.getStage().sortActorsByY();
+			System.out.println("after " + characterActor.getZIndex());
+
 			if (gameScreen.getConfig().animationsEnabled) {
 				Action action;
 				if (e.movingStyle == MovingStyle.STEP) {
@@ -125,9 +130,12 @@ public void event(final EventFovChange e) {
 				}
 				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
 					if (!gameScreen.getStage().hasWallActor(cell.x, cell.y)) {
-					gameScreen.getStage().addWallActor(cell.x, cell.y);
+						gameScreen.getStage().addWallActor(cell.x, cell.y);
 					}
+				} else if (gameScreen.getCurrentBackendPlane().hasObject(cell.x, cell.y)) {
+					gameScreen.getStage().addObjectActor(cell.x, cell.y);
 				}
+
 			}
 //			gameScreen.processOneMoreEventInCurrentFrame();
 			gameScreen.signalEventProcessingDone();
@@ -151,7 +159,10 @@ public void event(final EventInitialTerrain eventInitialTerrain) {
 				HorizontalPlane plane = Tendiwa.getWorld().getPlayer().getPlane();
 				if (plane.hasWall(cell.x, cell.y)) {
 					gameScreen.getStage().addWallActor(cell.x, cell.y);
+				} else if (plane.hasObject(cell.x, cell.y)) {
+					gameScreen.getStage().addObjectActor(cell.x, cell.y);
 				}
+
 			}
 			gameScreen.getUiStage().getQuiver().update();
 			gameScreen.signalEventProcessingDone();

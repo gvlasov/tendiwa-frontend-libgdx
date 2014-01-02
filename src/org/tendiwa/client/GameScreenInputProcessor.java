@@ -175,7 +175,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 						CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 							@Override
 							public void execute(EnhancedPoint point) {
-								Tendiwa.getServer().pushRequest(new RequestThrowItem(item, point.x, point.y));
+								Tendiwa.getServer().pushRequest(new RequestThrowItem(item.takeSingleItem(), point.x, point.y));
 							}
 						});
 					}
@@ -199,7 +199,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 					CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 						@Override
 						public void execute(EnhancedPoint point) {
-							Tendiwa.getServer().pushRequest(new RequestShoot(rangedWeapon, quiveredItem, point.x, point.y));
+							Tendiwa.getServer().pushRequest(new RequestShoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y));
 						}
 					});
 				}

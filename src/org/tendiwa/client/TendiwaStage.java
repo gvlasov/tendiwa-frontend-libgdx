@@ -7,10 +7,12 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import com.badlogic.gdx.scenes.scene2d.actions.ParallelAction;
 import com.badlogic.gdx.scenes.scene2d.actions.RunnableAction;
+import com.badlogic.gdx.utils.SnapshotArray;
 import org.tendiwa.events.EventProjectileFly;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +20,12 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 public class TendiwaStage extends Stage {
 
+private static Comparator<Actor> ySorter = new Comparator<Actor>() {
+	@Override
+	public int compare(Actor o1, Actor o2) {
+		return -Math.round(o1.getY()) + Math.round(o2.getY());
+	}
+};
 private final GameScreen gameScreen;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
@@ -42,6 +50,19 @@ private void initializeActors() {
 	}
 	if (playerCharacterActor == null) {
 		throw new RuntimeException("Player character actor has not been initialized");
+	}
+}
+
+/**
+ * Sets zIndexes of actors. This method is called whenever an actor is moved to another z-level. This method exists
+ * because of a too simple z-index model of libgdx, where z-index can only be a value [0..numberOfActors).
+ */
+void sortActorsByY() {
+	SnapshotArray<Actor> children = getRoot().getChildren();
+	children.sort(ySorter);
+	int index = 0;
+	for (Actor child : children) {
+		child.setZIndex(index);
 	}
 }
 
@@ -177,9 +198,12 @@ public void updateCharactersVisibility() {
  * 	Y coordinate of an actor in world coordinates.
  */
 public void addWallActor(int x, int y) {
-	WallActor actor = new WallActor(gameScreen, x, y, gameScreen.getCurrentBackendPlane().getWall(x, y));
+	GameObject gameObject = gameScreen.getCurrentBackendPlane().getGameObject(x, y);
+	WallActor actor = new WallActor(gameScreen, x, y, (WallType) gameObject);
 	wallActors.put(getWallActorKey(x, y), actor);
+//	actor.setVisible(false);
 	addActor(actor);
+	actor.setZIndex(y * Tendiwa.getWorldWidth() + x);
 }
 
 public void removeWallActor(int x, int y) {
@@ -212,5 +236,9 @@ private int getWallActorKey(int x, int y) {
  */
 public boolean hasWallActor(int x, int y) {
 	return wallActors.containsKey(getWallActorKey(x, y));
+}
+
+public void addObjectActor(int x, int y) {
+	addActor(new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y)));
 }
 }
