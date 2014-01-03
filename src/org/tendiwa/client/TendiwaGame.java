@@ -87,7 +87,7 @@ public void startup() {
 	cfg.width = 1024;
 	cfg.height = 768;
 	cfg.resizable = false;
-	cfg.vSyncEnabled = false;
+	cfg.vSyncEnabled = true;
 	cfg.forceExit = true;
 	cfg.foregroundFPS = config.limitFps ? 60 : 10000;
 	new LwjglApplication(this, cfg);

@@ -65,11 +65,12 @@ public void event(final EventMove e) {
 				} else {
 					action = moveTo(e.character.getX(), e.character.getY(), 0.1f);
 				}
-				gameScreen.signalEventProcessingDone();
 				Action sequence = sequence(action, run(new Runnable() {
 					@Override
 					public void run() {
 						gameScreen.getStage().updateCharactersVisibility();
+						gameScreen.processOneMoreEventInCurrentFrame();
+						gameScreen.signalEventProcessingDone();
 					}
 				}));
 				characterActor.addAction(sequence);

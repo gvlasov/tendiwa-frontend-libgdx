@@ -7,10 +7,14 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import org.tendiwa.events.RequestActionToCell;
 import org.tendiwa.events.RequestActionWithoutTarget;
 import tendiwa.core.*;
+import tendiwa.core.Character;
 
+import java.util.Collection;
 import java.util.Map;
 
 public class UiActions extends TendiwaWidget {
@@ -65,11 +69,35 @@ public static UiActions getInstance() {
 
 @Override
 public void update() {
-	mapper.update(Tendiwa.getPlayerCharacter().getAvailableActions());
+	Iterable<CharacterAbility> actionsAroundPlayer = findActionsAroundPlayer();
+	Collection<CharacterAbility> characterActions = Tendiwa.getPlayerCharacter().getAvailableActions();
+	mapper.update(Iterables.concat(actionsAroundPlayer, characterActions));
 	flowGroup.clearChildren();
 	for (Map.Entry<CharacterAbility, java.lang.Character> e : mapper) {
 		flowGroup.addActor(createActionWidget(e.getKey(), e.getValue()));
 	}
+}
+/**
+ * Finds available actions on objects around player character.
+ *
+ * @return
+ */
+public static Iterable<CharacterAbility> findActionsAroundPlayer() {
+	Character player = Tendiwa.getPlayerCharacter();
+	HorizontalPlane plane = player.getPlane();
+	ImmutableSet.Builder<CharacterAbility> builder = ImmutableSet.builder();
+	for (Direction dir : Directions.ALL_DIRECTIONS) {
+		int[] d = dir.side2d();
+		int x = player.getX() + d[0];
+		int y = player.getY() + d[1];
+		if (plane.hasObject(x, y)) {
+			Usable usable = GameObjects.asUsable(plane.getGameObject(x, y).getType());
+			if (usable != null) {
+				builder.addAll(usable.getUsages());
+			}
+		}
+	}
+	return builder.build();
 }
 
 private WidgetGroup createActionWidget(CharacterAbility action, char character) {

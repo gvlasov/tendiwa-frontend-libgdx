@@ -109,7 +109,6 @@ public void putImage(int imageHash, FrameBuffer fb) {
  */
 private int occupyNextIndexInCache(int imageHash) {
 	int assignedIndex = lastHashOccupied;
-	System.out.println(assignedIndex);
 	hash2index.inverse().remove(lastHashOccupied);
 	hash2index.put(imageHash, lastHashOccupied);
 	lastHashOccupied++;

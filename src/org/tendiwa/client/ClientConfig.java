@@ -4,7 +4,7 @@ public class ClientConfig {
 public boolean fpsCounter = true;
 public boolean animationsEnabled = true;
 public boolean animateLiquidFloor = true;
-public boolean limitFps = false;
+public boolean limitFps = true;
 
 public void toggleAnimations() {
 	animationsEnabled = !animationsEnabled;
