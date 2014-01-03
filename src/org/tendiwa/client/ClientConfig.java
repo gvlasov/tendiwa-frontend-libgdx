@@ -2,7 +2,7 @@ package org.tendiwa.client;
 
 public class ClientConfig {
 public boolean fpsCounter = true;
-public boolean animationsEnabled = false;
+public boolean animationsEnabled = true;
 public boolean animateLiquidFloor = true;
 public boolean limitFps = false;
 

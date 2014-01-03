@@ -1,6 +1,5 @@
-Graphical client for Tendiwa roguelike framework
+Graphical frontend for Tendiwa roguelike engine
 ================================================
 
-The main official client for Tendiwa framework. Written in Java,
-communicates directly with framework's core, uses LibGDX for
+The main official frontend for Tendiwa engine. Uses LibGDX for
 rendering via OpenGL. 

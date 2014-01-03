@@ -78,7 +78,12 @@ WallActor(GameScreen gameScreen, int x, int y, WallType type) {
 	setY(y);
 }
 
-private WallImageCache getCache(WallType type) {
+/**
+ * Lazily returns a cache for this type of wall. Each {@link WallType} has its own cache object.
+ *
+ * @return A new cache, or an existing one.
+ */
+private WallImageCache getCache() {
 	WallImageCache wallImageCache = caches.get(type);
 	if (wallImageCache == null) {
 		wallImageCache = new WallImageCache(type, NUMBER_OF_SLOTS_IN_CACHE);
@@ -87,6 +92,13 @@ private WallImageCache getCache(WallType type) {
 	return wallImageCache;
 }
 
+/**
+ * Computes a hash describing the image of this wall: which sides the wall faces, which transitions are applied to it.
+ * Image hash is a sum of {@link WallImageCache} constant fields, which are bitmasks.
+ *
+ * @return A hash describing this wall.
+ * @see WallImageCache
+ */
 public int getWallHash() {
 	RenderCell cell = renderWorld.getCell(x, y);
 	RenderCell cellFromSouth = renderWorld.getCell(x, y + 1);
@@ -136,7 +148,7 @@ public int getWallHash() {
 	if (hasSouthCellButNotWall) {
 		if (!renderWorld.hasCell(x - 1, y)) {
 			imageHash += WallImageCache.DARK_SOUTH_WALL_LEFT;
-		} else if( cell.isVisible() && renderWorld.hasCell(x - 1, y)
+		} else if (cell.isVisible() && renderWorld.hasCell(x - 1, y)
 			&& !renderWorld.getCell(x - 1, y).isVisible()) {
 			imageHash += WallImageCache.SHADE_SOUTH_WALL_LEFT;
 		}
@@ -144,7 +156,7 @@ public int getWallHash() {
 	if (hasSouthCellButNotWall) {
 		if (!renderWorld.hasCell(x + 1, y)) {
 			imageHash += WallImageCache.DARK_SOUTH_WALL_RIGHT;
-		} else if( cell.isVisible() && renderWorld.hasCell(x + 1, y)
+		} else if (cell.isVisible() && renderWorld.hasCell(x + 1, y)
 			&& !renderWorld.getCell(x + 1, y).isVisible()) {
 			imageHash += WallImageCache.SHADE_SOUTH_WALL_RIGHT;
 		}
@@ -166,7 +178,7 @@ public void draw(Batch batch, float parentAlpha) {
 		// Cull those walls that aren't inside viewport.
 		return;
 	}
-	WallImageCache cache = getCache(type);
+	WallImageCache cache = getCache();
 	RenderCell cell = renderWorld.getCell(x, y);
 	RenderCell cellFromSouth = renderWorld.getCell(x, y + 1);
 	int imageHash = getWallHash();
@@ -185,6 +197,18 @@ public void draw(Batch batch, float parentAlpha) {
 		y * GameScreen.TILE_SIZE - wallHeights.get(type) + GameScreen.TILE_SIZE);
 }
 
+/**
+ * Draws in image of a wall with all transitions above it and caches that image into a {@link WallImageCache}.
+ *
+ * @param cell
+ * 	A cell where the wall resides.
+ * @param cellFromSouth
+ * 	A cell 1 unit to south from {@code cell}.
+ * @param imageHash
+ * 	{@see WallImageCache}.
+ * @param cache
+ * 	A cache where to save the wall image after it is drawn.
+ */
 private void generateImage(RenderCell cell, RenderCell cellFromSouth, int imageHash, WallImageCache cache) {
 	// There is a complexity in drawing walls: drawing transitions above walls.
 	// These transitions mostly go on the "roof" of a wall, i.e. higher than floor transitions.

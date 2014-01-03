@@ -2,7 +2,6 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -42,6 +41,12 @@ private final TextureRegion[] regions;
 private int lastHashOccupied;
 private int slots;
 
+/**
+ * @param type
+ * 	Type of a wall whose images are cached.
+ * @param slots
+ * 	How many wall images may be cached.
+ */
 WallImageCache(WallType type, int slots) {
 	this.slots = slots;
 	regions = new TextureRegion[slots];
@@ -55,6 +60,12 @@ WallImageCache(WallType type, int slots) {
 	Gdx.gl.glClearColor(0, 0, 0, 1);
 	regionProvider.getFbo().end();
 }
+
+/**
+ * Return the object that holds a framebuffer and TextureRegions where images of this WallType are drawn.
+ *
+ * @return
+ */
 public TileTextureRegionProvider getRegionProvider() {
 	return regionProvider;
 }
@@ -76,9 +87,8 @@ public TextureRegion getImage(int imageHash) {
  * WallImageCache#getImage(int)} under hash {@code imageHash}.
  *
  * @param imageHash
- * 	Description of a wall image composed of a sum of this class's constant fields.
-// * @param texture
-// * 	A texture to draw to {@link WallImageCache#regionProvider}'s framebuffer be later available under given hash.
+ * 	Description of a wall image composed of a sum of this class's constant fields. // * @param texture // * 	A texture
+ * 	to draw to {@link WallImageCache#regionProvider}'s framebuffer be later available under given hash.
  */
 public void putImage(int imageHash, FrameBuffer fb) {
 	TextureRegion regionForIndex = regions[occupyNextIndexInCache(imageHash)];
