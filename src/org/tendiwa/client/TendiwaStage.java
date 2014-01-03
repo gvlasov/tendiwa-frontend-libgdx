@@ -241,4 +241,8 @@ public boolean hasWallActor(int x, int y) {
 public void addObjectActor(int x, int y) {
 	addActor(new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y)));
 }
+
+public WallActor getWallActor(int worldX, int worldY) {
+	return wallActors.get(getWallActorKey(worldX, worldY));
+}
 }

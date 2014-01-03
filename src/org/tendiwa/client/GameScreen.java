@@ -8,6 +8,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -15,6 +16,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.bitfire.utils.ShaderLoader;
+import org.tendiwa.entities.WallTypes;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
@@ -430,7 +432,7 @@ public void setCurrentPlane(HorizontalPlane plane) {
 	currentPlane = plane;
 }
 
-public boolean isOnScreen(int x, int y) {
-	return x >= startCellX && x < startCellX + windowWidthCells && y >= startCellY && y < startCellY + windowHeightCells;
+public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {
+	return x >= startScreenCellX && x < startScreenCellX + widthInCells && y >= startScreenCellY && y < startScreenCellY + heightInCells;
 }
 }

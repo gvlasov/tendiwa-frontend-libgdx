@@ -25,11 +25,13 @@ public void draw() {
 		gameScreen.startPixelX + 20,
 		gameScreen.startPixelY + 20 + 18
 	);
+	int worldX = gameScreen.getCursor().getWorldX();
+	int worldY = gameScreen.getCursor().getWorldY();
 	font.draw(
 		gameScreen.batch,
-		"cursor at " + gameScreen.getCursor().getWorldX() + ":" + gameScreen.getCursor().getWorldY(),
+		"cursor at " + worldX + ":" + worldY,
 		gameScreen.startPixelX + 20,
-		gameScreen.startPixelY + 20 + 36
+		gameScreen.startPixelY + 20 + 18 * 2
 	);
 	gameScreen.batch.end();
 }

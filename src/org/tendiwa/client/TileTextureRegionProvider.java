@@ -4,7 +4,6 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.MathUtils;
@@ -15,7 +14,6 @@ import com.badlogic.gdx.math.MathUtils;
  * framebuffer between all the implementations of {@link TransitionPregenerator}.
  */
 public class TileTextureRegionProvider {
-private static int lastClaimedRegionNumber = 0;
 final SpriteBatch textureDrawingBatch = new SpriteBatch();
 private final int regionsPerRow;
 private final FrameBuffer fbo;
@@ -23,6 +21,7 @@ private final Texture fboTexture;
 private final int tileSizeX;
 private final int tileSizeY;
 private final int maxNumber;
+private int lastClaimedRegionNumber = 0;
 
 public TileTextureRegionProvider(int numberOfPlaces, int tileSizeX, int tileSizeY) {
 	int fboDimension = MathUtils.nextPowerOfTwo(
@@ -34,24 +33,24 @@ public TileTextureRegionProvider(int numberOfPlaces, int tileSizeX, int tileSize
 	fbo = new FrameBuffer(Pixmap.Format.RGBA8888, fboDimension, fboDimension, false);
 	fboTexture = fbo.getColorBufferTexture();
 	OrthographicCamera camera = new OrthographicCamera(fboDimension, fboDimension);
-	camera.setToOrtho(true);
+	camera.setToOrtho(true, fboDimension, fboDimension);
 	textureDrawingBatch.setProjectionMatrix(camera.combined);
-	maxNumber = regionsPerRow*regionsPerRow;
+	maxNumber = regionsPerRow * regionsPerRow;
 }
 
 TextureRegion obtainFboTextureRegion() {
 	if (lastClaimedRegionNumber >= maxNumber) {
-		throw new RuntimeException("Maximum number of generated textures ("+maxNumber+") exceeded");
+		throw new RuntimeException("Maximum number of generated textures (" + maxNumber + ") exceeded");
 	}
 	int startX = (lastClaimedRegionNumber % regionsPerRow) * tileSizeX;
 	int startY = (lastClaimedRegionNumber / regionsPerRow) * tileSizeY;
-	TileTextureRegionProvider.lastClaimedRegionNumber++;
+	lastClaimedRegionNumber++;
 	return new TextureRegion(
 		fboTexture,
 		startX,
 		startY,
-		GameScreen.TILE_SIZE,
-		GameScreen.TILE_SIZE
+		tileSizeX,
+		tileSizeY
 	);
 }
 

@@ -43,9 +43,7 @@ public void event(final EventMove e) {
 		public void process() {
 			Actor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			int index = e.character.getY() * Tendiwa.getWorldWidth() + e.character.getX();
-			System.out.println("before " + characterActor.getZIndex());
 			gameScreen.getStage().sortActorsByY();
-			System.out.println("after " + characterActor.getZIndex());
 
 			if (gameScreen.getConfig().animationsEnabled) {
 				Action action;
