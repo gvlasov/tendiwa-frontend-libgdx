@@ -79,7 +79,7 @@ WallActor(GameScreen gameScreen, int x, int y, WallType type) {
 }
 
 /**
- * Lazily returns a cache for this type of wall. Each {@link WallType} has its own cache object.
+ * Lazily returns a cache for this ammunitionType of wall. Each {@link WallType} has its own cache object.
  *
  * @return A new cache, or an existing one.
  */

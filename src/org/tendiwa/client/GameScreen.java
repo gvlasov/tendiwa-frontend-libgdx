@@ -72,7 +72,7 @@ int startPixelX;
 int startPixelY;
 PostProcessor postProcessor;
 /**
- * Max index of each floor type's images.
+ * Max index of each floor ammunitionType's images.
  */
 private boolean eventResultProcessingIsGoing = false;
 /**

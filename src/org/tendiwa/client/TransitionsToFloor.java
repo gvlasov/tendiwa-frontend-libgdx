@@ -6,7 +6,7 @@ import tendiwa.core.*;
 import tendiwa.core.meta.Chance;
 
 /**
- * This class generates textures of transitions to a certain type of floor and provides access to them.
+ * This class generates textures of transitions to a certain ammunitionType of floor and provides access to them.
  */
 public class TransitionsToFloor extends TransitionPregenerator {
 private static final PixmapTextureAtlas pixmapTextureAtlasFloors;
