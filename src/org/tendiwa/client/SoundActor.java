@@ -10,6 +10,7 @@ private static final Label.LabelStyle style = new Label.LabelStyle(TendiwaFonts.
 static int width = 100;
 
 public SoundActor(SoundType soundType) {
+	assert soundType != null;
 	Label label = new Label(soundType.getName(), style);
 	add(label).expand().center();
 	setOrigin(0.5f, 0.5f);

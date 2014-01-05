@@ -2,7 +2,6 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -27,7 +26,7 @@ public ProjectileActor(Projectile projectile, int fromX, int fromY, int toX, int
 public void draw(Batch batch, float parentAlpha) {
 	super.draw(batch, parentAlpha);
 	boolean shaderWasChanged = false;
-	if (GameScreen.getRenderWorld().isCellUnseen((int) getX(), (int) getY())) {
+	if (TendiwaGame.getGameScreen().getRenderPlane().isCellUnseen((int) getX(), (int) getY())) {
 		shaderWasChanged = true;
 		batch.setShader(GameScreen.drawWithRGB06Shader);
 	}

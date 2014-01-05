@@ -10,10 +10,10 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
-import org.tendiwa.entities.WallTypes;
+import org.tendiwa.groovy.Registry;
 import tendiwa.core.CardinalDirection;
 import tendiwa.core.RenderCell;
-import tendiwa.core.RenderWorld;
+import tendiwa.core.RenderPlane;
 import tendiwa.core.WallType;
 
 import java.util.HashMap;
@@ -45,7 +45,7 @@ static {
 	for (TextureAtlas.AtlasRegion region : regions) {
 		// Save height of a particular wall
 		wallHeights.put(
-			WallTypes.getWallTypeByResourceName(region.name),
+			Registry.wallTypes.get(region.name),
 			region.getRegionHeight()
 		);
 		// And in the same iteration determine what size of framebuffer is needed.
@@ -63,7 +63,7 @@ static {
 }
 
 final GameScreen gameScreen;
-private final RenderWorld renderWorld;
+private final RenderPlane renderPlane;
 private final int y;
 private final int x;
 private final WallType type;
@@ -71,7 +71,7 @@ private final WallType type;
 WallActor(GameScreen gameScreen, int x, int y, WallType type) {
 	this.gameScreen = gameScreen;
 	this.type = type;
-	renderWorld = gameScreen.renderWorld;
+	renderPlane = gameScreen.renderPlane;
 	this.x = x;
 	this.y = y;
 	setX(x);
@@ -100,8 +100,8 @@ private WallImageCache getCache() {
  * @see WallImageCache
  */
 public int getWallHash() {
-	RenderCell cell = renderWorld.getCell(x, y);
-	RenderCell cellFromSouth = renderWorld.getCell(x, y + 1);
+	RenderCell cell = renderPlane.getCell(x, y);
+	RenderCell cellFromSouth = renderPlane.getCell(x, y + 1);
 	int imageHash = 0;
 	if (cell.isVisible()) {
 		imageHash += WallImageCache.VISIBLE;
@@ -123,41 +123,41 @@ public int getWallHash() {
 	if (gameScreen.getCurrentBackendPlane().hasWall(x - 1, y)) {
 		imageHash += WallImageCache.SIDE_W;
 	}
-	if (renderWorld.getCell(x, y - 1) == null) {
+	if (renderPlane.getCell(x, y - 1) == null) {
 		imageHash += WallImageCache.DARK_N;
-	} else if (renderWorld.getCell(x, y - 1).isVisible()) {
+	} else if (renderPlane.getCell(x, y - 1).isVisible()) {
 		imageHash += WallImageCache.SHADE_N;
 	}
-	if (renderWorld.getCell(x + 1, y) == null) {
+	if (renderPlane.getCell(x + 1, y) == null) {
 		imageHash += WallImageCache.DARK_E;
-	} else if (renderWorld.getCell(x + 1, y).isVisible()) {
+	} else if (renderPlane.getCell(x + 1, y).isVisible()) {
 		imageHash += WallImageCache.SHADE_E;
 	}
-	if (renderWorld.getCell(x, y + 1) == null) {
+	if (renderPlane.getCell(x, y + 1) == null) {
 		imageHash += WallImageCache.DARK_S;
-	} else if (renderWorld.getCell(x, y + 1).isVisible()) {
+	} else if (renderPlane.getCell(x, y + 1).isVisible()) {
 		imageHash += WallImageCache.SHADE_S;
 	}
-	if (renderWorld.getCell(x - 1, y) == null) {
+	if (renderPlane.getCell(x - 1, y) == null) {
 		imageHash += WallImageCache.DARK_W;
-	} else if (renderWorld.getCell(x - 1, y).isVisible()) {
+	} else if (renderPlane.getCell(x - 1, y).isVisible()) {
 		imageHash += WallImageCache.SHADE_W;
 	}
-	boolean hasSouthCellButNotWall = renderWorld.hasCell(x, y + 1)
-		&& !renderWorld.getCell(x, y + 1).hasWall();
+	boolean hasSouthCellButNotWall = renderPlane.hasCell(x, y + 1)
+		&& !renderPlane.getCell(x, y + 1).hasWall();
 	if (hasSouthCellButNotWall) {
-		if (!renderWorld.hasCell(x - 1, y)) {
+		if (!renderPlane.hasCell(x - 1, y)) {
 			imageHash += WallImageCache.DARK_SOUTH_WALL_LEFT;
-		} else if (cell.isVisible() && renderWorld.hasCell(x - 1, y)
-			&& !renderWorld.getCell(x - 1, y).isVisible()) {
+		} else if (cell.isVisible() && renderPlane.hasCell(x - 1, y)
+			&& !renderPlane.getCell(x - 1, y).isVisible()) {
 			imageHash += WallImageCache.SHADE_SOUTH_WALL_LEFT;
 		}
 	}
 	if (hasSouthCellButNotWall) {
-		if (!renderWorld.hasCell(x + 1, y)) {
+		if (!renderPlane.hasCell(x + 1, y)) {
 			imageHash += WallImageCache.DARK_SOUTH_WALL_RIGHT;
-		} else if (cell.isVisible() && renderWorld.hasCell(x + 1, y)
-			&& !renderWorld.getCell(x + 1, y).isVisible()) {
+		} else if (cell.isVisible() && renderPlane.hasCell(x + 1, y)
+			&& !renderPlane.getCell(x + 1, y).isVisible()) {
 			imageHash += WallImageCache.SHADE_SOUTH_WALL_RIGHT;
 		}
 	}
@@ -178,9 +178,13 @@ public void draw(Batch batch, float parentAlpha) {
 		// Cull those walls that aren't inside viewport.
 		return;
 	}
+	if (renderPlane != gameScreen.renderPlane) {
+		return;
+	}
+
 	WallImageCache cache = getCache();
-	RenderCell cell = renderWorld.getCell(x, y);
-	RenderCell cellFromSouth = renderWorld.getCell(x, y + 1);
+	RenderCell cell = renderPlane.getCell(x, y);
+	RenderCell cellFromSouth = renderPlane.getCell(x, y + 1);
 	int imageHash = getWallHash();
 	if (!cache.hasImage(imageHash)) {
 		gameScreen.postProcessor.captureEnd();
@@ -314,7 +318,7 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 		// Here to get texture number shift we pass absolute coordinates x and y, because,
 		// unlike in applyUnseenBrightnessMap(),  here position of transition in not relative to viewport.
 		int[] d = dir.side2d();
-		RenderCell neighborCell = renderWorld.getCell(x + d[0], y + d[1]);
+		RenderCell neighborCell = renderPlane.getCell(x + d[0], y + d[1]);
 		TextureRegion transition = null;
 		boolean noNeighbor = neighborCell == null;
 		if (noNeighbor) {
@@ -329,18 +333,18 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 			Gdx.gl.glDepthMask(true);
 			transition = fovEdgeOnWallToUnseen.getTransition(dir, x, y);
 		} else if (dir.isHorizontal()
-			&& renderWorld.hasCell(x, y + 1)
-			&& !renderWorld.getCell(x, y + 1).hasWall()
+			&& renderPlane.hasCell(x, y + 1)
+			&& !renderPlane.getCell(x, y + 1).hasWall()
 			) {
 			// Draw transitions just on south side of a wall in case where a neighbor wall is visible, but there should
 			// be a transition because a cell below it is not.
-			if (renderWorld.hasCell(x + d[0], y + 1)
+			if (renderPlane.hasCell(x + d[0], y + 1)
 				&& neighborCell.isVisible()
 				&& cell.isVisible()
-				&& renderWorld.hasCell(x - d[0], y)
-				&& !renderWorld.getCell(x - d[0], y).hasWall()
+				&& renderPlane.hasCell(x - d[0], y)
+				&& !renderPlane.getCell(x - d[0], y).hasWall()
 				) {
-				if (!renderWorld.getCell(x + d[0], y + 1).isVisible()) {
+				if (!renderPlane.getCell(x + d[0], y + 1).isVisible()) {
 					// Draw mask for transitions to unseen south wall sides.
 					depthTestBatch.setShader(drawOpaqueToDepth05Shader);
 					Gdx.gl.glColorMask(false, false, false, false);
@@ -363,8 +367,8 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 		}
 		if (transition != null) {
 			if (dir.isHorizontal()
-				&& renderWorld.hasCell(x, y + 1)
-				&& !renderWorld.getCell(x, y + 1).hasWall()
+				&& renderPlane.hasCell(x, y + 1)
+				&& !renderPlane.getCell(x, y + 1).hasWall()
 				) {
 				// If this wall has a visible south side,
 				// draw transitions on the lower part of a wall too.
@@ -392,19 +396,19 @@ TextureRegion getWallTextureByCell(int x, int y) {
 	WallType wallType = (WallType) gameScreen.getCurrentBackendPlane().getGameObject(x, y);
 	String name = wallType.getResourceName();
 	int index = 0;
-	RenderCell neighborCell = gameScreen.renderWorld.getCell(x, y - 1);
+	RenderCell neighborCell = gameScreen.renderPlane.getCell(x, y - 1);
 	if (neighborCell == null || neighborCell.getObject() == wallType) {
 		index += 1000;
 	}
-	neighborCell = gameScreen.renderWorld.getCell(x + 1, y);
+	neighborCell = gameScreen.renderPlane.getCell(x + 1, y);
 	if (neighborCell == null || neighborCell.getObject() == wallType) {
 		index += 100;
 	}
-	neighborCell = gameScreen.renderWorld.getCell(x, y + 1);
+	neighborCell = gameScreen.renderPlane.getCell(x, y + 1);
 	if (neighborCell == null || neighborCell.getObject() == wallType) {
 		index += 10;
 	}
-	neighborCell = gameScreen.renderWorld.getCell(x - 1, y);
+	neighborCell = gameScreen.renderPlane.getCell(x - 1, y);
 	if (neighborCell == null || neighborCell.getObject() == wallType) {
 		index += 1;
 	}

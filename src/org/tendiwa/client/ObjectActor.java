@@ -20,7 +20,7 @@ public ObjectActor(int x, int y, GameObject gameObject) {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 	boolean shaderWasChanged = false;
-	if (GameScreen.getRenderWorld().isCellUnseen(x, y)) {
+	if (TendiwaGame.getGameScreen().getRenderPlane().isCellUnseen(x, y)) {
 		shaderWasChanged = true;
 		batch.setShader(GameScreen.drawWithRGB06Shader);
 	}

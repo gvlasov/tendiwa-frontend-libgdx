@@ -1,8 +1,8 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
-import org.tendiwa.entities.CharacterAbilities;
 import org.tendiwa.events.*;
+import org.tendiwa.groovy.Registry;
 import tendiwa.core.*;
 import tendiwa.core.Character;
 import tendiwa.core.meta.Condition;
@@ -145,7 +145,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 			TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
-						return entity.getType() instanceof Shootable;
+						return Items.isShootable(entity.getType());
 					}
 				}, new EntitySelectionListener<Item>() {
 					@Override
@@ -194,8 +194,8 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 			});
 			final Item quiveredItem = QuiveredItemHolder.getItem();
 			if (rangedWeapon != null && quiveredItem != null && Items.isShootable(quiveredItem.getType())) {
-				final Shootable shootable = (Shootable) quiveredItem.getType();
-				if (shootable.getAmmunitionType() == ((RangedWeapon) rangedWeapon.getType()).getAmmunitionType()) {
+				final Shootable shootable = Items.asShootable(quiveredItem.getType());
+				if (shootable.getAmmunitionType() == (Items.asRangedWeapon(rangedWeapon.getType())).getAmmunitionType()) {
 					CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 						@Override
 						public void execute(EnhancedPoint point) {
@@ -214,7 +214,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 				new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
-						return entity.getType() instanceof Wieldable;
+						return Items.isWieldable(entity.getType());
 					}
 				},
 				new EntitySelectionListener<Item>() {
@@ -233,7 +233,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 			TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
-						return entity.getType() instanceof Wearable;
+						return Items.isWearable(entity.getType());
 					}
 				}, new EntitySelectionListener<Item>() {
 					@Override
@@ -248,7 +248,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 		@Override
 		public void act() {
 			Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget(
-				(ActionWithoutTarget) CharacterAbilities.SHOUT.getAction()
+				(ActionWithoutTarget) Registry.characterAbilities.get("shout").getAction()
 			));
 		}
 	});
@@ -346,7 +346,7 @@ private void moveToOrAttackCharacterInCell(int x, int y) {
 	if (player.canStepOn(x, y)) {
 		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(-dx, -dy)));
 	} else {
-		Character aim = gameScreen.backendWorld.getDefaultPlane().getCharacter(x, y);
+		Character aim = gameScreen.getCurrentBackendPlane().getCharacter(x, y);
 		boolean isCharacterPresent = aim != null;
 		if (isCharacterPresent) {
 			boolean isHeAnEnemy = aim.isEnemy(player);

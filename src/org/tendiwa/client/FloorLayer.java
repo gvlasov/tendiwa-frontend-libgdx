@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
-import org.tendiwa.entities.FloorTypes;
+import org.tendiwa.groovy.Registry;
 import tendiwa.core.CardinalDirection;
 import tendiwa.core.FloorType;
 import tendiwa.core.RenderCell;
@@ -44,7 +44,7 @@ public FloorLayer(GameScreen gameScreen) {
 
 void initFloorTransitionsProviders() {
 	floorTransitionsProviders = new HashMap<>();
-	for (FloorType floorType : FloorTypes.values()) {
+	for (FloorType floorType : Registry.floorTypes) {
 		floorTransitionsProviders.put(floorType, new TransitionsToFloor(floorType));
 	}
 }
@@ -89,7 +89,7 @@ private void drawFloors(boolean liquid) {
 	int maxY = gameScreen.getMaxRenderCellY();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
+			RenderCell cell = gameScreen.renderPlane.getCell(x, y);
 			if (cell != null && (cell.getFloor().isLiquid() == liquid || !animateLiquidFloor)) {
 				drawFloor(cell.getFloor(), x, y);
 			}
@@ -111,7 +111,7 @@ private void drawTransitions(boolean liquid) {
 	// Draw transitions
 	for (int x = gameScreen.startCellX; x < gameScreen.getMaxRenderCellX(); x++) {
 		for (int y = gameScreen.startCellY; y < gameScreen.getMaxRenderCellY(); y++) {
-			RenderCell cell = gameScreen.renderWorld.getCell(x, y);
+			RenderCell cell = gameScreen.renderPlane.getCell(x, y);
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
 			if (cell != null
@@ -131,7 +131,7 @@ private TextureRegion getFloorTextureByCell(FloorType floor, int x, int y) {
 private void cacheRegions() {
 	Map<String, FloorType> name2Type = new HashMap<>();
 	Map<String, Array<TextureAtlas.AtlasRegion>> name2Regions = new HashMap<>();
-	for (FloorType floorType : FloorTypes.values()) {
+	for (FloorType floorType : Registry.floorTypes) {
 		name2Type.put(floorType.getResourceName(), floorType);
 		floorRegions.put(floorType, new HashMap<Integer, TextureRegion>());
 		assert atlasFloors.findRegion(floorType.getResourceName()) != null;
@@ -174,14 +174,14 @@ private TransitionsToFloor getFloorTransitionsProvider(FloorType floorType) {
 
 void drawFloorTransitionsInCell(RenderCell cell, boolean liquid) {
 	FloorType self = cell.getFloor();
-	RenderCell renderCell = gameScreen.renderWorld.getCell(cell.getX(), cell.getY() + 1);
+	RenderCell renderCell = gameScreen.renderPlane.getCell(cell.getX(), cell.getY() + 1);
 	// Indices 0 and 2 are swapped
 	floorsFrom4Sides[2] = cell.getY() + 1 < gameScreen.worldHeightCells && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.renderWorld.getCell(cell.getX() + 1, cell.getY());
+	renderCell = gameScreen.renderPlane.getCell(cell.getX() + 1, cell.getY());
 	floorsFrom4Sides[1] = cell.getX() + 1 < gameScreen.worldWidthCells && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.renderWorld.getCell(cell.getX(), cell.getY() - 1);
+	renderCell = gameScreen.renderPlane.getCell(cell.getX(), cell.getY() - 1);
 	floorsFrom4Sides[0] = cell.getY() > 0 && renderCell != null ? renderCell.getFloor() : self;
-	renderCell = gameScreen.renderWorld.getCell(cell.getX() - 1, cell.getY());
+	renderCell = gameScreen.renderPlane.getCell(cell.getX() - 1, cell.getY());
 	floorsFrom4Sides[3] = cell.getX() > 0 && renderCell != null ? renderCell.getFloor() : self;
 	if (floorsFrom4Sides[0] != self || floorsFrom4Sides[1] != self || floorsFrom4Sides[2] != self || floorsFrom4Sides[3] != self) {
 		drawCellWithTransitions(cell.getX(), cell.getY(), self, liquid);
@@ -194,7 +194,7 @@ private void drawCellWithTransitions(int x, int y, FloorType self, boolean liqui
 		int[] d = dir.side2d();
 		int i = dir.getCardinalIndex();
 		if (floorsFrom4Sides[i] != self
-			&& (!animateLiquidFloor || gameScreen.renderWorld.getCell(x + d[0], y + d[1]).getFloor().isLiquid() == liquid)
+			&& (!animateLiquidFloor || gameScreen.renderPlane.getCell(x + d[0], y + d[1]).getFloor().isLiquid() == liquid)
 			) {
 			TransitionsToFloor floorTransitionsProvider = getFloorTransitionsProvider(floorsFrom4Sides[i]);
 			batch.draw(

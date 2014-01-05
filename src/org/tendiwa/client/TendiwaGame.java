@@ -3,15 +3,9 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.google.common.io.Resources;
-import org.tendiwa.lexeme.Language;
-import org.tendiwa.lexeme.implementations.Russian;
 import tendiwa.core.RequestInitialTerrain;
 import tendiwa.core.Tendiwa;
 import tendiwa.core.TendiwaClient;
-import tendiwa.modules.MainModule;
-
-import java.net.URL;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 
@@ -87,12 +81,11 @@ public void startup() {
 	cfg.width = 1024;
 	cfg.height = 768;
 	cfg.resizable = false;
-	cfg.vSyncEnabled = true;
+	cfg.vSyncEnabled = config.vSync;
 	cfg.forceExit = true;
 	cfg.foregroundFPS = config.limitFps ? 60 : 10000;
 	new LwjglApplication(this, cfg);
 }
-
 
 @Override
 public TendiwaClientLibgdxEventManager getEventManager() {

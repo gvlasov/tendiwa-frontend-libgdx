@@ -4,12 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import org.tendiwa.entities.WallTypes;
+import org.tendiwa.groovy.Registry;
 import tendiwa.core.EntityPlacer;
 import tendiwa.core.HorizontalPlane;
 import tendiwa.core.Tendiwa;
 import tendiwa.core.World;
-import org.tendiwa.entities.FloorTypes;
 
 public class WorldMapScreen implements Screen {
 private final TendiwaGame game;
@@ -50,9 +49,9 @@ public void render(float delta) {
 				color = Color.rgba8888(0.2f, 1.0f, 1.0f, 1);
 			} else if (plane.hasAnyItems(x, y)) {
 				color = Color.rgba8888(0.2f, 0.4f, 1.0f, 1);
-			} else if (EntityPlacer.containedIn(plane, WallTypes.GREY_STONE, x, y)) {
+			} else if (EntityPlacer.containedIn(plane, Registry.wallTypes.get("grey_stone_wall"), x, y)) {
 				color = Color.rgba8888(0.2f, 0.2f, 0.2f, 1);
-			} else if (EntityPlacer.containedIn(plane, FloorTypes.WATER, x, y)) {
+			} else if (EntityPlacer.containedIn(plane, Registry.floorTypes.get("water"), x, y)) {
 				color = Color.rgba8888(0.2f, 0.3f, 0.93f, 1);
 			} else {
 				color = Color.rgba8888(0.2f, 0.7f, 0.3f, 1);

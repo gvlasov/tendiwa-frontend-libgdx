@@ -2,7 +2,6 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import tendiwa.core.Item;
@@ -24,7 +23,7 @@ public ItemActor(int x, int y, Item item) {
 public void draw(Batch batch, float parentAlpha) {
 	super.draw(batch, parentAlpha);
 	boolean shaderWasChanged = false;
-	if (GameScreen.getRenderWorld().isCellUnseen((int) getX(), (int) getY())) {
+	if (TendiwaGame.getGameScreen().getRenderPlane().isCellUnseen((int) getX(), (int) getY())) {
 		shaderWasChanged = true;
 		batch.setShader(GameScreen.drawWithRGB06Shader);
 	}

@@ -111,11 +111,11 @@ public void event(final EventFovChange e) {
 		@Override
 		public void process() {
 			for (Integer coord : e.unseen) {
-				RenderCell cell = GameScreen.getRenderWorld().getCell(coord);
+				RenderCell cell = gameScreen.getRenderPlane().getCell(coord);
 				cell.setVisible(false);
 				if (gameScreen.player.getPlane().hasAnyItems(cell.x, cell.y)) {
 					for (Item item : gameScreen.player.getPlane().getItems(cell.x, cell.y)) {
-						gameScreen.renderWorld.addUnseenItem(cell.x, cell.y, item);
+						gameScreen.renderPlane.addUnseenItem(cell.x, cell.y, item);
 					}
 				}
 //				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
@@ -123,9 +123,9 @@ public void event(final EventFovChange e) {
 //				}
 			}
 			for (RenderCell cell : e.seen) {
-				GameScreen.getRenderWorld().seeCell(cell);
-				if (gameScreen.renderWorld.hasAnyUnseenItems(cell.x, cell.y)) {
-					gameScreen.renderWorld.removeUnseenItems(cell.x, cell.y);
+				gameScreen.getRenderPlane().seeCell(cell);
+				if (gameScreen.renderPlane.hasAnyUnseenItems(cell.x, cell.y)) {
+					gameScreen.renderPlane.removeUnseenItems(cell.x, cell.y);
 				}
 				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
 					if (!gameScreen.getStage().hasWallActor(cell.x, cell.y)) {
@@ -143,7 +143,7 @@ public void event(final EventFovChange e) {
 }
 
 @Override
-public void event(final EventInitialTerrain eventInitialTerrain) {
+public void event(final EventInitialTerrain e) {
 	pendingOperations.add(new EventResult() {
 		@Override
 		public String toString() {
@@ -152,9 +152,9 @@ public void event(final EventInitialTerrain eventInitialTerrain) {
 
 		@Override
 		public void process() {
-			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(eventInitialTerrain.currentPlaneLevel));
-			for (RenderCell cell : eventInitialTerrain.seen) {
-				GameScreen.getRenderWorld().seeCell(cell);
+			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(e.zLevel));
+			for (RenderCell cell : e.seen) {
+				gameScreen.getRenderPlane().seeCell(cell);
 				HorizontalPlane plane = Tendiwa.getWorld().getPlayer().getPlane();
 				if (plane.hasWall(cell.x, cell.y)) {
 					gameScreen.getStage().addWallActor(cell.x, cell.y);
@@ -413,6 +413,33 @@ public void event(final EventDie e) {
 			UiLog.getInstance().pushText(
 				Languages.getText("log.death", e.character)
 			);
+			gameScreen.signalEventProcessingDone();
+		}
+	});
+}
+
+@Override
+public void event(final EventMoveToPlane e) {
+	pendingOperations.add(new EventResult() {
+
+		@Override
+		public void process() {
+			gameScreen.getRenderPlane().unseeAllCells();
+			gameScreen.getStage().removeActorsOfPlane(gameScreen.getCurrentBackendPlane().getLevel());
+			gameScreen.setCurrentPlane(Tendiwa.getWorld().getPlane(e.zLevel));
+			for (RenderCell cell : e.seen) {
+				gameScreen.getRenderPlane().seeCell(cell);
+				if (gameScreen.renderPlane.hasAnyUnseenItems(cell.x, cell.y)) {
+					gameScreen.renderPlane.removeUnseenItems(cell.x, cell.y);
+				}
+				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
+					if (!gameScreen.getStage().hasWallActor(cell.x, cell.y)) {
+						gameScreen.getStage().addWallActor(cell.x, cell.y);
+					}
+				} else if (gameScreen.getCurrentBackendPlane().hasObject(cell.x, cell.y)) {
+					gameScreen.getStage().addObjectActor(cell.x, cell.y);
+				}
+			}
 			gameScreen.signalEventProcessingDone();
 		}
 	});

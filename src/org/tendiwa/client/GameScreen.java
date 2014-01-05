@@ -8,7 +8,6 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
@@ -16,7 +15,6 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.bitfire.utils.ShaderLoader;
-import org.tendiwa.entities.WallTypes;
 import tendiwa.core.Character;
 import tendiwa.core.*;
 
@@ -40,7 +38,6 @@ final int worldHeightCells;
 final FrameBuffer depthTestFrameBuffer;
 final int windowWidthCells;
 final int windowHeightCells;
-final RenderWorld renderWorld;
 private final TendiwaGame game;
 private final TextureAtlas atlasObjects;
 private final TextureAtlas atlasUi;
@@ -57,6 +54,7 @@ private final Server server;
 private final StatusLayer statusLayer;
 private final ClientConfig config;
 protected int startCellX;
+RenderPlane renderPlane;
 OrthographicCamera camera;
 /**
  * The World object in backend (not always consistent with current animation state, so you shouldn't read from it
@@ -87,6 +85,7 @@ private Map<Integer, GameObject> objects = new HashMap<>();
 private boolean lastEventEndsFrame;
 private int eventsProcessed;
 private HorizontalPlane currentPlane;
+private RenderWorld renderWorld;
 
 public GameScreen(final TendiwaGame game, ClientConfig config) {
 	this.config = config;
@@ -94,6 +93,7 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 	this.game = game;
 	backendWorld = Tendiwa.getWorld();
 	player = Tendiwa.getPlayerCharacter();
+	renderWorld = new RenderWorld();
 
 	worldWidthCells = Tendiwa.getWorld().getWidth();
 	worldHeightCells = Tendiwa.getWorld().getHeight();
@@ -128,7 +128,7 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 
 	setRenderingMode();
 
-	renderWorld = new RenderWorld(backendWorld);
+	renderPlane = new RenderPlane();
 	floorLayer = new FloorLayer(this);
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
@@ -153,8 +153,8 @@ public static ShaderProgram createShader(FileHandle file) {
 	return shader;
 }
 
-public static RenderWorld getRenderWorld() {
-	return INSTANCE.renderWorld;
+public RenderPlane getRenderPlane() {
+	return renderPlane;
 }
 
 private void initPostProcessor() {
@@ -278,7 +278,7 @@ private void drawObjects() {
 	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
 		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY || centerPixelY == maxPixelY - TILE_SIZE ? 0 : 2); y++) {
-			RenderCell cell = renderWorld.getCell(startCellX + x, startCellY + y);
+			RenderCell cell = renderPlane.getCell(startCellX + x, startCellY + y);
 			if (cell != null) {
 				// If the frontend has already received this cell from backend
 				if (cell.isVisible()) {
@@ -294,7 +294,7 @@ private void drawObjects() {
 		}
 	}
 	// Draw stats
-	RenderCell cellUnderCursor = renderWorld.getCell(cursor.getWorldX(), cursor.getWorldY());
+	RenderCell cellUnderCursor = renderPlane.getCell(cursor.getWorldX(), cursor.getWorldY());
 	batch.end();
 }
 
@@ -308,7 +308,7 @@ private void drawObjects() {
  * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seen, true otherwise.
  */
 boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
-	return !(renderWorld.getCell(x, y).hasWall() && !renderWorld.hasCell(x, y + 1));
+	return !(renderPlane.getCell(x, y).hasWall() && !renderPlane.hasCell(x, y + 1));
 }
 
 int getMaxRenderCellX() {
@@ -430,6 +430,7 @@ public HorizontalPlane getCurrentBackendPlane() {
 
 public void setCurrentPlane(HorizontalPlane plane) {
 	currentPlane = plane;
+	renderPlane = renderWorld.touchPlane(plane.getLevel());
 }
 
 public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {

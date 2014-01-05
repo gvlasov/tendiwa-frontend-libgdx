@@ -6,24 +6,22 @@ import tendiwa.core.*;
 
 public class ItemsLayer {
 private final GameScreen gameScreen;
-private final RenderWorld renderWorld;
 private final TextureRegion multipleItemsMarker;
 
 ItemsLayer(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
-	this.renderWorld = GameScreen.getRenderWorld();
-
 	multipleItemsMarker = gameScreen.getAtlasUi().findRegion("multiItem");
 }
 
 void draw() {
-	HorizontalPlane plane = Tendiwa.getWorld().getDefaultPlane();
+	HorizontalPlane plane = gameScreen.getCurrentBackendPlane();
+	RenderPlane renderPlane = gameScreen.getRenderPlane();
 	int maxX = gameScreen.getMaxRenderCellX();
 	int maxY = gameScreen.getMaxRenderCellY();
 	gameScreen.batch.begin();
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			if (renderWorld.isCellVisible(x, y) && plane.hasAnyItems(x, y)) {
+			if (renderPlane.isCellVisible(x, y) && plane.hasAnyItems(x, y)) {
 				// Check for objective view (we could maintain character's own subjective view on items,
 				// but that's difficult and maybe will appear later.
 				ItemCollection items = plane.getItems(x, y);
@@ -44,8 +42,8 @@ void draw() {
 	gameScreen.batch.setShader(GameScreen.drawWithRGB06Shader);
 	for (int x = gameScreen.startCellX; x < maxX; x++) {
 		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			if (renderWorld.hasAnyUnseenItems(x, y)) {
-				for (RememberedItem item : renderWorld.getUnseenItems(x, y)) {
+			if (gameScreen.renderPlane.hasAnyUnseenItems(x, y)) {
+				for (RememberedItem item : gameScreen.renderPlane.getUnseenItems(x, y)) {
 					gameScreen.batch.draw(
 						getTexture(item.getType()),
 						x * GameScreen.TILE_SIZE,

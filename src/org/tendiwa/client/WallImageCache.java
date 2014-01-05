@@ -51,6 +51,7 @@ WallImageCache(WallType type, int slots) {
 	this.slots = slots;
 	regions = new TextureRegion[slots];
 	TextureAtlas.AtlasRegion region = AtlasWalls.getInstance().findRegion(type.getResourceName());
+	assert region != null : type.getResourceName();
 	regionProvider = new TileTextureRegionProvider(slots, region.getRegionWidth(), region.getRegionHeight());
 	for (int i = 0; i < slots; i++) {
 		regions[i] = regionProvider.obtainFboTextureRegion();

@@ -93,7 +93,7 @@ public static Iterable<CharacterAbility> findActionsAroundPlayer() {
 		if (plane.hasObject(x, y)) {
 			Usable usable = GameObjects.asUsable(plane.getGameObject(x, y).getType());
 			if (usable != null) {
-				builder.addAll(usable.getUsages());
+				builder.addAll(usable.getActions());
 			}
 		}
 	}

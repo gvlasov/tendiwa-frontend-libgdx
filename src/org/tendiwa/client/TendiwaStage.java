@@ -8,6 +8,8 @@ import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import com.badlogic.gdx.scenes.scene2d.actions.ParallelAction;
 import com.badlogic.gdx.scenes.scene2d.actions.RunnableAction;
 import com.badlogic.gdx.utils.SnapshotArray;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import org.tendiwa.events.EventProjectileFly;
 import tendiwa.core.Character;
 import tendiwa.core.*;
@@ -31,6 +33,7 @@ private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
 private Map<Item, Actor> itemActors = new HashMap<>();
 private HashMap<Integer, WallActor> wallActors = new HashMap<>();
+private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
 
 TendiwaStage(GameScreen gameScreen) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
@@ -156,7 +159,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 	return actor;
 }
 
-public com.badlogic.gdx.scenes.scene2d.Actor obtainSoundActor(SoundType soundType, int x, int y) {
+public Actor obtainSoundActor(SoundType soundType, int x, int y) {
 	final SoundActor actor = new SoundActor(soundType);
 	actor.setPosition(
 		x * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2,
@@ -239,7 +242,16 @@ public boolean hasWallActor(int x, int y) {
 }
 
 public void addObjectActor(int x, int y) {
-	addActor(new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y)));
+	ObjectActor actor = new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y));
+	plane2actors.put(gameScreen.getCurrentBackendPlane().getLevel(), actor);
+	addActor(actor);
+}
+
+public void removeActorsOfPlane(int zLevel) {
+	for (Actor actor : plane2actors.get(zLevel)) {
+		getRoot().removeActor(actor);
+	}
+	plane2actors.removeAll(zLevel);
 }
 
 public WallActor getWallActor(int worldX, int worldY) {
