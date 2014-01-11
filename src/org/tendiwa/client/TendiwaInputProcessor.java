@@ -71,11 +71,10 @@ public void putAction(int combination, UiAction action) {
 
 @Override
 public boolean keyDown(int keycode) {
-//	System.out.println(gameScreen.isEventProcessingGoing()+" "+Server.isTurnComputing());
 	if (keycode == ESCAPE && currentTask != null) {
 		currentTask = null;
 	}
-	if (gameScreen.isEventProcessingGoing() || Server.isTurnComputing()) {
+	if (gameScreen.isEventProcessingGoing() || Server.hasRequestToProcess()) {
 		return false;
 	}
 	switch (keycode) {
@@ -151,11 +150,17 @@ public void executeCurrentTask() {
 				currentTask = null;
 			}
 		}
+	} else {
+		assert false;
 	}
 }
 
 public ImmutableList<Mapping> getMappings() {
 	return ImmutableList.copyOf(mappings);
+}
+
+public boolean hasCurrentTask() {
+	return currentTask != null;
 }
 
 private static class KeyCombinationPool {

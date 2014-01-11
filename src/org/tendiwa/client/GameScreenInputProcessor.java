@@ -318,10 +318,6 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 			if (!path.isEmpty()) {
 				EnhancedPoint nextStep = path.removeFirst();
 				moveToOrAttackCharacterInCell(nextStep.x, nextStep.y);
-//				Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(
-//					nextStep.x - player.getX(),
-//					nextStep.y - player.getY()
-//				)));
 			}
 		}
 	});
@@ -355,6 +351,8 @@ private void moveToOrAttackCharacterInCell(int x, int y) {
 			} else {
 				assert false : "This should not happen";
 			}
+		} else {
+			assert false : "This should not happen";
 		}
 	}
 }

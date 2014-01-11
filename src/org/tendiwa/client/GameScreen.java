@@ -128,7 +128,7 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 
 	setRenderingMode();
 
-	renderPlane = new RenderPlane();
+	renderPlane = new RenderPlane(Tendiwa.getWorld().getPlayer().getPlane());
 	floorLayer = new FloorLayer(this);
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
@@ -321,7 +321,7 @@ int getMaxRenderCellY() {
 
 private void processEvents() {
 	Queue<EventResult> queue = game.getEventManager().getPendingOperations();
-	if (!eventResultProcessingIsGoing && !Server.isTurnComputing() && queue.size() == 0) {
+	if (!eventResultProcessingIsGoing && !Server.hasRequestToProcess() && queue.size() == 0 && controller.hasCurrentTask()) {
 		controller.executeCurrentTask();
 	}
 	// Loop variable will remain true if it is not set to true inside .process().

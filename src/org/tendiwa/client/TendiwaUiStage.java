@@ -66,7 +66,7 @@ private void initializeActors() {
 	UiSpells spells = UiSpells.getInstance();
 	inventory = new UiInventory();
 	UiLog log = UiLog.getInstance();
-	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
+//	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
 	table.add(UiHealthBar.getInstance()).expand().right().top().pad(5).colspan(1);
 	table.row();
 	uiQuiver = new UiQuiver();
@@ -77,7 +77,7 @@ private void initializeActors() {
 	table.add(inventory).right().bottom().pad(5).size(200, 100);
 	inventory.update();
 	actions.update();
-	log.update();
+//	log.update();
 	UiHealthBar.getInstance().update();
 
 	this.addActor(UiKeyHints.getInstance());

@@ -11,8 +11,8 @@ import com.badlogic.gdx.utils.SnapshotArray;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.tendiwa.events.EventProjectileFly;
-import tendiwa.core.Character;
 import tendiwa.core.*;
+import tendiwa.core.Character;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -256,5 +256,11 @@ public void removeActorsOfPlane(int zLevel) {
 
 public WallActor getWallActor(int worldX, int worldY) {
 	return wallActors.get(getWallActorKey(worldX, worldY));
+}
+
+public BorderObjectActor addBorderObjectActor(int worldX, int worldY, CardinalDirection dir) {
+	BorderObjectActor actor = new BorderObjectActor(worldX, worldY, dir, gameScreen.getCurrentBackendPlane().getBorderObject(worldX, worldY, dir));
+	addActor(actor);
+	return actor;
 }
 }

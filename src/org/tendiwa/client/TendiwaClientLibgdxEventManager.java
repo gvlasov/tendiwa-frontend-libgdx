@@ -136,6 +136,7 @@ public void event(final EventFovChange e) {
 				}
 
 			}
+			gameScreen.renderPlane.updateBorderObjectsVisibility();
 //			gameScreen.processOneMoreEventInCurrentFrame();
 			gameScreen.signalEventProcessingDone();
 		}
@@ -164,6 +165,7 @@ public void event(final EventInitialTerrain e) {
 
 			}
 			gameScreen.getUiStage().getQuiver().update();
+			gameScreen.renderPlane.updateBorderObjectsVisibility();
 			gameScreen.signalEventProcessingDone();
 		}
 	});
