@@ -3,7 +3,7 @@ package org.tendiwa.client;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import tendiwa.core.CardinalDirection;
+import org.tendiwa.core.CardinalDirection;
 
 /**
  * Creates and returns images of something gradually transitioning to something else. Once an instance of

@@ -7,8 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.client.effects.Blood;
-import org.tendiwa.events.*;
-import tendiwa.core.*;
+import org.tendiwa.core.*;
 
 import java.util.LinkedList;
 import java.util.Queue;
@@ -16,7 +15,7 @@ import java.util.Queue;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 /**
- * On each received {@link Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
+ * On each received {@link org.tendiwa.core.Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
  * Each time the game is rendered, all EventResults are processed inside {@link GameScreen#render(float)}.
  */
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
@@ -110,7 +109,7 @@ public void event(final EventFovChange e) {
 
 		@Override
 		public void process() {
-			for (Integer coord : e.unseen) {
+			for (Integer coord : e.unseenCells) {
 				RenderCell cell = gameScreen.getRenderPlane().getCell(coord);
 				cell.setVisible(false);
 				if (gameScreen.player.getPlane().hasAnyItems(cell.x, cell.y)) {
@@ -122,8 +121,11 @@ public void event(final EventFovChange e) {
 //					gameScreen.getStage().removeWallActor(cell.x, cell.y);
 //				}
 			}
-			for (RenderCell cell : e.seen) {
+			for (RenderCell cell : e.seenCells) {
 				gameScreen.getRenderPlane().seeCell(cell);
+				if (!gameScreen.getCurrentBackendPlane().containsCell(cell.x, cell.y)) {
+					assert false : cell;
+				}
 				if (gameScreen.renderPlane.hasAnyUnseenItems(cell.x, cell.y)) {
 					gameScreen.renderPlane.removeUnseenItems(cell.x, cell.y);
 				}
@@ -136,7 +138,14 @@ public void event(final EventFovChange e) {
 				}
 
 			}
-			gameScreen.renderPlane.updateBorderObjectsVisibility();
+			for (RenderBorder border : e.seenBorders) {
+				if (!gameScreen.renderPlane.hasUnseenBorderObject(border)) {
+					gameScreen.getStage().addBorderObjectActor(border);
+				}
+			}
+			for (RenderBorder border : e.unseenBorders) {
+				gameScreen.renderPlane.addUnseenBorder(border);
+			}
 //			gameScreen.processOneMoreEventInCurrentFrame();
 			gameScreen.signalEventProcessingDone();
 		}
@@ -154,7 +163,7 @@ public void event(final EventInitialTerrain e) {
 		@Override
 		public void process() {
 			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(e.zLevel));
-			for (RenderCell cell : e.seen) {
+			for (RenderCell cell : e.seenCells) {
 				gameScreen.getRenderPlane().seeCell(cell);
 				HorizontalPlane plane = Tendiwa.getWorld().getPlayer().getPlane();
 				if (plane.hasWall(cell.x, cell.y)) {
@@ -164,8 +173,12 @@ public void event(final EventInitialTerrain e) {
 				}
 
 			}
+			for (RenderBorder border : e.seenBorders) {
+				if (border.getObject() != null) {
+					gameScreen.getStage().addBorderObjectActor(border);
+				}
+			}
 			gameScreen.getUiStage().getQuiver().update();
-			gameScreen.renderPlane.updateBorderObjectsVisibility();
 			gameScreen.signalEventProcessingDone();
 		}
 	});
@@ -429,7 +442,7 @@ public void event(final EventMoveToPlane e) {
 			gameScreen.getRenderPlane().unseeAllCells();
 			gameScreen.getStage().removeActorsOfPlane(gameScreen.getCurrentBackendPlane().getLevel());
 			gameScreen.setCurrentPlane(Tendiwa.getWorld().getPlane(e.zLevel));
-			for (RenderCell cell : e.seen) {
+			for (RenderCell cell : e.seenCells) {
 				gameScreen.getRenderPlane().seeCell(cell);
 				if (gameScreen.renderPlane.hasAnyUnseenItems(cell.x, cell.y)) {
 					gameScreen.renderPlane.removeUnseenItems(cell.x, cell.y);

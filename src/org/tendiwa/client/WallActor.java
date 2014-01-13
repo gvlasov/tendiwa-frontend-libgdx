@@ -11,10 +11,10 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import org.tendiwa.groovy.Registry;
-import tendiwa.core.CardinalDirection;
-import tendiwa.core.RenderCell;
-import tendiwa.core.RenderPlane;
-import tendiwa.core.WallType;
+import org.tendiwa.core.CardinalDirection;
+import org.tendiwa.core.RenderCell;
+import org.tendiwa.core.RenderPlane;
+import org.tendiwa.core.WallType;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -282,7 +282,7 @@ private void generateImage(RenderCell cell, RenderCell cellFromSouth, int imageH
 	drawDepthMaskAndOpaqueTransitionOnWall(x, y, cell);
 	depthTestBatch.end();
 
-	// Draw seen walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
+	// Draw seenCells walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
 	Gdx.gl.glColorMask(true, true, true, true);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
 	depthTestBatch.setShader(GameScreen.drawWithRGB06Shader);
@@ -322,7 +322,7 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 		TextureRegion transition = null;
 		boolean noNeighbor = neighborCell == null;
 		if (noNeighbor) {
-			// Drawing black pixels for transitions to not yet seen cells on wall's height
+			// Drawing black pixels for transitions to not yet seenCells cells on wall's height
 			// (right into color buffer, hence trueing color mask).
 			Gdx.gl.glColorMask(true, true, true, true);
 			Gdx.gl.glDepthMask(false);
@@ -353,7 +353,7 @@ void drawDepthMaskAndOpaqueTransitionOnWall(int x, int y, RenderCell cell) {
 					depthTestBatch.setShader(drawOpaqueToDepth05Shader);
 				}
 			} else if (!gameScreen.isFloorUnderWallShouldBeDrawn(x + d[0], y)) {
-				// Draw black color for transitions to not yet seen south wall sides.
+				// Draw black color for transitions to not yet seenCells south wall sides.
 				Gdx.gl.glColorMask(true, true, true, true);
 				Gdx.gl.glDepthMask(true);
 				Gdx.gl.glDepthFunc(GL10.GL_LESS);

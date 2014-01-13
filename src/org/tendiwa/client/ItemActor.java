@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import tendiwa.core.Item;
+import org.tendiwa.core.Item;
 
 public class ItemActor extends Actor {
 private final TextureRegion texture;

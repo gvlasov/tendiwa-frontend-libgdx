@@ -5,10 +5,10 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import org.tendiwa.groovy.Registry;
-import tendiwa.core.EntityPlacer;
-import tendiwa.core.HorizontalPlane;
-import tendiwa.core.Tendiwa;
-import tendiwa.core.World;
+import org.tendiwa.core.EntityPlacer;
+import org.tendiwa.core.HorizontalPlane;
+import org.tendiwa.core.Tendiwa;
+import org.tendiwa.core.World;
 
 public class WorldMapScreen implements Screen {
 private final TendiwaGame game;

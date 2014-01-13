@@ -3,7 +3,7 @@ package org.tendiwa.client;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import tendiwa.core.SoundType;
+import org.tendiwa.core.SoundType;
 
 public class SoundActor extends Table {
 private static final Label.LabelStyle style = new Label.LabelStyle(TendiwaFonts.default14Flipped, Color.RED);

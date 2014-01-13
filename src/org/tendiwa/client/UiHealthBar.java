@@ -2,7 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.Color;
 import com.esotericsoftware.tablelayout.Cell;
-import tendiwa.core.Tendiwa;
+import org.tendiwa.core.Tendiwa;
 
 public class UiHealthBar extends TendiwaWidget {
 private final int width;

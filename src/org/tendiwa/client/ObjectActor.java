@@ -2,7 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import tendiwa.core.GameObject;
+import org.tendiwa.core.GameObject;
 
 public class ObjectActor extends Actor {
 private final int x;

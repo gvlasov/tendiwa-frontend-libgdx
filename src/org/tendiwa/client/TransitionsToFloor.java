@@ -2,8 +2,8 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
-import tendiwa.core.*;
-import tendiwa.core.meta.Chance;
+import org.tendiwa.core.*;
+import org.tendiwa.core.meta.Chance;
 
 /**
  * This class generates textures of transitions to a certain ammunitionType of floor and provides access to them.

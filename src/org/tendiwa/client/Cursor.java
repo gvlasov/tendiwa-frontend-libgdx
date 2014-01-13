@@ -3,7 +3,7 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import tendiwa.core.EnhancedPoint;
+import org.tendiwa.core.EnhancedPoint;
 
 public class Cursor {
 private final Texture texture;

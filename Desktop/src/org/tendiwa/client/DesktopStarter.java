@@ -1,6 +1,6 @@
 package org.tendiwa.client;
 
-import tendiwa.core.Tendiwa;
+import org.tendiwa.core.Tendiwa;
 
 public class DesktopStarter {
 public static void main(String[] args) {
@@ -28,5 +28,6 @@ public static void buildResources() {
 	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/chardoll/wielded", "wielded");
 	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/ranged", "projectiles");
 	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/spells", "spells");
+	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/borderObjects", "borderObjects");
 }
 }

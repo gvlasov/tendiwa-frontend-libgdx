@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
-import tendiwa.core.WallType;
+import org.tendiwa.core.WallType;
 
 /**
  * Caches images of {@link WallActor}s, which are composed of wall's image and various shading and darkening with

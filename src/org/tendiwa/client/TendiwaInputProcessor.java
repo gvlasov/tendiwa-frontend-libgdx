@@ -5,10 +5,10 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.google.common.collect.ImmutableList;
-import tendiwa.core.Character;
-import tendiwa.core.Server;
-import tendiwa.core.Tendiwa;
-import tendiwa.core.World;
+import org.tendiwa.core.Character;
+import org.tendiwa.core.Server;
+import org.tendiwa.core.Tendiwa;
+import org.tendiwa.core.World;
 
 import java.util.HashMap;
 import java.util.LinkedList;

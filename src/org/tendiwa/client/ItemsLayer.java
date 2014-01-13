@@ -2,7 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import tendiwa.core.*;
+import org.tendiwa.core.*;
 
 public class ItemsLayer {
 private final GameScreen gameScreen;

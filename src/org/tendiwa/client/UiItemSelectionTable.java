@@ -4,9 +4,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import org.tendiwa.lexeme.Language;
-import tendiwa.core.Item;
-import tendiwa.core.ItemPile;
-import tendiwa.core.Items;
+import org.tendiwa.core.Item;
+import org.tendiwa.core.ItemPile;
+import org.tendiwa.core.Items;
 
 import java.util.Map;
 

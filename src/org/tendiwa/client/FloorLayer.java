@@ -9,10 +9,10 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
 import org.tendiwa.groovy.Registry;
-import tendiwa.core.CardinalDirection;
-import tendiwa.core.FloorType;
-import tendiwa.core.RenderCell;
-import tendiwa.core.Tendiwa;
+import org.tendiwa.core.CardinalDirection;
+import org.tendiwa.core.FloorType;
+import org.tendiwa.core.RenderCell;
+import org.tendiwa.core.Tendiwa;
 
 import java.util.HashMap;
 import java.util.Map;

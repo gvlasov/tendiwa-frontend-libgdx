@@ -1,6 +1,6 @@
 package org.tendiwa.client;
 
-import tendiwa.core.Item;
+import org.tendiwa.core.Item;
 
 import java.util.LinkedList;
 import java.util.List;

@@ -1,11 +1,10 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
-import org.tendiwa.events.*;
+import org.tendiwa.core.*;
+import org.tendiwa.core.Character;
 import org.tendiwa.groovy.Registry;
-import tendiwa.core.*;
-import tendiwa.core.Character;
-import tendiwa.core.meta.Condition;
+import org.tendiwa.core.meta.Condition;
 
 import java.util.LinkedList;
 

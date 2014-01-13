@@ -2,7 +2,6 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL10;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -10,8 +9,8 @@ import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import tendiwa.core.*;
-import tendiwa.core.Character;
+import org.tendiwa.core.*;
+import org.tendiwa.core.Character;
 
 public class CharacterActor extends Actor {
 private static final TextureAtlas atlasCharacters = AtlasCharacters.getInstance();

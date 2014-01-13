@@ -8,11 +8,12 @@ import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import com.badlogic.gdx.scenes.scene2d.actions.ParallelAction;
 import com.badlogic.gdx.scenes.scene2d.actions.RunnableAction;
 import com.badlogic.gdx.utils.SnapshotArray;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import org.tendiwa.events.EventProjectileFly;
-import tendiwa.core.*;
-import tendiwa.core.Character;
+import com.google.common.collect.Table;
+import org.tendiwa.core.*;
+import org.tendiwa.core.Character;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
 private Map<Item, Actor> itemActors = new HashMap<>();
 private HashMap<Integer, WallActor> wallActors = new HashMap<>();
 private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
+private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors = HashBasedTable.create();
 
 TendiwaStage(GameScreen gameScreen) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
@@ -89,7 +91,7 @@ public com.badlogic.gdx.scenes.scene2d.Actor getPlayerCharacterActor() {
 }
 
 /**
- * Returns an existing ItemActor for a {@link RememberedItem}, or creates a new ItemActor for a RememberedItem and
+ * Returns an existing ItemActor for a {@link org.tendiwa.core.RememberedItem}, or creates a new ItemActor for a RememberedItem and
  * returns it.
  *
  * @param item
@@ -258,9 +260,20 @@ public WallActor getWallActor(int worldX, int worldY) {
 	return wallActors.get(getWallActorKey(worldX, worldY));
 }
 
-public BorderObjectActor addBorderObjectActor(int worldX, int worldY, CardinalDirection dir) {
-	BorderObjectActor actor = new BorderObjectActor(worldX, worldY, dir, gameScreen.getCurrentBackendPlane().getBorderObject(worldX, worldY, dir));
+public BorderObjectActor addBorderObjectActor(RenderBorder border) {
+	BorderObjectActor actor = new BorderObjectActor(
+		border.getX(),
+		border.getY(),
+		border.getSide(),
+		border.getObject()
+	);
+	borderObjectActors.put(Chunk.cellHash(border.getX(), border.getY(), Tendiwa.getWorldHeight()), border.getSide(), actor);
 	addActor(actor);
 	return actor;
+}
+
+public void removeBorderObjectActor(int worldX, int worldY, CardinalDirection side) {
+	BorderObjectActor removedActor = borderObjectActors.remove(Chunk.cellHash(worldX, worldY, Tendiwa.getWorldHeight()), side);
+	getRoot().removeActor(removedActor);
 }
 }

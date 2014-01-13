@@ -5,9 +5,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import tendiwa.core.Equipment;
-import tendiwa.core.Item;
-import tendiwa.core.ItemPile;
+import org.tendiwa.core.Equipment;
+import org.tendiwa.core.Item;
+import org.tendiwa.core.ItemPile;
 
 public abstract class TendiwaWidget extends Table {
 protected TendiwaWidget() {

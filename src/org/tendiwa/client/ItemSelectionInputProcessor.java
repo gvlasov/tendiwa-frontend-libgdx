@@ -8,7 +8,7 @@ import com.badlogic.gdx.InputProcessor;
  * for an entity to be chosen.
  *
  * @param <T>
- * 	Type of entity. Common examples are {@link tendiwa.core.Item}s or Spells.
+ * 	Type of entity. Common examples are {@link org.tendiwa.core.Item}s or Spells.
  */
 public class ItemSelectionInputProcessor<T> implements InputProcessor {
 private final ItemToKeyMapper<T> itemToKeyMapper;

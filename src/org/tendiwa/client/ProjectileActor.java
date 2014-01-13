@@ -5,7 +5,7 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import tendiwa.core.Projectile;
+import org.tendiwa.core.Projectile;
 
 public class ProjectileActor extends Actor {
 private final TextureAtlas.AtlasRegion texture;

@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
-import tendiwa.core.Item;
+import org.tendiwa.core.Item;
 
 public class UiQuiver extends TendiwaWidget {
 private final Label label;

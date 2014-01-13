@@ -15,8 +15,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.bitfire.utils.ShaderLoader;
-import tendiwa.core.Character;
-import tendiwa.core.*;
+import org.tendiwa.core.*;
+import org.tendiwa.core.Character;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,7 +58,7 @@ RenderPlane renderPlane;
 OrthographicCamera camera;
 /**
  * The World object in backend (not always consistent with current animation state, so you shouldn't read from it
- * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.events.Event}s.
+ * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.core.Event}s.
  */
 World backendWorld;
 Character player;
@@ -305,7 +305,7 @@ private void drawObjects() {
  * 	World x coordinate of a cell.
  * @param y
  * 	World y coordinate of a cell.
- * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seen, true otherwise.
+ * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seenCells, true otherwise.
  */
 boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
 	return !(renderPlane.getCell(x, y).hasWall() && !renderPlane.hasCell(x, y + 1));

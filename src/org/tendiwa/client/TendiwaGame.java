@@ -3,9 +3,9 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import tendiwa.core.RequestInitialTerrain;
-import tendiwa.core.Tendiwa;
-import tendiwa.core.TendiwaClient;
+import org.tendiwa.core.RequestInitialTerrain;
+import org.tendiwa.core.Tendiwa;
+import org.tendiwa.core.TendiwaClient;
 
 public class TendiwaGame extends Game implements TendiwaClient {
 

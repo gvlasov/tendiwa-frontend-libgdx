@@ -9,10 +9,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
-import org.tendiwa.events.RequestActionToCell;
-import org.tendiwa.events.RequestActionWithoutTarget;
-import tendiwa.core.*;
-import tendiwa.core.Character;
+import org.tendiwa.core.*;
+import org.tendiwa.core.Character;
 
 import java.util.Collection;
 import java.util.Map;
@@ -90,7 +88,7 @@ public static Iterable<CharacterAbility> findActionsAroundPlayer() {
 		int[] d = dir.side2d();
 		int x = player.getX() + d[0];
 		int y = player.getY() + d[1];
-		if (plane.hasObject(x, y)) {
+		if (plane.containsCell(x, y) && plane.hasObject(x, y)) {
 			Usable usable = GameObjects.asUsable(plane.getGameObject(x, y).getType());
 			if (usable != null) {
 				builder.addAll(usable.getActions());

@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import tendiwa.core.RenderCell;
+import org.tendiwa.core.RenderCell;
 
 public class FloorFieldOfViewLayer {
 private final GameScreen gameScreen;
@@ -104,7 +104,7 @@ public void draw() {
 		(gameScreen.startCellY + gameScreen.getMaxRenderCellY()) * GameScreen.TILE_SIZE);
 	shapeRen.end();
 
-	// Draw transitions to not yet seen cells
+	// Draw transitions to not yet seenCells cells
 	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	Gdx.gl.glClearDepthf(1.0f);
 	Gdx.gl.glClear(GL10.GL_DEPTH_BUFFER_BIT);
@@ -147,7 +147,7 @@ public void draw() {
 	}
 	fovEdgeOpaque.batch.end();
 
-	// Render not yet seen cells
+	// Render not yet seenCells cells
 //	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	if (renderNotYetSeenCells) {
 		Gdx.gl.glDepthFunc(GL10.GL_EQUAL);

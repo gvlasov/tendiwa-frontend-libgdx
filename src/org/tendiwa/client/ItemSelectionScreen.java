@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import tendiwa.core.Item;
+import org.tendiwa.core.Item;
 
 public class ItemSelectionScreen implements Screen, EntityProvider<Item> {
 private Runnable onComplete = new Runnable() {

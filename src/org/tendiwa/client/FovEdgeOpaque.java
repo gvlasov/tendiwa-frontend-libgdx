@@ -4,8 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import tendiwa.core.*;
-import tendiwa.core.meta.Chance;
+import org.tendiwa.core.*;
+import org.tendiwa.core.meta.Chance;
 
 public class FovEdgeOpaque extends TransitionPregenerator {
 final SpriteBatch batch;

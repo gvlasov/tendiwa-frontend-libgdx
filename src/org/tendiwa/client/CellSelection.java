@@ -5,9 +5,9 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
-import tendiwa.core.Chunk;
-import tendiwa.core.EnhancedPoint;
-import tendiwa.core.meta.Coordinate;
+import org.tendiwa.core.Chunk;
+import org.tendiwa.core.EnhancedPoint;
+import org.tendiwa.core.meta.Coordinate;
 
 public class CellSelection {
 private static CellSelection INSTANCE;
@@ -163,5 +163,8 @@ void buildTexture() {
 	pixmap.setColor(0, 1, 0, 0.3f);
 	pixmap.fillRectangle(0, 0, GameScreen.TILE_SIZE - 1, GameScreen.TILE_SIZE - 1);
 	texture = new Texture(pixmap);
+}
+Texture getTexture() {
+	return texture;
 }
 }

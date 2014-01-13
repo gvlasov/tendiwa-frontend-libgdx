@@ -7,9 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
-import org.tendiwa.events.RequestActionToCell;
-import org.tendiwa.events.RequestActionWithoutTarget;
-import tendiwa.core.*;
+import org.tendiwa.core.*;
 
 import java.lang.Character;
 import java.util.Map;

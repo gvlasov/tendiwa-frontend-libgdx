@@ -1,7 +1,7 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.Pixmap;
-import tendiwa.core.CardinalDirection;
+import org.tendiwa.core.CardinalDirection;
 
 public class FovEdgeTransparent extends FovEdgeOpaque {
 public FovEdgeTransparent() {
