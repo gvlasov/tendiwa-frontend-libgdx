@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import org.tendiwa.core.Tendiwa;
 
 public class StatusLayer {
 private final GameScreen gameScreen;

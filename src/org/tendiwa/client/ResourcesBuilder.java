@@ -10,8 +10,9 @@ static void buildTexturesToAtlas(String directory, String atlasName, boolean com
 	settings.maxHeight = 100000;
 	settings.maxHeight = 100000;
 	settings.pot = false;
-	TexturePacker2.process(directory, "pack", atlasName);
+	TexturePacker2.process(settings, directory, "pack", atlasName);
 }
+
 static void buildTexturesToAtlas(String directory, String atlasName) {
 	buildTexturesToAtlas(directory, atlasName, true);
 }

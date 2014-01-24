@@ -15,8 +15,9 @@ import java.util.Queue;
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 /**
- * On each received {@link org.tendiwa.core.Event} this class creates a {@link EventResult} pending operation and placed it in a queue.
- * Each time the game is rendered, all EventResults are processed inside {@link GameScreen#render(float)}.
+ * On each received {@link org.tendiwa.core.Event} this class creates a {@link EventResult} pending operation and placed
+ * it in a queue. Each time the game is rendered, all EventResults are processed inside {@link
+ * GameScreen#render(float)}.
  */
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
 private GameScreen gameScreen;

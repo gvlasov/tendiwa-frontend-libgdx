@@ -41,7 +41,7 @@ public Pixmap createTransition(CardinalDirection dir) {
 	EnhancedRectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
 	pixmap.setColor(0, 0, 0, 0);
 	// Fill the most of the pixmap with transparent pixels.
-	pixmap.fillRectangle(clearRec.x, clearRec.y, clearRec.width, clearRec.height);
+	pixmap.fillRectangle(clearRec.getX(), clearRec.getY(), clearRec.getWidth(), clearRec.getHeight());
 	Segment sideSegment = transitionRec.getSideAsSegment(dir);
 	EnhancedPoint point = new EnhancedPoint(sideSegment.x, sideSegment.y);
 	pixmap.setColor(0, 0, 0, 0);

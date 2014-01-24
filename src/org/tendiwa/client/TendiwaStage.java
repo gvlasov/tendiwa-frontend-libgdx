@@ -73,7 +73,7 @@ void sortActorsByY() {
 
 private CharacterActor createCharacterActor(Character character) {
 	CharacterActor actor = new CharacterActor(character);
-	if (Tendiwa.getPlayerCharacter().canSee(character.getX(), character.getY())) {
+	if (Tendiwa.getPlayerCharacter().getSeer().canSee(character.getX(), character.getY())) {
 		actor.setVisible(true);
 	} else {
 		actor.setVisible(false);
@@ -142,7 +142,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
-	moveToAction.setDuration((float) (EnhancedPoint.distance(fromX, fromY, toX, toY) * 0.05));
+	moveToAction.setDuration((float) (EnhancedPoint.distanceDouble(fromX, fromY, toX, toY) * 0.05));
 	ParallelAction movingAndRotating = parallel(moveToAction, rotateBy(360, moveToAction.getDuration()));
 	RunnableAction runnable = run(new Runnable() {
 		@Override
