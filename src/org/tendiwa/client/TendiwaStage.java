@@ -12,6 +12,7 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import org.tendiwa.client.markers.MarkersRegistry;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 
@@ -36,6 +37,7 @@ private Map<Item, Actor> itemActors = new HashMap<>();
 private HashMap<Integer, WallActor> wallActors = new HashMap<>();
 private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
 private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors = HashBasedTable.create();
+private MarkersRegistry markersRegistry = new MarkersRegistry();
 
 TendiwaStage(GameScreen gameScreen) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
@@ -261,6 +263,7 @@ public WallActor getWallActor(int worldX, int worldY) {
 }
 
 public BorderObjectActor addBorderObjectActor(RenderBorder border) {
+	assert border.getObject() != null;
 	BorderObjectActor actor = new BorderObjectActor(
 		border.getX(),
 		border.getY(),
@@ -275,5 +278,9 @@ public BorderObjectActor addBorderObjectActor(RenderBorder border) {
 public void removeBorderObjectActor(int worldX, int worldY, CardinalDirection side) {
 	BorderObjectActor removedActor = borderObjectActors.remove(Chunk.cellHash(worldX, worldY, Tendiwa.getWorldHeight()), side);
 	getRoot().removeActor(removedActor);
+}
+
+public MarkersRegistry getMarkersRegistry() {
+return markersRegistry;
 }
 }

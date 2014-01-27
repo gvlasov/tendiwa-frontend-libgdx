@@ -24,7 +24,7 @@ import java.util.Queue;
 
 public class GameScreen implements Screen {
 
-static final int TILE_SIZE = 32;
+public static final int TILE_SIZE = 32;
 static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
 private static GameScreen INSTANCE;

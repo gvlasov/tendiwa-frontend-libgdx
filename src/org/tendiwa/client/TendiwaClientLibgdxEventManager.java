@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import org.tendiwa.client.effects.Blood;
+import org.tendiwa.client.markers.BorderMarker;
 import org.tendiwa.core.*;
 
 import java.util.LinkedList;
@@ -139,9 +140,15 @@ public void event(final EventFovChange e) {
 				}
 
 			}
+			gameScreen.getStage().getMarkersRegistry().clear();
 			for (RenderBorder border : e.seenBorders) {
+				gameScreen.getStage().getMarkersRegistry().add(new BorderMarker(border));
 				if (!gameScreen.renderPlane.hasUnseenBorderObject(border)) {
-					gameScreen.getStage().addBorderObjectActor(border);
+					if (border.getObject() != null) {
+						gameScreen.getStage().addBorderObjectActor(border);
+					}
+				} else if (gameScreen.renderPlane.hasUnseenBorderObject(border) && border.getObject() == null) {
+					gameScreen.renderPlane.removeUnseenBorder(border);
 				}
 			}
 			for (RenderBorder border : e.unseenBorders) {

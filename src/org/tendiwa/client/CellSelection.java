@@ -164,7 +164,7 @@ void buildTexture() {
 	pixmap.fillRectangle(0, 0, GameScreen.TILE_SIZE - 1, GameScreen.TILE_SIZE - 1);
 	texture = new Texture(pixmap);
 }
-Texture getTexture() {
+public Texture getTexture() {
 	return texture;
 }
 }
