@@ -15,19 +15,18 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.bitfire.utils.ShaderLoader;
-import org.tendiwa.core.*;
+import com.google.inject.Inject;
 import org.tendiwa.core.Character;
+import org.tendiwa.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Queue;
 
 public class GameScreen implements Screen {
 
 public static final int TILE_SIZE = 32;
 static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
-private static GameScreen INSTANCE;
 final int maxStartX;
 final int maxStartY;
 final SpriteBatch batch;
@@ -38,10 +37,8 @@ final int worldHeightCells;
 final FrameBuffer depthTestFrameBuffer;
 final int windowWidthCells;
 final int windowHeightCells;
-private final TendiwaGame game;
 private final TextureAtlas atlasObjects;
 private final TextureAtlas atlasUi;
-private final TendiwaInputProcessor controller;
 private final FloorLayer floorLayer;
 private final FloorFieldOfViewLayer floorFieldOfViewLayer;
 private final TendiwaStage stage;
@@ -50,7 +47,6 @@ private final Cursor cursor;
 private final ItemsLayer itemsLayer;
 private final TendiwaUiStage uiStage;
 private final InputMultiplexer inputMultiplexer;
-private final Server server;
 private final StatusLayer statusLayer;
 private final ClientConfig config;
 protected int startCellX;
@@ -69,10 +65,7 @@ int cameraMoveStep = 1;
 int startPixelX;
 int startPixelY;
 PostProcessor postProcessor;
-/**
- * Max index of each floor ammunitionType's images.
- */
-private boolean eventResultProcessingIsGoing = false;
+private Map<Integer, GameObject> objects = new HashMap<>();
 /**
  * The greatest value of camera's center pixel on y axis in world coordinates.
  */
@@ -81,16 +74,14 @@ private int maxPixelY;
  * The greatest value of camera's center pixel on x axis in world coordinates.
  */
 private int maxPixelX;
-private Map<Integer, GameObject> objects = new HashMap<>();
-private boolean lastEventEndsFrame;
-private int eventsProcessed;
 private HorizontalPlane currentPlane;
 private RenderWorld renderWorld;
+private EventProcessor eventProcessor;
 
-public GameScreen(final TendiwaGame game, ClientConfig config) {
+@Inject
+public GameScreen(TendiwaGame game, ClientConfig config, TendiwaStage stage, EventProcessor eventProcessor, GameScreenInputProcessor gameScreenInputProcessor) {
 	this.config = config;
-	INSTANCE = this;
-	this.game = game;
+	this.eventProcessor = eventProcessor;
 	backendWorld = Tendiwa.getWorld();
 	player = Tendiwa.getPlayerCharacter();
 	renderWorld = new RenderWorld();
@@ -122,13 +113,10 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 
 	depthTestFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, windowWidth, windowHeight, true);
 
-	stage = new TendiwaStage(this);
-
-	controller = new GameScreenInputProcessor(this);
+	this.stage = stage;
 
 	setRenderingMode();
 
-	renderPlane = new RenderPlane(Tendiwa.getWorld().getPlayer().getPlane());
 	floorLayer = new FloorLayer(this);
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
@@ -136,9 +124,8 @@ public GameScreen(final TendiwaGame game, ClientConfig config) {
 	statusLayer = new StatusLayer(this);
 	cursor = new Cursor(this);
 	uiStage = new TendiwaUiStage();
-	inputMultiplexer = new InputMultiplexer(uiStage, controller);
+	inputMultiplexer = new InputMultiplexer(uiStage, gameScreenInputProcessor);
 	Gdx.input.setInputProcessor(inputMultiplexer);
-	server = Tendiwa.getServer();
 	UiKeyHints.getInstance().update();
 	initPostProcessor();
 
@@ -216,25 +203,7 @@ private void setRenderingMode() {
 
 @Override
 public void render(float delta) {
-	eventsProcessed = 0;
-	do {
-		synchronized (Tendiwa.getLock()) {
-			processEvents();
-			// If at least one event was processed during this frame,
-			// then be ready to process more events that come from the last request
-			if (eventsProcessed > 0) {
-				// If the next event after the last event is supposed to be rendered in current frame,
-				// then wait until a pending operation comes to client.
-				while (game.getEventManager().getPendingOperations().isEmpty() && !lastEventEndsFrame) {
-					try {
-						// While this thread waits, a new pending operation may be created.
-						Tendiwa.getLock().wait();
-					} catch (InterruptedException e) {
-					}
-				}
-			}
-		}
-	} while (!lastEventEndsFrame && !game.getEventManager().getPendingOperations().isEmpty());
+	eventProcessor.processEventsUntilRenderNecessity();
 	synchronized (Tendiwa.getLock()) {
 		Actor characterActor = stage.getPlayerCharacterActor();
 		stage.act(Gdx.graphics.getDeltaTime());
@@ -319,40 +288,11 @@ int getMaxRenderCellY() {
 	return startCellY + windowHeightCells + (startPixelY % TILE_SIZE == 0 ? 0 : 1) + (windowHeightCells % 2 == 0 ? 0 : 1);
 }
 
-private void processEvents() {
-	Queue<EventResult> queue = game.getEventManager().getPendingOperations();
-	if (!eventResultProcessingIsGoing && !Server.hasRequestToProcess() && queue.size() == 0 && controller.hasCurrentTask()) {
-		controller.executeCurrentTask();
-	}
-	// Loop variable will remain true if it is not set to true inside .process().
-	while (!eventResultProcessingIsGoing && !queue.isEmpty()) {
-		EventResult result = queue.remove();
-		eventResultProcessingIsGoing = true;
-		// lastEventEndsFrame will remain true under the same condition
-		lastEventEndsFrame = true;
-		result.process();
-		eventsProcessed++;
-	}
-}
-
-void processOneMoreEventInCurrentFrame() {
-	lastEventEndsFrame = false;
-}
-
 EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
 	return new EnhancedPoint(
 		(startPixelX + screenX) / GameScreen.TILE_SIZE,
 		(startPixelY + screenY) / GameScreen.TILE_SIZE
 	);
-}
-
-void signalEventProcessingDone() {
-	eventResultProcessingIsGoing = false;
-	Tendiwa.signalAnimationCompleted();
-}
-
-boolean isEventProcessingGoing() {
-	return eventResultProcessingIsGoing;
 }
 
 private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {

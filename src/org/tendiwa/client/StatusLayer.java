@@ -38,14 +38,22 @@ public StatusLayer(final GameScreen gameScreen) {
 			return "cursor at " + worldX + ":" + worldY;
 		}
 	});
-	addLine(new Object() {
-		@Override
-		public String toString() {
-			int worldX = gameScreen.getCursor().getWorldX();
-			int worldY = gameScreen.getCursor().getWorldY();
-			return "visibility: " + Tendiwa.getPlayerCharacter().getSeer().canSeeBorder(new Border(worldX, worldY, Directions.W));
-		}
-	});
+//	addLine(new Object() {
+//		@Override
+//		public String toString() {
+//			int worldX = gameScreen.getCursor().getWorldX();
+//			int worldY = gameScreen.getCursor().getWorldY();
+//			return "visibility previous: " + Tendiwa.getPlayerCharacter().getSeer().getPreviousBorderVisionCache().get(new Border(worldX, worldY, Directions.W));
+//		}
+//	});
+//	addLine(new Object() {
+//		@Override
+//		public String toString() {
+//			int worldX = gameScreen.getCursor().getWorldX();
+//			int worldY = gameScreen.getCursor().getWorldY();
+//			return "visibility current: " + Tendiwa.getPlayerCharacter().getSeer().getBorderVisionCache().get(new Border(worldX, worldY, Directions.W));
+//		}
+//	});
 }
 
 public void draw() {

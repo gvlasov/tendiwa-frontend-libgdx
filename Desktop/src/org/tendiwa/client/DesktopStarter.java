@@ -1,33 +1,29 @@
 package org.tendiwa.client;
 
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 import org.tendiwa.core.Tendiwa;
 
 public class DesktopStarter {
+private final TendiwaGame game;
+private final ResourcesBuilder resourcesBuilder;
+
+DesktopStarter(TendiwaGame game, ResourcesBuilder resourcesBuilder) {
+	this.game = game;
+	this.resourcesBuilder = resourcesBuilder;
+}
+
 public static void main(String[] args) {
+	Injector injector = Guice.createInjector(new TendiwaLibgdxModule());
 	if (args.length > 0 && args[0].equals("atlas")) {
-		buildResources();
+		injector.getInstance(ResourcesBuilder.class).buildResources();
 	} else {
-		loadGame();
+		injector.getInstance(DesktopStarter.class).loadGame();
 	}
 }
 
-public static void loadGame() {
-	TendiwaGame.getInstance().startup();
+public void loadGame() {
+	game.startup();
 	Tendiwa.getLogger().setLevel(org.apache.log4j.Level.DEBUG);
-}
-
-public static void buildResources() {
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/floors", "floors");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/walls", "walls", false);
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/objects", "objects");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/characters", "characters");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/items", "items");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/ui", "ui");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/chardoll/bodies", "bodies");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/chardoll/apparel", "apparel");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/chardoll/wielded", "wielded");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/ranged", "projectiles");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/spells", "spells");
-	ResourcesBuilder.buildTexturesToAtlas("/home/suseika/Projects/tendiwa/MainModule/data/images/borderObjects", "borderObjects");
 }
 }

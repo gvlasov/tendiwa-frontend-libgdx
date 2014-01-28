@@ -3,46 +3,32 @@ package org.tendiwa.client;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import org.tendiwa.core.Border;
 import org.tendiwa.core.BorderObject;
 import org.tendiwa.core.CardinalDirection;
 import org.tendiwa.core.Directions;
 
 public class BorderObjectActor extends Actor {
-private final int x;
-private final int y;
-private final CardinalDirection side;
 private final BorderObject borderObject;
+private final Border border;
 private TextureAtlas.AtlasRegion atlasRegion;
 private int worldPixelX;
 private int worldPixelY;
 
-public BorderObjectActor(int x, int y, CardinalDirection side, BorderObject borderObject) {
-	assert side != null;
-	if (side != Directions.N && side != Directions.W) {
-		if (side == Directions.E) {
-			side = Directions.W;
-			x += 1;
-		} else {
-			assert side == Directions.S;
-			side = Directions.N;
-			y += 1;
-		}
-	}
-	this.side = side;
-	this.x = x;
-	this.y = y;
+public BorderObjectActor(Border border, BorderObject borderObject) {
+	this.border = border;
 	this.borderObject = borderObject;
-	setX(x);
-	setY(y);
-	atlasRegion = AtlasBorderObjects.getInstance().findRegion(borderObject.getType().getResourceName() + (side.isVertical() ? "_hor" : "_ver"));
+	setX(border.x);
+	setY(border.y);
+	atlasRegion = AtlasBorderObjects.getInstance().findRegion(borderObject.getType().getResourceName() + (border.side.isVertical() ? "_hor" : "_ver"));
 
-	if (side.isVertical()) {
-		worldPixelX = GameScreen.TILE_SIZE * x;
-		worldPixelY = GameScreen.TILE_SIZE * y - atlasRegion.getRegionHeight();
+	if (border.side.isVertical()) {
+		worldPixelX = GameScreen.TILE_SIZE * border.x;
+		worldPixelY = GameScreen.TILE_SIZE * border.y - atlasRegion.getRegionHeight();
 	} else {
-		assert side.isHorizontal();
-		worldPixelX = GameScreen.TILE_SIZE * x;
-		worldPixelY = GameScreen.TILE_SIZE * (y + 1) - atlasRegion.getRegionHeight();
+		assert border.side.isHorizontal();
+		worldPixelX = GameScreen.TILE_SIZE * border.x;
+		worldPixelY = GameScreen.TILE_SIZE * (border.y + 1) - atlasRegion.getRegionHeight();
 	}
 
 }
@@ -50,7 +36,7 @@ public BorderObjectActor(int x, int y, CardinalDirection side, BorderObject bord
 @Override
 public void draw(Batch batch, float parentAlpha) {
 	boolean shaderWasChanged = false;
-	if (TendiwaGame.getGameScreen().getRenderPlane().isCellUnseen(x, y)) {
+	if (!TendiwaGame.getGameScreen().getRenderPlane().isBorderVisible(border)) {
 		shaderWasChanged = true;
 		batch.setShader(GameScreen.drawWithRGB06Shader);
 	}

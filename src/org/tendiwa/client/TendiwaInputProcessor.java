@@ -15,12 +15,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import static com.badlogic.gdx.Input.Keys.*;
-
 public abstract class TendiwaInputProcessor implements InputProcessor {
 protected static final int ctrl = 1 << 8;
 protected static final int alt = 1 << 9;
 protected static final int shift = 1 << 10;
+protected final TaskManager taskManager;
 final GameScreen gameScreen;
 final Character player;
 final World world;
@@ -30,10 +29,12 @@ private Map<KeyCombination, UiAction> combinationToAction = new HashMap<>();
  * order and in generally easier to iterate over).
  */
 private List<Mapping> mappings = new LinkedList<>();
-Task currentTask;
+private EventProcessor eventProcessor;
 
-public TendiwaInputProcessor(GameScreen gameScreen) {
+TendiwaInputProcessor(GameScreen gameScreen, TaskManager taskManager, EventProcessor eventProcessor) {
 	this.gameScreen = gameScreen;
+	this.taskManager = taskManager;
+	this.eventProcessor = eventProcessor;
 	this.player = Tendiwa.getPlayerCharacter();
 	this.world = Tendiwa.getWorld();
 }
@@ -71,19 +72,19 @@ public void putAction(int combination, UiAction action) {
 
 @Override
 public boolean keyDown(int keycode) {
-	if (keycode == ESCAPE && currentTask != null) {
-		currentTask = null;
+	if (keycode == Input.Keys.ESCAPE && taskManager.hasCurrentTask()) {
+		taskManager.cancelCurrentTask();
 	}
-	if (gameScreen.isEventProcessingGoing() || Server.hasRequestToProcess()) {
+	if (eventProcessor.isEventProcessingGoing() || Server.hasRequestToProcess()) {
 		return false;
 	}
 	switch (keycode) {
-		case SHIFT_LEFT:
-		case SHIFT_RIGHT:
-		case ALT_LEFT:
-		case ALT_RIGHT:
-		case CONTROL_LEFT:
-		case CONTROL_RIGHT:
+		case Input.Keys.SHIFT_LEFT:
+		case Input.Keys.SHIFT_RIGHT:
+		case Input.Keys.ALT_LEFT:
+		case Input.Keys.ALT_RIGHT:
+		case Input.Keys.CONTROL_LEFT:
+		case Input.Keys.CONTROL_RIGHT:
 			return false;
 	}
 	KeyCombination combination = KeyCombinationPool.obtainCombination(
@@ -111,15 +112,6 @@ public boolean keyTyped(char character) {
 	return false;
 }
 
-boolean trySettingTask(Task task) {
-	if (currentTask == null) {
-		currentTask = task;
-		return true;
-	} else {
-		return false;
-	}
-}
-
 @Override
 public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 	return false;
@@ -140,27 +132,8 @@ public boolean scrolled(int amount) {
 	return false;
 }
 
-public void executeCurrentTask() {
-	if (currentTask != null) {
-		if (currentTask.ended()) {
-			currentTask = null;
-		} else {
-			currentTask.execute();
-			if (Tendiwa.getPlayerCharacter().isUnderAnyThreat()) {
-				currentTask = null;
-			}
-		}
-	} else {
-		assert false;
-	}
-}
-
 public ImmutableList<Mapping> getMappings() {
 	return ImmutableList.copyOf(mappings);
-}
-
-public boolean hasCurrentTask() {
-	return currentTask != null;
 }
 
 private static class KeyCombinationPool {

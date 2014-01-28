@@ -3,19 +3,19 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Gdx;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
-import org.tendiwa.groovy.Registry;
 import org.tendiwa.core.meta.Condition;
+import org.tendiwa.groovy.Registry;
 
 import java.util.LinkedList;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
-public class GameScreenInputProcessor extends TendiwaInputProcessor {
+final class GameScreenInputProcessor extends TendiwaInputProcessor {
 
 private ItemToKeyMapper<Item> mapper = new ItemToKeyMapper<>();
 
-public GameScreenInputProcessor(final GameScreen gameScreen) {
-	super(gameScreen);
+public GameScreenInputProcessor(final GameScreen gameScreen, TaskManager taskManager, EventProcessor eventProcessor, final TendiwaGame game) {
+	super(gameScreen, taskManager, eventProcessor);
 	putAction(LEFT, new UiAction("action.cameraMoveWest") {
 		@Override
 		public void act() {
@@ -109,10 +109,10 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 	putAction(F9, new UiAction("action.toggleWorldMapScreen") {
 		@Override
 		public void act() {
-			if (TendiwaGame.isGameScreenActive()) {
-				TendiwaGame.switchToWorldMapScreen();
+			if (game.isGameScreenActive()) {
+				game.switchToWorldMapScreen();
 			} else {
-				TendiwaGame.switchToGameScreen();
+				game.switchToGameScreen();
 			}
 		}
 	});
@@ -141,7 +141,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 		@Override
 		public void act() {
 			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-			TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
+			game.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
 						return Items.isShootable(entity.getType());
@@ -150,7 +150,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 					@Override
 					public void execute(Item item) {
 						QuiveredItemHolder.setItem(item);
-						TendiwaGame.switchToGameScreen();
+						game.switchToGameScreen();
 					}
 				}
 			);
@@ -160,7 +160,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 		@Override
 		public void act() {
 			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-			TendiwaGame.getItemSelectionScreen().startSelection(mapper,
+			game.getItemSelectionScreen().startSelection(mapper,
 				new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
@@ -170,7 +170,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 				new EntitySelectionListener<Item>() {
 					@Override
 					public void execute(final Item item) {
-						TendiwaGame.switchToGameScreen();
+						game.switchToGameScreen();
 						CellSelection.getInstance().start(new EntitySelectionListener<EnhancedPoint>() {
 							@Override
 							public void execute(EnhancedPoint point) {
@@ -209,7 +209,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 		@Override
 		public void act() {
 			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-			TendiwaGame.getItemSelectionScreen().startSelection(mapper,
+			game.getItemSelectionScreen().startSelection(mapper,
 				new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
@@ -229,7 +229,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 		@Override
 		public void act() {
 			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
-			TendiwaGame.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
+			game.getItemSelectionScreen().startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
 						return Items.isWearable(entity.getType());
@@ -277,7 +277,7 @@ public GameScreenInputProcessor(final GameScreen gameScreen) {
 
 @Override
 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-	if (currentTask != null) {
+	if (taskManager.hasCurrentTask()) {
 		return false;
 	}
 	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
@@ -294,7 +294,7 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 	if (path == null || path.size() == 0) {
 		return true;
 	}
-	trySettingTask(new Task() {
+	taskManager.trySettingTask(new Task() {
 		public boolean forcedEnd = false;
 
 		@Override

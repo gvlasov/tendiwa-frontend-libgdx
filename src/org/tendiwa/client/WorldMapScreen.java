@@ -4,18 +4,20 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import org.tendiwa.groovy.Registry;
+import com.google.inject.Inject;
 import org.tendiwa.core.EntityPlacer;
 import org.tendiwa.core.HorizontalPlane;
 import org.tendiwa.core.Tendiwa;
 import org.tendiwa.core.World;
+import org.tendiwa.groovy.Registry;
 
 public class WorldMapScreen implements Screen {
 private final TendiwaGame game;
 private OrthographicCamera camera;
 private SpriteBatch batch;
 
-WorldMapScreen(final TendiwaGame game) {
+@Inject
+WorldMapScreen(TendiwaGame game) {
 	this.game = game;
 	camera = new OrthographicCamera();
 	camera.setToOrtho(true, Tendiwa.getWorldWidth(), Tendiwa.getWorldHeight());

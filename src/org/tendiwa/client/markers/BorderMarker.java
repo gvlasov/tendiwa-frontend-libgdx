@@ -7,10 +7,9 @@ import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.TendiwaFonts;
 import org.tendiwa.core.Border;
 import org.tendiwa.core.CardinalDirection;
-import org.tendiwa.core.Directions;
 
 public class BorderMarker extends Actor {
-private final static int markerWidth = 32;
+private final static int markerWidth = 4;
 private final CardinalDirection side;
 
 public BorderMarker(Border border) {
@@ -21,8 +20,8 @@ public BorderMarker(Border border) {
 
 @Override
 public void draw(Batch batch, float parentAlpha) {
-	float x = side != Directions.E ? getX() * GameScreen.TILE_SIZE : getX() * GameScreen.TILE_SIZE + GameScreen.TILE_SIZE - markerWidth;
-	float y = side != Directions.S ? getY() * GameScreen.TILE_SIZE : getY() * GameScreen.TILE_SIZE + GameScreen.TILE_SIZE - markerWidth;
+	float x = getX() * GameScreen.TILE_SIZE - markerWidth / 2;
+	float y = getY() * GameScreen.TILE_SIZE - markerWidth / 2;
 	float width = side.isVertical() ? GameScreen.TILE_SIZE : markerWidth;
 	float height = side.isHorizontal() ? GameScreen.TILE_SIZE : markerWidth;
 	batch.draw(
@@ -32,6 +31,5 @@ public void draw(Batch batch, float parentAlpha) {
 		width,
 		height
 	);
-	TendiwaFonts.default14Flipped.draw(batch, side.toString(), x, y);
 }
 }

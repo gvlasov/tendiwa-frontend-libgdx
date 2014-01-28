@@ -31,6 +31,7 @@ private static Comparator<Actor> ySorter = new Comparator<Actor>() {
 	}
 };
 private final GameScreen gameScreen;
+private final EventProcessor eventProcessor;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
 private Map<Item, Actor> itemActors = new HashMap<>();
@@ -39,9 +40,10 @@ private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
 private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors = HashBasedTable.create();
 private MarkersRegistry markersRegistry = new MarkersRegistry();
 
-TendiwaStage(GameScreen gameScreen) {
+TendiwaStage(GameScreen gameScreen, EventProcessor eventProcessor) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
 	this.gameScreen = gameScreen;
+	this.eventProcessor = eventProcessor;
 	setCamera(gameScreen.camera);
 	initializeActors();
 }
@@ -126,7 +128,7 @@ public boolean hasActorForItem(Item item) {
  * 	X coordinate of flight end cell in world coordinates.
  * @param toY
  * 	Y coordinate of flight end cell in world coordinates.
- * @return A new ItemActor with MoveToAction and call to {@link org.tendiwa.client.GameScreen#signalEventProcessingDone()}
+ * @return A new ItemActor with MoveToAction and call to {@link EventProcessor#signalEventProcessingDone()}
  *         added to it.
  */
 public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int fromY, int toX, int toY, EventProjectileFly.FlightStyle style) {
@@ -150,7 +152,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 		@Override
 		public void run() {
 			TendiwaStage.this.getRoot().removeActor(actor);
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 	if (rotating) {
@@ -173,7 +175,7 @@ public Actor obtainSoundActor(SoundType soundType, int x, int y) {
 		@Override
 		public void run() {
 			TendiwaStage.this.getRoot().removeActor(actor);
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	})));
 	return actor;
@@ -265,9 +267,7 @@ public WallActor getWallActor(int worldX, int worldY) {
 public BorderObjectActor addBorderObjectActor(RenderBorder border) {
 	assert border.getObject() != null;
 	BorderObjectActor actor = new BorderObjectActor(
-		border.getX(),
-		border.getY(),
-		border.getSide(),
+		border,
 		border.getObject()
 	);
 	borderObjectActors.put(Chunk.cellHash(border.getX(), border.getY(), Tendiwa.getWorldHeight()), border.getSide(), actor);

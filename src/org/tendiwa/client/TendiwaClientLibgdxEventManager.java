@@ -6,12 +6,10 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
+import com.google.inject.Inject;
 import org.tendiwa.client.effects.Blood;
 import org.tendiwa.client.markers.BorderMarker;
 import org.tendiwa.core.*;
-
-import java.util.LinkedList;
-import java.util.Queue;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
@@ -20,21 +18,31 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
  * it in a queue. Each time the game is rendered, all EventResults are processed inside {@link
  * GameScreen#render(float)}.
  */
-public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager {
+public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager, EventResultProvider {
+private final EventProcessor eventProcessor;
+private final TendiwaGame game;
 private GameScreen gameScreen;
-private Queue<EventResult> pendingOperations = new LinkedList<>();
+private EventResult pendingOperation;
 
-TendiwaClientLibgdxEventManager(GameScreen gameScreen) {
+@Inject
+TendiwaClientLibgdxEventManager(EventProcessor eventProcessor, GameScreen gameScreen, TendiwaGame game) {
+	this.eventProcessor = eventProcessor;
 	this.gameScreen = gameScreen;
+	this.game = game;
 }
 
 public void toggleAnimations() {
 	gameScreen.getConfig().toggleAnimations();
 }
 
+private void setPendingOperation(EventResult eventResult) {
+	assert pendingOperation == null;
+	pendingOperation = eventResult;
+}
+
 @Override
 public void event(final EventMove e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public String toString() {
 			return "result move";
@@ -70,8 +78,8 @@ public void event(final EventMove e) {
 					@Override
 					public void run() {
 						gameScreen.getStage().updateCharactersVisibility();
-						gameScreen.processOneMoreEventInCurrentFrame();
-						gameScreen.signalEventProcessingDone();
+						eventProcessor.processOneMoreEventInCurrentFrame();
+						eventProcessor.signalEventProcessingDone();
 					}
 				}));
 				characterActor.addAction(sequence);
@@ -83,9 +91,9 @@ public void event(final EventMove e) {
 					// If this is player moving, then the next event will be
 					// EventFovChange, and to prevent flickering we make the current event
 					// render in the same frame as the previous event.
-					gameScreen.processOneMoreEventInCurrentFrame();
+					eventProcessor.processOneMoreEventInCurrentFrame();
 				}
-				gameScreen.signalEventProcessingDone();
+				eventProcessor.signalEventProcessingDone();
 			}
 		}
 	});
@@ -93,7 +101,7 @@ public void event(final EventMove e) {
 
 @Override
 public void event(final EventSay e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 
@@ -103,7 +111,7 @@ public void event(final EventSay e) {
 
 @Override
 public void event(final EventFovChange e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public String toString() {
 			return "result fov change";
@@ -111,26 +119,15 @@ public void event(final EventFovChange e) {
 
 		@Override
 		public void process() {
+			gameScreen.getRenderPlane().updateFieldOfView(e);
+			gameScreen.getStage().getMarkersRegistry().clear();
 			for (Integer coord : e.unseenCells) {
-				RenderCell cell = gameScreen.getRenderPlane().getCell(coord);
-				cell.setVisible(false);
-				if (gameScreen.player.getPlane().hasAnyItems(cell.x, cell.y)) {
-					for (Item item : gameScreen.player.getPlane().getItems(cell.x, cell.y)) {
-						gameScreen.renderPlane.addUnseenItem(cell.x, cell.y, item);
-					}
-				}
 //				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
 //					gameScreen.getStage().removeWallActor(cell.x, cell.y);
 //				}
 			}
 			for (RenderCell cell : e.seenCells) {
-				gameScreen.getRenderPlane().seeCell(cell);
-				if (!gameScreen.getCurrentBackendPlane().containsCell(cell.x, cell.y)) {
-					assert false : cell;
-				}
-				if (gameScreen.renderPlane.hasAnyUnseenItems(cell.x, cell.y)) {
-					gameScreen.renderPlane.removeUnseenItems(cell.x, cell.y);
-				}
+				assert gameScreen.getCurrentBackendPlane().containsCell(cell.x, cell.y) : cell;
 				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
 					if (!gameScreen.getStage().hasWallActor(cell.x, cell.y)) {
 						gameScreen.getStage().addWallActor(cell.x, cell.y);
@@ -138,31 +135,26 @@ public void event(final EventFovChange e) {
 				} else if (gameScreen.getCurrentBackendPlane().hasObject(cell.x, cell.y)) {
 					gameScreen.getStage().addObjectActor(cell.x, cell.y);
 				}
-
 			}
-			gameScreen.getStage().getMarkersRegistry().clear();
 			for (RenderBorder border : e.seenBorders) {
 				gameScreen.getStage().getMarkersRegistry().add(new BorderMarker(border));
 				if (!gameScreen.renderPlane.hasUnseenBorderObject(border)) {
 					if (border.getObject() != null) {
 						gameScreen.getStage().addBorderObjectActor(border);
 					}
-				} else if (gameScreen.renderPlane.hasUnseenBorderObject(border) && border.getObject() == null) {
-					gameScreen.renderPlane.removeUnseenBorder(border);
 				}
 			}
-			for (RenderBorder border : e.unseenBorders) {
-				gameScreen.renderPlane.addUnseenBorder(border);
+			for (Border border : e.unseenBorders) {
 			}
 //			gameScreen.processOneMoreEventInCurrentFrame();
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventInitialTerrain e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public String toString() {
 			return "result initial terrain";
@@ -170,7 +162,10 @@ public void event(final EventInitialTerrain e) {
 
 		@Override
 		public void process() {
+			System.out.println("process");
 			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(e.zLevel));
+			gameScreen.getRenderPlane().initFieldOfView(e);
+			game.switchToGameScreen();
 			for (RenderCell cell : e.seenCells) {
 				gameScreen.getRenderPlane().seeCell(cell);
 				HorizontalPlane plane = Tendiwa.getWorld().getPlayer().getPlane();
@@ -187,14 +182,14 @@ public void event(final EventInitialTerrain e) {
 				}
 			}
 			gameScreen.getUiStage().getQuiver().update();
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventItemDisappear eventItemDisappear) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			Actor actor = gameScreen.getStage().obtainItemActor(
@@ -210,14 +205,14 @@ public void event(final EventItemDisappear eventItemDisappear) {
 					@Override
 					public void run() {
 						gameScreen.getStage().removeItemActor(eventItemDisappear.item);
-						gameScreen.signalEventProcessingDone();
+						eventProcessor.signalEventProcessingDone();
 					}
 				}));
 				actor.addAction(sequence);
 				gameScreen.getStage().addActor(actor);
 			} else {
 				gameScreen.getStage().removeItemActor(eventItemDisappear.item);
-				gameScreen.signalEventProcessingDone();
+				eventProcessor.signalEventProcessingDone();
 			}
 		}
 	});
@@ -225,22 +220,22 @@ public void event(final EventItemDisappear eventItemDisappear) {
 
 @Override
 public void event(final EventGetItem eventGetItem) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			TendiwaUiStage.getInventory().update();
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(EventLoseItem eventLoseItem) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			TendiwaUiStage.getInventory().update();
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
@@ -251,7 +246,7 @@ public void event(EventItemAppear eventItemAppear) {
 
 @Override
 public void event(final EventPutOn eventPutOn) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			if (eventPutOn.getCharacter().isPlayer()) {
@@ -260,18 +255,14 @@ public void event(final EventPutOn eventPutOn) {
 			if (eventPutOn.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(eventPutOn.getCharacter()).updateTexture();
 			}
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
-public Queue<EventResult> getPendingOperations() {
-	return pendingOperations;
-}
-
 @Override
 public void event(final EventWield eventWield) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			if (eventWield.getCharacter().isPlayer()) {
@@ -280,14 +271,14 @@ public void event(final EventWield eventWield) {
 			if (eventWield.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(eventWield.getCharacter()).updateTexture();
 			}
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventTakeOff eventTakeOff) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			if (eventTakeOff.getCharacter().isPlayer()) {
@@ -296,14 +287,14 @@ public void event(final EventTakeOff eventTakeOff) {
 			if (eventTakeOff.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(eventTakeOff.getCharacter()).updateTexture();
 			}
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventUnwield e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			if (e.getCharacter().isPlayer()) {
@@ -312,14 +303,14 @@ public void event(final EventUnwield e) {
 			if (e.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(e.getCharacter()).updateTexture();
 			}
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventProjectileFly e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			com.badlogic.gdx.scenes.scene2d.Actor actor = gameScreen.getStage().obtainFlyingProjectileActor(
@@ -337,7 +328,7 @@ public void event(final EventProjectileFly e) {
 
 @Override
 public void event(final EventSound eventSound) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			com.badlogic.gdx.scenes.scene2d.Actor actor = gameScreen.getStage().obtainSoundActor(
@@ -365,7 +356,7 @@ public void event(final EventSound eventSound) {
 
 @Override
 public void event(final EventExplosion e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 //			com.badlogic.gdx.scenes.scene2d.Actor explosionActor = gameScreen.getStage().obtainExplosionActor(
@@ -373,14 +364,14 @@ public void event(final EventExplosion e) {
 //				e.y
 //			);
 //			gameScreen.getStage().addActor(explosionActor);
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventGetDamage e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 
@@ -398,14 +389,14 @@ public void event(final EventGetDamage e) {
 				}
 			})));
 			gameScreen.getStage().addActor(blood);
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventAttack e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			CharacterActor characterActor = gameScreen.getStage().getCharacterActor(e.attacker);
@@ -417,7 +408,7 @@ public void event(final EventAttack e) {
 				run(new Runnable() {
 					@Override
 					public void run() {
-						gameScreen.signalEventProcessingDone();
+						eventProcessor.signalEventProcessingDone();
 					}
 				}),
 				moveBy(-dx * 0.5f, -dy * 0.5f, 0.2f)
@@ -428,7 +419,7 @@ public void event(final EventAttack e) {
 
 @Override
 public void event(final EventDie e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
 			CharacterActor characterActor = gameScreen.getStage().getCharacterActor(e.character);
@@ -436,14 +427,14 @@ public void event(final EventDie e) {
 			UiLog.getInstance().pushText(
 				Languages.getText("log.death", e.character)
 			);
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
 }
 
 @Override
 public void event(final EventMoveToPlane e) {
-	pendingOperations.add(new EventResult() {
+	setPendingOperation(new EventResult() {
 
 		@Override
 		public void process() {
@@ -463,8 +454,21 @@ public void event(final EventMoveToPlane e) {
 					gameScreen.getStage().addObjectActor(cell.x, cell.y);
 				}
 			}
-			gameScreen.signalEventProcessingDone();
+			eventProcessor.signalEventProcessingDone();
 		}
 	});
+}
+
+@Override
+public EventResult provideEventResult() {
+	assert pendingOperation != null;
+	EventResult answer = pendingOperation;
+	pendingOperation = null;
+	return answer;
+}
+
+@Override
+public boolean hasResultPending() {
+	return pendingOperation != null;
 }
 }

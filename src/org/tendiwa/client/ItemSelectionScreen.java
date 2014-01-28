@@ -7,19 +7,15 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import org.tendiwa.core.Item;
 
 public class ItemSelectionScreen implements Screen, EntityProvider<Item> {
-private Runnable onComplete = new Runnable() {
-	@Override
-	public void run() {
-		Gdx.input.setInputProcessor(TendiwaGame.getGameScreen().getInputProcessor());
-		TendiwaGame.switchToGameScreen();
-	}
-};
-//private final UiItemSelectionTable table;
+private final ItemSelectionScreenOnComplete onComplete;
 private final Stage stage;
 private final UiItemSelectionTable table;
+private final EntityProvider<Item> entityProvider = new ItemSelectionScreenEntityProvider();
 private ItemSelectionInputProcessor<Item> inputProcessor = null;
 
-public ItemSelectionScreen() {
+public ItemSelectionScreen(ItemSelectionScreenOnComplete onComplete, EntityProvider<Item> entityProvider) {
+	this.onComplete = onComplete;
+	this.entityProvider = entityProvider;
 	stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
 //	OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 //	camera.setToOrtho(true, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -67,10 +63,4 @@ public void dispose() {
 
 }
 
-public void startSelection(ItemToKeyMapper<Item> mapper, EntityFilter<Item> filter, EntitySelectionListener<Item> onNextItemSelected) {
-	inputProcessor = new ItemSelectionInputProcessor<>(mapper, onNextItemSelected, onComplete);
-	table.update(mapper, filter);
-	TendiwaGame.switchToItemSelectionScreen();
-	Gdx.input.setInputProcessor(inputProcessor);
-}
 }
