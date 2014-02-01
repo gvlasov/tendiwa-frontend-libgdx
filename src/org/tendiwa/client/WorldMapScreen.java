@@ -12,13 +12,11 @@ import org.tendiwa.core.World;
 import org.tendiwa.groovy.Registry;
 
 public class WorldMapScreen implements Screen {
-private final TendiwaGame game;
 private OrthographicCamera camera;
 private SpriteBatch batch;
 
 @Inject
-WorldMapScreen(TendiwaGame game) {
-	this.game = game;
+WorldMapScreen() {
 	camera = new OrthographicCamera();
 	camera.setToOrtho(true, Tendiwa.getWorldWidth(), Tendiwa.getWorldHeight());
 

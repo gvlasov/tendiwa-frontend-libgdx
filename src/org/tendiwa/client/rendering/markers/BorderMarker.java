@@ -1,10 +1,9 @@
-package org.tendiwa.client.markers;
+package org.tendiwa.client.rendering.markers;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import org.tendiwa.client.CellSelection;
 import org.tendiwa.client.GameScreen;
-import org.tendiwa.client.TendiwaFonts;
+import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
 import org.tendiwa.core.Border;
 import org.tendiwa.core.CardinalDirection;
 
@@ -25,7 +24,7 @@ public void draw(Batch batch, float parentAlpha) {
 	float width = side.isVertical() ? GameScreen.TILE_SIZE : markerWidth;
 	float height = side.isHorizontal() ? GameScreen.TILE_SIZE : markerWidth;
 	batch.draw(
-		CellSelection.getInstance().getTexture(),
+		CellSelectionPlainActor.getTexture(),
 		x,
 		y,
 		width,

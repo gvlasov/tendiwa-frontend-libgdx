@@ -9,33 +9,34 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.google.inject.Inject;
+import org.tendiwa.client.ui.actors.CellSelectionActor;
+import org.tendiwa.client.ui.actors.CursorActor;
 
 public class TendiwaUiStage extends Stage {
-private static UiInventory inventory;
 private static Skin skin;
-private UiQuiver uiQuiver;
 
-TendiwaUiStage() {
+@Inject
+TendiwaUiStage(WidgetsPlacer widgetsPlacer, CellSelectionActor celSelectionActor, CursorActor cursorActor) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, new SpriteBatch());
 	OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	setCamera(camera);
 	initializeStyles();
-	initializeActors();
+
+	Table table = createTable();
+	table.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+	addActor(celSelectionActor);
+	addActor(cursorActor);
+	addActor(table);
+	widgetsPlacer.placeWidgets(this, table);
+
 }
 
-static Image createImage(Color color) {
-	return new Image(skin.newDrawable("white", color));
-}
-
-public static UiInventory getInventory() {
-	return inventory;
-}
 
 private static void initializeStyles() {
 	// Lazily
@@ -58,36 +59,6 @@ private static void initializeStyles() {
 	}
 }
 
-private void initializeActors() {
-	Table table = createTable();
-	table.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-	this.addActor(table);
-	UiActions actions = UiActions.getInstance();
-	UiSpells spells = UiSpells.getInstance();
-	inventory = new UiInventory();
-	UiLog log = UiLog.getInstance();
-//	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
-	table.add(UiHealthBar.getInstance()).expand().right().top().pad(5).colspan(1);
-	table.row();
-	uiQuiver = new UiQuiver();
-	table.add(uiQuiver).expand().right().bottom().pad(5).colspan(3);
-	table.row();
-	table.add(actions).left().bottom().pad(5).size(200, 100);
-	table.add(spells).pad(5).size(200, 100);
-	table.add(inventory).right().bottom().pad(5).size(200, 100);
-	inventory.update();
-	actions.update();
-//	log.update();
-	UiHealthBar.getInstance().update();
-
-	this.addActor(UiKeyHints.getInstance());
-
-	UiKeyHints.getInstance().setVisible(false);
-
-	actions.setVisible(false);
-	spells.setVisible(false);
-}
-
 private Table createTable() {
 	Table table = new Table();
 	table.setFillParent(true);
@@ -102,9 +73,5 @@ private TextButton createButton() {
 		}
 	});
 	return button;
-}
-
-public UiQuiver getQuiver() {
-	return uiQuiver;
 }
 }

@@ -10,7 +10,7 @@ import com.badlogic.gdx.InputProcessor;
  * @param <T>
  * 	Type of entity. Common examples are {@link org.tendiwa.core.Item}s or Spells.
  */
-public class ItemSelectionInputProcessor<T> implements InputProcessor {
+public class EntitySelectionInputProcessor<T> implements InputProcessor {
 private final ItemToKeyMapper<T> itemToKeyMapper;
 private final EntitySelectionListener<T> onNextItemSelected;
 private final Runnable onComplete;
@@ -27,7 +27,7 @@ private final Runnable onComplete;
  * 	A listener that is executed when selection was cancelled or done. If selection was successfully done (i.e. not
  * 	cancelled), then it is executed <b>before</b> {@code onNextItemSelected}.
  */
-public ItemSelectionInputProcessor(ItemToKeyMapper<T> itemToKeyMapper, EntitySelectionListener<T> onNextItemSelected, Runnable onComplete) {
+public EntitySelectionInputProcessor(ItemToKeyMapper<T> itemToKeyMapper, EntitySelectionListener<T> onNextItemSelected, Runnable onComplete) {
 	this.itemToKeyMapper = itemToKeyMapper;
 	this.onNextItemSelected = onNextItemSelected;
 	this.onComplete = onComplete;

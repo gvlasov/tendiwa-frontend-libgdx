@@ -1,8 +1,12 @@
-package org.tendiwa.client;
+package org.tendiwa.client.ui.widgets;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.google.inject.Inject;
+import org.tendiwa.client.*;
+import org.tendiwa.client.ui.factories.ItemViewFactory;
+import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.lexeme.Language;
 import org.tendiwa.core.Item;
 import org.tendiwa.core.ItemPile;
@@ -11,14 +15,17 @@ import org.tendiwa.core.Items;
 import java.util.Map;
 
 public class UiItemSelectionTable extends Table {
+private final ItemViewFactory itemViewFactory;
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 private Label.LabelStyle labelStyle;
 
-public UiItemSelectionTable() {
+@Inject
+public UiItemSelectionTable(FontRegistry fontRegistry, ItemViewFactory itemViewFactory) {
+	this.itemViewFactory = itemViewFactory;
 	add(flowGroup).expand().fill();
 	setFillParent(true);
 	labelStyle = new Label.LabelStyle();
-	labelStyle.font = TendiwaFonts.default14NonFlipped;
+	labelStyle.font = fontRegistry.obtain(14, false);
 }
 
 public void update(ItemToKeyMapper<Item> mappings, EntityFilter<Item> filter) {
@@ -33,7 +40,7 @@ public void update(ItemToKeyMapper<Item> mappings, EntityFilter<Item> filter) {
 
 protected Table createItemLetterMappingView(Item item, char ch) {
 	Table table = new Table();
-	Image image = UiInventory.createItemIcon(item);
+	Image image = itemViewFactory.createItemImage(item);
 	Label character = new Label(String.valueOf(ch), labelStyle);
 	String labelText;
 	if (Items.isStackable(item)) {

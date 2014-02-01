@@ -1,22 +1,28 @@
-package org.tendiwa.client;
+package org.tendiwa.client.ui.actors;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import org.tendiwa.client.GameScreen;
 import org.tendiwa.core.EnhancedPoint;
 
-public class Cursor {
+public class CursorActor extends Actor {
 private final Texture texture;
 private final GameScreen gameScreen;
 private int worldX;
 private int worldY;
 
-Cursor(GameScreen gameScreen) {
+CursorActor(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
-
 	texture = buildCursorTexture();
 }
 
+void setWorldCoords(int worldX, int worldY) {
+	this.worldX = worldX;
+	this.worldY = worldY;
+}
 void updateCursorCoords() {
 	EnhancedPoint point = gameScreen.screenPixelToWorldCell(Gdx.input.getX(), Gdx.input.getY());
 	worldX = point.x;
@@ -42,9 +48,10 @@ private Texture buildCursorTexture() {
 	return new Texture(pixmap);
 }
 
-public void draw() {
-	gameScreen.batch.begin();
-	gameScreen.batch.draw(getTexture(), getWorldX() * GameScreen.TILE_SIZE, getWorldY() * GameScreen.TILE_SIZE);
-	gameScreen.batch.end();
+@Override
+public void draw(Batch batch, float parentAlpha) {
+	batch.begin();
+	batch.draw(getTexture(), getWorldX() * GameScreen.TILE_SIZE, getWorldY() * GameScreen.TILE_SIZE);
+	batch.end();
 }
 }

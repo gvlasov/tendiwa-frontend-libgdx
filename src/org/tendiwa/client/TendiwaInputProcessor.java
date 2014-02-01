@@ -66,6 +66,7 @@ public static ImmutableList<Mapping> getCurrentMappings() {
  */
 public void putAction(int combination, UiAction action) {
 	Mapping mapping = new Mapping(KeyCombinationPool.obtainCombination(combination), action);
+	assert !combinationToAction.containsKey(mapping.getCombination());
 	combinationToAction.put(mapping.getCombination(), mapping.getAction());
 	mappings.add(mapping);
 }

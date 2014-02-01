@@ -3,21 +3,20 @@ package org.tendiwa.client;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import org.tendiwa.core.Border;
-import org.tendiwa.core.BorderObject;
-import org.tendiwa.core.CardinalDirection;
-import org.tendiwa.core.Directions;
+import org.tendiwa.core.*;
 
 public class BorderObjectActor extends Actor {
 private final BorderObject borderObject;
+private final RenderPlane renderPlane;
 private final Border border;
 private TextureAtlas.AtlasRegion atlasRegion;
 private int worldPixelX;
 private int worldPixelY;
 
-public BorderObjectActor(Border border, BorderObject borderObject) {
+public BorderObjectActor(Border border, BorderObject borderObject, RenderPlane renderPlane) {
 	this.border = border;
 	this.borderObject = borderObject;
+	this.renderPlane = renderPlane;
 	setX(border.x);
 	setY(border.y);
 	atlasRegion = AtlasBorderObjects.getInstance().findRegion(borderObject.getType().getResourceName() + (border.side.isVertical() ? "_hor" : "_ver"));
@@ -36,7 +35,7 @@ public BorderObjectActor(Border border, BorderObject borderObject) {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 	boolean shaderWasChanged = false;
-	if (!TendiwaGame.getGameScreen().getRenderPlane().isBorderVisible(border)) {
+	if (!renderPlane.isBorderVisible(border)) {
 		shaderWasChanged = true;
 		batch.setShader(GameScreen.drawWithRGB06Shader);
 	}

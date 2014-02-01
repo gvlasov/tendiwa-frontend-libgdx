@@ -12,9 +12,12 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
-import org.tendiwa.client.markers.MarkersRegistry;
+import com.google.inject.Inject;
+import org.tendiwa.client.rendering.markers.MarkersRegistry;
+import org.tendiwa.client.ui.factories.SoundActorFactory;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
+import org.tendiwa.core.events.EventProjectileFly;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,18 +35,21 @@ private static Comparator<Actor> ySorter = new Comparator<Actor>() {
 };
 private final GameScreen gameScreen;
 private final EventProcessor eventProcessor;
+private final SoundActorFactory soundActorFactory;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
 private Map<Item, Actor> itemActors = new HashMap<>();
 private HashMap<Integer, WallActor> wallActors = new HashMap<>();
 private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
 private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors = HashBasedTable.create();
-private MarkersRegistry markersRegistry = new MarkersRegistry();
+private final MarkersRegistry markersRegistry = new MarkersRegistry(this);
 
-TendiwaStage(GameScreen gameScreen, EventProcessor eventProcessor) {
+@Inject
+TendiwaStage(GameScreen gameScreen, EventProcessor eventProcessor, SoundActorFactory soundActorFactory) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
 	this.gameScreen = gameScreen;
 	this.eventProcessor = eventProcessor;
+	this.soundActorFactory = soundActorFactory;
 	setCamera(gameScreen.camera);
 	initializeActors();
 }
@@ -103,7 +109,7 @@ public com.badlogic.gdx.scenes.scene2d.Actor getPlayerCharacterActor() {
  * @return An existing or a new ItemActor.
  */
 public Actor obtainItemActor(int x, int y, Item item) {
-	ItemActor actor = new ItemActor(x, y, item);
+	ItemActor actor = new ItemActor(x, y, item, gameScreen.getRenderPlane());
 	return actor;
 }
 
@@ -142,7 +148,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 	} else if (item instanceof SpellProjectile) {
 		actor = new SpellProjectileFireballActor(fromX, fromY);
 	} else {
-		actor = new ProjectileActor(item, fromX, fromY, toX, toY);
+		actor = new ProjectileActor(item, fromX, fromY, toX, toY,gameScreen.getRenderPlane());
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
@@ -166,18 +172,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 }
 
 public Actor obtainSoundActor(SoundType soundType, int x, int y) {
-	final SoundActor actor = new SoundActor(soundType);
-	actor.setPosition(
-		x * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2,
-		y * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2
-	);
-	actor.addAction(sequence(rotateBy(90, 0.3f), run(new Runnable() {
-		@Override
-		public void run() {
-			TendiwaStage.this.getRoot().removeActor(actor);
-			eventProcessor.signalEventProcessingDone();
-		}
-	})));
+	final SoundActor actor = soundActorFactory.create(soundType, x, y);
 	return actor;
 }
 
@@ -248,7 +243,7 @@ public boolean hasWallActor(int x, int y) {
 }
 
 public void addObjectActor(int x, int y) {
-	ObjectActor actor = new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y));
+	ObjectActor actor = new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y), gameScreen.getRenderPlane());
 	plane2actors.put(gameScreen.getCurrentBackendPlane().getLevel(), actor);
 	addActor(actor);
 }
@@ -268,7 +263,8 @@ public BorderObjectActor addBorderObjectActor(RenderBorder border) {
 	assert border.getObject() != null;
 	BorderObjectActor actor = new BorderObjectActor(
 		border,
-		border.getObject()
+		border.getObject(),
+		gameScreen.getRenderPlane()
 	);
 	borderObjectActors.put(Chunk.cellHash(border.getX(), border.getY(), Tendiwa.getWorldHeight()), border.getSide(), actor);
 	addActor(actor);

@@ -1,9 +1,9 @@
-package org.tendiwa.client.markers;
+package org.tendiwa.client.rendering.markers;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import org.tendiwa.client.CellSelection;
 import org.tendiwa.client.GameScreen;
+import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
 
 public class CellMarker extends Actor {
 CellMarker(int x, int y) {
@@ -13,6 +13,6 @@ CellMarker(int x, int y) {
 
 @Override
 public void draw(Batch batch, float parentAlpha) {
-	batch.draw(CellSelection.getInstance().getTexture(), getX() * GameScreen.TILE_SIZE, getY() * GameScreen.TILE_SIZE);
+	batch.draw(CellSelectionPlainActor.getTexture(), getX() * GameScreen.TILE_SIZE, getY() * GameScreen.TILE_SIZE);
 }
 }

@@ -5,12 +5,15 @@ import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import org.tendiwa.core.Item;
+import org.tendiwa.core.RenderPlane;
 
 public class ItemActor extends Actor {
 private final TextureRegion texture;
+private final RenderPlane renderPlane;
 
-public ItemActor(int x, int y, Item item) {
+public ItemActor(int x, int y, Item item, RenderPlane renderPlane) {
 	super();
+	this.renderPlane = renderPlane;
 	texture = AtlasItems.getInstance().findRegion(item.getType().getResourceName());
 	setX(x);
 	setY(y);
@@ -23,7 +26,7 @@ public ItemActor(int x, int y, Item item) {
 public void draw(Batch batch, float parentAlpha) {
 	super.draw(batch, parentAlpha);
 	boolean shaderWasChanged = false;
-	if (TendiwaGame.getGameScreen().getRenderPlane().isCellUnseen((int) getX(), (int) getY())) {
+	if (renderPlane.isCellUnseen((int) getX(), (int) getY())) {
 		shaderWasChanged = true;
 		batch.setShader(GameScreen.drawWithRGB06Shader);
 	}

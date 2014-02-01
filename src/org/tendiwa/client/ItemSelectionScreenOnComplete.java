@@ -1,17 +1,22 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.google.inject.Inject;
 
 public class ItemSelectionScreenOnComplete implements Runnable {
-private final TendiwaGame game;
+private final GameScreen gameScreen;
+private final Game game;
 
-ItemSelectionScreenOnComplete(TendiwaGame game) {
+@Inject
+ItemSelectionScreenOnComplete(GameScreen gameScreen, Game game) {
+	this.gameScreen = gameScreen;
 	this.game = game;
 }
 
 @Override
 public void run() {
-	Gdx.input.setInputProcessor(game.getGameScreen().getInputProcessor());
-	game.switchToGameScreen();
+	Gdx.input.setInputProcessor(gameScreen.getInputProcessor());
+	game.setScreen(gameScreen);
 }
 }

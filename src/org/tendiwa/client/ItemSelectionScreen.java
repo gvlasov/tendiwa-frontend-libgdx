@@ -1,26 +1,25 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.google.inject.Inject;
+import org.tendiwa.client.ui.widgets.UiItemSelectionTable;
 import org.tendiwa.core.Item;
 
-public class ItemSelectionScreen implements Screen, EntityProvider<Item> {
-private final ItemSelectionScreenOnComplete onComplete;
+public class ItemSelectionScreen extends ScreenAdapter {
 private final Stage stage;
 private final UiItemSelectionTable table;
-private final EntityProvider<Item> entityProvider = new ItemSelectionScreenEntityProvider();
-private ItemSelectionInputProcessor<Item> inputProcessor = null;
 
-public ItemSelectionScreen(ItemSelectionScreenOnComplete onComplete, EntityProvider<Item> entityProvider) {
-	this.onComplete = onComplete;
-	this.entityProvider = entityProvider;
-	stage = new Stage(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+@Inject
+public ItemSelectionScreen(LwjglApplicationConfiguration config, UiItemSelectionTable table) {
+	stage = new Stage(config.width, config.height, true);
 //	OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 //	camera.setToOrtho(true, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 //	stage.setCamera(camera);
-	this.table = new UiItemSelectionTable();
+	this.table = table;
 	table.setTransform(true);
 	table.setFillParent(true);
 	stage.addActor(table);
@@ -39,28 +38,7 @@ public void resize(int width, int height) {
 	stage.setViewport(width, height, true);
 }
 
-@Override
-public void show() {
+public void updateTable(ItemToKeyMapper<Item> mapper, EntityFilter<Item> filter) {
+	table.update(mapper, filter);
 }
-
-@Override
-public void hide() {
-
-}
-
-@Override
-public void pause() {
-
-}
-
-@Override
-public void resume() {
-
-}
-
-@Override
-public void dispose() {
-
-}
-
 }

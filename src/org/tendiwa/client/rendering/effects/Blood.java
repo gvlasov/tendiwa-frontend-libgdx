@@ -1,4 +1,4 @@
-package org.tendiwa.client.effects;
+package org.tendiwa.client.rendering.effects;
 
 import org.tendiwa.client.AtlasProjectiles;
 import org.tendiwa.client.ParticleEffectActor;

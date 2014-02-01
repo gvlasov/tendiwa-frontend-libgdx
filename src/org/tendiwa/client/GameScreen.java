@@ -16,6 +16,8 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.bitfire.utils.ShaderLoader;
 import com.google.inject.Inject;
+import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
+import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
 
@@ -43,18 +45,18 @@ private final FloorLayer floorLayer;
 private final FloorFieldOfViewLayer floorFieldOfViewLayer;
 private final TendiwaStage stage;
 private final CellNetLayer cellNetLayer;
-private final Cursor cursor;
 private final ItemsLayer itemsLayer;
 private final TendiwaUiStage uiStage;
 private final InputMultiplexer inputMultiplexer;
 private final StatusLayer statusLayer;
-private final ClientConfig config;
+private final GraphicsConfig config;
+private final CursorPosition cellSelection;
 protected int startCellX;
 RenderPlane renderPlane;
 OrthographicCamera camera;
 /**
  * The World object in backend (not always consistent with current animation state, so you shouldn't read from it
- * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.core.Event}s.
+ * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.core.observation.Event}s.
  */
 World backendWorld;
 Character player;
@@ -77,19 +79,22 @@ private int maxPixelX;
 private HorizontalPlane currentPlane;
 private RenderWorld renderWorld;
 private EventProcessor eventProcessor;
+private Actor cellSelectionActor;
 
 @Inject
-public GameScreen(TendiwaGame game, ClientConfig config, TendiwaStage stage, EventProcessor eventProcessor, GameScreenInputProcessor gameScreenInputProcessor) {
+public GameScreen(TendiwaUiStage uiStage, GraphicsConfig config, TendiwaStage stage, EventProcessor eventProcessor, GameScreenInputProcessor gameScreenInputProcessor, CursorPosition cellSelection, StatusLayer statusLayer, CellSelectionPlainActor cellSelectionPlainActor) {
 	this.config = config;
 	this.eventProcessor = eventProcessor;
+	this.cellSelection = cellSelection;
+	this.cellSelectionActor = cellSelectionPlainActor;
 	backendWorld = Tendiwa.getWorld();
 	player = Tendiwa.getPlayerCharacter();
 	renderWorld = new RenderWorld();
 
 	worldWidthCells = Tendiwa.getWorld().getWidth();
 	worldHeightCells = Tendiwa.getWorld().getHeight();
-	windowWidth = game.cfg.width;
-	windowHeight = game.cfg.height;
+	windowWidth = Gdx.graphics.getWidth();
+	windowHeight = Gdx.graphics.getHeight();
 	windowWidthCells = (int) Math.ceil(((float) windowWidth) / TILE_SIZE);
 	windowHeightCells = (int) Math.ceil(((float) windowHeight) / TILE_SIZE);
 
@@ -121,12 +126,10 @@ public GameScreen(TendiwaGame game, ClientConfig config, TendiwaStage stage, Eve
 	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
 	cellNetLayer = new CellNetLayer(this);
 	itemsLayer = new ItemsLayer(this);
-	statusLayer = new StatusLayer(this);
-	cursor = new Cursor(this);
-	uiStage = new TendiwaUiStage();
+	this.statusLayer = statusLayer;
+	this.uiStage = uiStage;
 	inputMultiplexer = new InputMultiplexer(uiStage, gameScreenInputProcessor);
 	Gdx.input.setInputProcessor(inputMultiplexer);
-	UiKeyHints.getInstance().update();
 	initPostProcessor();
 
 }
@@ -224,12 +227,6 @@ public void render(float delta) {
 		floorFieldOfViewLayer.draw();
 		itemsLayer.draw();
 		cellNetLayer.draw();
-		if (CellSelection.getInstance().isActive()) {
-			CellSelection.getInstance().draw();
-		} else {
-			cursor.updateCursorCoords();
-			cursor.draw();
-		}
 		drawObjects();
 		stage.draw();
 		uiStage.act();
@@ -262,8 +259,6 @@ private void drawObjects() {
 			}
 		}
 	}
-	// Draw stats
-	RenderCell cellUnderCursor = renderPlane.getCell(cursor.getWorldX(), cursor.getWorldY());
 	batch.end();
 }
 
@@ -288,7 +283,7 @@ int getMaxRenderCellY() {
 	return startCellY + windowHeightCells + (startPixelY % TILE_SIZE == 0 ? 0 : 1) + (windowHeightCells % 2 == 0 ? 0 : 1);
 }
 
-EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
+public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
 	return new EnhancedPoint(
 		(startPixelX + screenX) / GameScreen.TILE_SIZE,
 		(startPixelY + screenY) / GameScreen.TILE_SIZE
@@ -356,12 +351,8 @@ public TendiwaUiStage getUiStage() {
 	return uiStage;
 }
 
-public ClientConfig getConfig() {
+public GraphicsConfig getConfig() {
 	return config;
-}
-
-public Cursor getCursor() {
-	return cursor;
 }
 
 public HorizontalPlane getCurrentBackendPlane() {

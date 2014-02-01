@@ -1,5 +1,6 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -7,25 +8,30 @@ import com.badlogic.gdx.scenes.scene2d.actions.AlphaAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveByAction;
 import com.badlogic.gdx.scenes.scene2d.actions.MoveToAction;
 import com.google.inject.Inject;
-import org.tendiwa.client.effects.Blood;
-import org.tendiwa.client.markers.BorderMarker;
+import org.tendiwa.client.rendering.effects.Blood;
+import org.tendiwa.client.rendering.markers.BorderMarker;
+import org.tendiwa.client.ui.model.MessageLog;
+import org.tendiwa.client.ui.widgets.UiHealthBar;
 import org.tendiwa.core.*;
+import org.tendiwa.core.events.*;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 /**
- * On each received {@link org.tendiwa.core.Event} this class creates a {@link EventResult} pending operation and placed
+ * On each received {@link org.tendiwa.core.observation.Event} this class creates a {@link EventResult} pending operation and placed
  * it in a queue. Each time the game is rendered, all EventResults are processed inside {@link
  * GameScreen#render(float)}.
  */
 public class TendiwaClientLibgdxEventManager implements TendiwaClientEventManager, EventResultProvider {
 private final EventProcessor eventProcessor;
-private final TendiwaGame game;
+private final Game game;
 private GameScreen gameScreen;
 private EventResult pendingOperation;
+private MessageLog messageLog;
 
 @Inject
-TendiwaClientLibgdxEventManager(EventProcessor eventProcessor, GameScreen gameScreen, TendiwaGame game) {
+TendiwaClientLibgdxEventManager(MessageLog messageLog, EventProcessor eventProcessor, GameScreen gameScreen, Game game) {
+	this.messageLog = messageLog;
 	this.eventProcessor = eventProcessor;
 	this.gameScreen = gameScreen;
 	this.game = game;
@@ -165,10 +171,10 @@ public void event(final EventInitialTerrain e) {
 			System.out.println("process");
 			gameScreen.setCurrentPlane(gameScreen.backendWorld.getPlane(e.zLevel));
 			gameScreen.getRenderPlane().initFieldOfView(e);
-			game.switchToGameScreen();
+			game.setScreen(gameScreen);
 			for (RenderCell cell : e.seenCells) {
 				gameScreen.getRenderPlane().seeCell(cell);
-				HorizontalPlane plane = Tendiwa.getWorld().getPlayer().getPlane();
+				HorizontalPlane plane = gameScreen.getCurrentBackendPlane();
 				if (plane.hasWall(cell.x, cell.y)) {
 					gameScreen.getStage().addWallActor(cell.x, cell.y);
 				} else if (plane.hasObject(cell.x, cell.y)) {
@@ -181,7 +187,6 @@ public void event(final EventInitialTerrain e) {
 					gameScreen.getStage().addBorderObjectActor(border);
 				}
 			}
-			gameScreen.getUiStage().getQuiver().update();
 			eventProcessor.signalEventProcessingDone();
 		}
 	});
@@ -223,7 +228,7 @@ public void event(final EventGetItem eventGetItem) {
 	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
-			TendiwaUiStage.getInventory().update();
+			uiUpdater.update(UiPortion.INVENTORY);
 			eventProcessor.signalEventProcessingDone();
 		}
 	});
@@ -234,7 +239,7 @@ public void event(EventLoseItem eventLoseItem) {
 	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
-			TendiwaUiStage.getInventory().update();
+			uiUpdater.update(UiPortion.INVENTORY);
 			eventProcessor.signalEventProcessingDone();
 		}
 	});
@@ -250,7 +255,7 @@ public void event(final EventPutOn eventPutOn) {
 		@Override
 		public void process() {
 			if (eventPutOn.getCharacter().isPlayer()) {
-				TendiwaUiStage.getInventory().update();
+				uiUpdater.update(UiPortion.INVENTORY);
 			}
 			if (eventPutOn.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(eventPutOn.getCharacter()).updateTexture();
@@ -266,7 +271,7 @@ public void event(final EventWield eventWield) {
 		@Override
 		public void process() {
 			if (eventWield.getCharacter().isPlayer()) {
-				TendiwaUiStage.getInventory().update();
+				uiUpdater.update(UiPortion.INVENTORY);
 			}
 			if (eventWield.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(eventWield.getCharacter()).updateTexture();
@@ -282,7 +287,7 @@ public void event(final EventTakeOff eventTakeOff) {
 		@Override
 		public void process() {
 			if (eventTakeOff.getCharacter().isPlayer()) {
-				TendiwaUiStage.getInventory().update();
+				uiUpdater.update(UiPortion.INVENTORY);
 			}
 			if (eventTakeOff.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(eventTakeOff.getCharacter()).updateTexture();
@@ -298,7 +303,7 @@ public void event(final EventUnwield e) {
 		@Override
 		public void process() {
 			if (e.getCharacter().isPlayer()) {
-				TendiwaUiStage.getInventory().update();
+				uiUpdater.update(UiPortion.INVENTORY);
 			}
 			if (e.getCharacter().getType().hasAspect(CharacterAspect.HUMANOID)) {
 				gameScreen.getStage().getCharacterActor(e.getCharacter()).updateTexture();
@@ -337,15 +342,15 @@ public void event(final EventSound eventSound) {
 				eventSound.y
 			);
 			if (eventSound.source == null) {
-				UiLog.getInstance().pushText(
+				messageLog.pushMessage(
 					Languages.getText("events.sound_from_cell", eventSound.sound)
 				);
 			} else if (eventSound.source == Tendiwa.getPlayerCharacter()) {
-				UiLog.getInstance().pushText(
+				messageLog.pushMessage(
 					Languages.getText("events.sound_from_player", eventSound.sound)
 				);
 			} else {
-				UiLog.getInstance().pushText(
+				messageLog.pushMessage(
 					Languages.getText("events.sound_from_source", eventSound.source, eventSound.sound)
 				);
 			}
@@ -374,11 +379,7 @@ public void event(final EventGetDamage e) {
 	setPendingOperation(new EventResult() {
 		@Override
 		public void process() {
-
-			if (e.character.isPlayer()) {
-				UiHealthBar.getInstance().update();
-			}
-			UiLog.getInstance().pushText(
+			messageLog.pushMessage(
 				Languages.getText("log.get_damage", e.damageSource, e.damageType, e.character)
 			);
 			final Actor blood = new Blood(e.character.getX(), e.character.getY());
@@ -424,7 +425,7 @@ public void event(final EventDie e) {
 		public void process() {
 			CharacterActor characterActor = gameScreen.getStage().getCharacterActor(e.character);
 			gameScreen.getStage().getRoot().removeActor(characterActor);
-			UiLog.getInstance().pushText(
+			messageLog.pushMessage(
 				Languages.getText("log.death", e.character)
 			);
 			eventProcessor.signalEventProcessingDone();
@@ -440,11 +441,11 @@ public void event(final EventMoveToPlane e) {
 		public void process() {
 			gameScreen.getRenderPlane().unseeAllCells();
 			gameScreen.getStage().removeActorsOfPlane(gameScreen.getCurrentBackendPlane().getLevel());
-			gameScreen.setCurrentPlane(Tendiwa.getWorld().getPlane(e.zLevel));
+			gameScreen.setCurrentPlane(gameScreen.getWorld().getPlane(e.zLevel));
 			for (RenderCell cell : e.seenCells) {
 				gameScreen.getRenderPlane().seeCell(cell);
-				if (gameScreen.renderPlane.hasAnyUnseenItems(cell.x, cell.y)) {
-					gameScreen.renderPlane.removeUnseenItems(cell.x, cell.y);
+				if (gameScreen.getRenderPlane().hasAnyUnseenItems(cell.x, cell.y)) {
+					gameScreen.getRenderPlane().removeUnseenItems(cell.x, cell.y);
 				}
 				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
 					if (!gameScreen.getStage().hasWallActor(cell.x, cell.y)) {

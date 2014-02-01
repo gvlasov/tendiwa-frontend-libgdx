@@ -64,7 +64,7 @@ void processOneMoreEventInCurrentFrame() {
 	lastEventEndsFrame = false;
 }
 
-void signalEventProcessingDone() {
+public void signalEventProcessingDone() {
 	eventResultProcessingIsGoing = false;
 	Tendiwa.signalAnimationCompleted();
 }

@@ -1,6 +1,6 @@
 package org.tendiwa.client;
 
-class Mapping {
+public class Mapping {
 private final KeyCombination combination;
 private final UiAction action;
 
@@ -9,11 +9,11 @@ Mapping(KeyCombination combination, UiAction action) {
 	this.action = action;
 }
 
-KeyCombination getCombination() {
+public KeyCombination getCombination() {
 	return combination;
 }
 
-UiAction getAction() {
+public UiAction getAction() {
 	return action;
 }
 }
