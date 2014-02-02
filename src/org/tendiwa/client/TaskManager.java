@@ -1,9 +1,15 @@
 package org.tendiwa.client;
 
-import org.tendiwa.core.Tendiwa;
+import org.tendiwa.core.Character;
 
 class TaskManager {
+private final Character player;
 Task currentTask;
+
+TaskManager(Character player) {
+
+	this.player = player;
+}
 
 boolean trySettingTask(Task task) {
 	if (currentTask == null) {
@@ -20,7 +26,7 @@ public void executeCurrentTask() {
 			currentTask = null;
 		} else {
 			currentTask.execute();
-			if (Tendiwa.getPlayerCharacter().isUnderAnyThreat()) {
+			if (player.isUnderAnyThreat()) {
 				currentTask = null;
 			}
 		}

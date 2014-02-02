@@ -5,13 +5,15 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.core.Chunk;
-import org.tendiwa.core.Tendiwa;
+import org.tendiwa.core.meta.CellPosition;
 import org.tendiwa.core.meta.Coordinate;
 
 public class CellSelectionPlainActor extends CellSelectionActor {
 public static Texture texture;
+private final CellPosition player;
 
-public CellSelectionPlainActor() {
+public CellSelectionPlainActor(CellPosition player) {
+	this.player = player;
 }
 
 public static Texture getTexture() {
@@ -32,8 +34,8 @@ public void setWorldCoordinates(int worldX, int worldY) {
 public void draw(Batch batch, float parentAlpha) {
 	batch.begin();
 	Coordinate[] vector = Chunk.vector(
-		Tendiwa.getPlayerCharacter().getX(),
-		Tendiwa.getPlayerCharacter().getY(),
+		player.getX(),
+		player.getY(),
 		worldX,
 		worldY
 	);

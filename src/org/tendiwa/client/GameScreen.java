@@ -6,7 +6,6 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -29,18 +28,9 @@ public class GameScreen implements Screen {
 public static final int TILE_SIZE = 32;
 static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
 static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
-final int maxStartX;
-final int maxStartY;
 final SpriteBatch batch;
-final int windowHeight;
-final int windowWidth;
-final int worldWidthCells;
-final int worldHeightCells;
 final FrameBuffer depthTestFrameBuffer;
-final int windowWidthCells;
-final int windowHeightCells;
 private final TextureAtlas atlasObjects;
-private final TextureAtlas atlasUi;
 private final FloorLayer floorLayer;
 private final FloorFieldOfViewLayer floorFieldOfViewLayer;
 private final TendiwaStage stage;
@@ -49,83 +39,54 @@ private final ItemsLayer itemsLayer;
 private final TendiwaUiStage uiStage;
 private final InputMultiplexer inputMultiplexer;
 private final StatusLayer statusLayer;
+private final GameScreenViewport viewport;
 private final GraphicsConfig config;
 private final CursorPosition cellSelection;
-protected int startCellX;
 RenderPlane renderPlane;
-OrthographicCamera camera;
 /**
  * The World object in backend (not always consistent with current animation state, so you shouldn't read from it
- * directly unless absolutely necessary. For listening for changes in the world use {@link org.tendiwa.core.observation.Event}s.
+ * directly unless absolutely necessary. For listening for changes in the world use {@link
+ * org.tendiwa.core.observation.Event}s.
  */
 World backendWorld;
 Character player;
-int startCellY;
-int centerPixelX;
-int centerPixelY;
-int cameraMoveStep = 1;
-int startPixelX;
-int startPixelY;
 PostProcessor postProcessor;
 private Map<Integer, GameObject> objects = new HashMap<>();
-/**
- * The greatest value of camera's center pixel on y axis in world coordinates.
- */
-private int maxPixelY;
-/**
- * The greatest value of camera's center pixel on x axis in world coordinates.
- */
-private int maxPixelX;
 private HorizontalPlane currentPlane;
 private RenderWorld renderWorld;
 private EventProcessor eventProcessor;
 private Actor cellSelectionActor;
 
 @Inject
-public GameScreen(TendiwaUiStage uiStage, GraphicsConfig config, TendiwaStage stage, EventProcessor eventProcessor, GameScreenInputProcessor gameScreenInputProcessor, CursorPosition cellSelection, StatusLayer statusLayer, CellSelectionPlainActor cellSelectionPlainActor) {
+public GameScreen(CellNetLayer cellNetLayer, ItemsLayer itemsLayer, FloorLayer floorLayer, FloorFieldOfViewLayer floorFieldOfViewLayer, GameScreenViewport viewport, TendiwaUiStage uiStage, GraphicsConfig config, TendiwaStage stage, EventProcessor eventProcessor, GameScreenInputProcessor gameScreenInputProcessor, CursorPosition cellSelection, StatusLayer statusLayer, CellSelectionPlainActor cellSelectionPlainActor) {
+	this.cellNetLayer = cellNetLayer;
+	this.itemsLayer = itemsLayer;
+	this.floorLayer = floorLayer;
+	this.floorFieldOfViewLayer = floorFieldOfViewLayer;
+	this.viewport = viewport;
 	this.config = config;
 	this.eventProcessor = eventProcessor;
 	this.cellSelection = cellSelection;
 	this.cellSelectionActor = cellSelectionPlainActor;
-	backendWorld = Tendiwa.getWorld();
-	player = Tendiwa.getPlayerCharacter();
-	renderWorld = new RenderWorld();
-
-	worldWidthCells = Tendiwa.getWorld().getWidth();
-	worldHeightCells = Tendiwa.getWorld().getHeight();
-	windowWidth = Gdx.graphics.getWidth();
-	windowHeight = Gdx.graphics.getHeight();
-	windowWidthCells = (int) Math.ceil(((float) windowWidth) / TILE_SIZE);
-	windowHeightCells = (int) Math.ceil(((float) windowHeight) / TILE_SIZE);
-
-	camera = new OrthographicCamera(windowWidth, windowHeight);
-	camera.setToOrtho(true, windowWidth, windowHeight);
-	centerCamera(player.getX() * TILE_SIZE, player.getY() * TILE_SIZE);
-	camera.update();
 
 	atlasObjects = new TextureAtlas(Gdx.files.internal("pack/objects.atlas"), true);
-	atlasUi = new TextureAtlas(Gdx.files.internal("pack/ui.atlas"), true);
 
 	TransitionPregenerator.initTileTextureRegionProvider(100);
 
 	// Sprite batch for drawing to world.
 	batch = new SpriteBatch();
 
-	maxStartX = worldWidthCells - windowWidthCells - cameraMoveStep;
-	maxStartY = worldHeightCells - windowHeightCells - cameraMoveStep;
-	maxPixelX = backendWorld.getWidth() * TILE_SIZE - windowWidth / 2;
-	maxPixelY = backendWorld.getHeight() * TILE_SIZE - windowHeight / 2;
-
-	depthTestFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, windowWidth, windowHeight, true);
+	depthTestFrameBuffer = new FrameBuffer(
+		Pixmap.Format.RGBA8888,
+		viewport.getWindowWidthPixels(),
+		viewport.getWindowHeightPixels(),
+		true
+	);
 
 	this.stage = stage;
 
 	setRenderingMode();
 
-	floorLayer = new FloorLayer(this);
-	floorFieldOfViewLayer = new FloorFieldOfViewLayer(this);
-	cellNetLayer = new CellNetLayer(this);
-	itemsLayer = new ItemsLayer(this);
 	this.statusLayer = statusLayer;
 	this.uiStage = uiStage;
 	inputMultiplexer = new InputMultiplexer(uiStage, gameScreenInputProcessor);
@@ -141,10 +102,6 @@ public static ShaderProgram createShader(FileHandle file) {
 		throw new RuntimeException("Could not compile a shader");
 	}
 	return shader;
-}
-
-public RenderPlane getRenderPlane() {
-	return renderPlane;
 }
 
 private void initPostProcessor() {
@@ -165,37 +122,6 @@ private void initPostProcessor() {
 }
 
 /**
- * Centers camera on a certain point of the world to render viewport around that point. Viewport will always be inside
- * world rectangle, so near world borders camera will be shifted back so viewport doesn't look at area outside the
- * world.
- *
- * @param x
- * 	X coordinate in pixels
- * @param y
- * 	Y coordinate in pixels
- */
-void centerCamera(int x, int y) {
-	if (x < windowWidth / 2) {
-		x = windowWidth / 2;
-	}
-	if (y < windowHeight / 2) {
-		y = windowHeight / 2;
-	}
-	if (x > maxPixelX) {
-		x = maxPixelX;
-	}
-	if (y > maxPixelY) {
-		y = maxPixelY;
-	}
-	startCellX = x / TILE_SIZE - windowWidthCells / 2 - windowWidthCells % 2;
-	startCellY = y / TILE_SIZE - windowHeightCells / 2 - windowHeightCells % 2;
-	centerPixelX = x;
-	centerPixelY = y;
-	startPixelX = centerPixelX - windowWidth / 2;
-	startPixelY = centerPixelY - windowHeight / 2;
-}
-
-/**
  * Sets continuous rendering. Needed for restoration of this Screen after switching from another screen with
  * non-continuous rendering.
  */
@@ -210,17 +136,15 @@ public void render(float delta) {
 	synchronized (Tendiwa.getLock()) {
 		Actor characterActor = stage.getPlayerCharacterActor();
 		stage.act(Gdx.graphics.getDeltaTime());
-		centerCamera(
+		viewport.centerCamera(
 			(int) (characterActor.getX() * TILE_SIZE),
 			(int) (characterActor.getY() * TILE_SIZE)
 		);
 
-		camera.position.set(centerPixelX, centerPixelY, 0);
-
 		Gdx.gl.glClearColor(0, 0, 0, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		camera.update();
-		batch.setProjectionMatrix(camera.combined);
+		viewport.getCamera().update();
+		batch.setProjectionMatrix(viewport.getCamera().combined);
 
 		postProcessor.capture();
 		floorLayer.draw();
@@ -241,18 +165,18 @@ public void render(float delta) {
 
 private void drawObjects() {
 	batch.begin();
-	for (int x = 0; x < windowWidth / TILE_SIZE + (centerPixelX == maxPixelX ? 0 : 1); x++) {
+	for (int x = 0; x < viewport.getWindowWidthPixels() / TILE_SIZE + (viewport.getCenterPixelX() == viewport.getMaxPixelX() ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
-		for (int y = 0; y < windowHeight / TILE_SIZE + (centerPixelY == maxPixelY || centerPixelY == maxPixelY - TILE_SIZE ? 0 : 2); y++) {
-			RenderCell cell = renderPlane.getCell(startCellX + x, startCellY + y);
+		for (int y = 0; y < viewport.getWindowHeightPixels() / TILE_SIZE + (viewport.getCenterPixelY() == viewport.getMaxPixelY() || viewport.getCenterPixelY() == viewport.getMaxPixelY() - TILE_SIZE ? 0 : 2); y++) {
+			RenderCell cell = renderPlane.getCell(viewport.getStartCellX() + x, viewport.getStartCellY() + y);
 			if (cell != null) {
 				// If the frontend has already received this cell from backend
 				if (cell.isVisible()) {
 					// Draw visible object
-					TextureAtlas.AtlasRegion objectTexture = getObjectTextureByCell(startCellX + x, startCellY + y);
+					TextureAtlas.AtlasRegion objectTexture = getObjectTextureByCell(viewport.getStartCellX() + x, viewport.getStartCellY() + y);
 					if (objectTexture != null) {
-						int textureX = (startCellX + x) * TILE_SIZE - (objectTexture.getRegionWidth() - TILE_SIZE) / 2;
-						int textureY = (startCellY + y) * TILE_SIZE - (objectTexture.getRegionHeight() - TILE_SIZE);
+						int textureX = (viewport.getStartCellX() + x) * TILE_SIZE - (objectTexture.getRegionWidth() - TILE_SIZE) / 2;
+						int textureY = (viewport.getStartCellY() + y) * TILE_SIZE - (objectTexture.getRegionHeight() - TILE_SIZE);
 						batch.draw(objectTexture, textureX, textureY);
 					}
 				}
@@ -275,18 +199,10 @@ boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
 	return !(renderPlane.getCell(x, y).hasWall() && !renderPlane.hasCell(x, y + 1));
 }
 
-int getMaxRenderCellX() {
-	return startCellX + windowWidthCells + (startPixelX % TILE_SIZE == 0 ? 0 : 1) + (windowWidthCells % 2 == 0 ? 0 : 1);
-}
-
-int getMaxRenderCellY() {
-	return startCellY + windowHeightCells + (startPixelY % TILE_SIZE == 0 ? 0 : 1) + (windowHeightCells % 2 == 0 ? 0 : 1);
-}
-
 public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
 	return new EnhancedPoint(
-		(startPixelX + screenX) / GameScreen.TILE_SIZE,
-		(startPixelY + screenY) / GameScreen.TILE_SIZE
+		(viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE,
+		(viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE
 	);
 }
 
@@ -331,16 +247,8 @@ public void dispose() {
 
 }
 
-public TendiwaStage getStage() {
-	return stage;
-}
-
 public void toggleStatusbar() {
 	config.fpsCounter = !config.fpsCounter;
-}
-
-public TextureAtlas getAtlasUi() {
-	return atlasUi;
 }
 
 public InputProcessor getInputProcessor() {
@@ -357,11 +265,6 @@ public GraphicsConfig getConfig() {
 
 public HorizontalPlane getCurrentBackendPlane() {
 	return currentPlane;
-}
-
-public void setCurrentPlane(HorizontalPlane plane) {
-	currentPlane = plane;
-	renderPlane = renderWorld.touchPlane(plane.getLevel());
 }
 
 public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {

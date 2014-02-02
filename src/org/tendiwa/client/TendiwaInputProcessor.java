@@ -16,13 +16,11 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class TendiwaInputProcessor implements InputProcessor {
-protected static final int ctrl = 1 << 8;
-protected static final int alt = 1 << 9;
-protected static final int shift = 1 << 10;
+public static final int ctrl = 1 << 8;
+public static final int alt = 1 << 9;
+public static final int shift = 1 << 10;
 protected final TaskManager taskManager;
 final GameScreen gameScreen;
-final Character player;
-final World world;
 private Map<KeyCombination, UiAction> combinationToAction = new HashMap<>();
 /**
  * Contains same data as {@link TendiwaInputProcessor#combinationToAction}, but in form of list (so it has a defined
@@ -35,8 +33,6 @@ TendiwaInputProcessor(GameScreen gameScreen, TaskManager taskManager, EventProce
 	this.gameScreen = gameScreen;
 	this.taskManager = taskManager;
 	this.eventProcessor = eventProcessor;
-	this.player = Tendiwa.getPlayerCharacter();
-	this.world = Tendiwa.getWorld();
 }
 
 public static ImmutableList<Mapping> getCurrentMappings() {

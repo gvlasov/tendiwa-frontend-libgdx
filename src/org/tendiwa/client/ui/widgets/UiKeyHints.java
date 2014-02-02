@@ -1,6 +1,7 @@
 package org.tendiwa.client.ui.widgets;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -17,8 +18,8 @@ private final GameScreen gameScreen;
 private final InputProcessor inputProcessor;
 
 @Inject
-UiKeyHints(GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
-	this.labelStyle  = new Label.LabelStyle(fontRegistry.obtain(14, false), Color.WHITE);
+UiKeyHints(TendiwaInputProcessor tendiwaInputProcessor, GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
+	this.labelStyle = new Label.LabelStyle(fontRegistry.obtain(14, false), Color.WHITE);
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	this.gameScreen = gameScreen;
 	this.inputProcessor = new UiKeyHintsInputProcessor(new Runnable() {
@@ -26,6 +27,12 @@ UiKeyHints(GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory co
 		public void run() {
 			Gdx.input.setInputProcessor(UiKeyHints.this.gameScreen.getInputProcessor());
 			setVisible(false);
+		}
+	});
+	tendiwaInputProcessor.putAction(TendiwaInputProcessor.shift + Input.Keys.SLASH, new UiAction("action.key_hints") {
+		@Override
+		public void act() {
+			UiKeyHints.this.update();
 		}
 	});
 }

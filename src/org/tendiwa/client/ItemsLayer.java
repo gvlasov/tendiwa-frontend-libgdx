@@ -1,26 +1,34 @@
 package org.tendiwa.client;
 
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
 
 public class ItemsLayer {
-private final GameScreen gameScreen;
+private final Batch batch;
+private final GameScreenViewport viewport;
+private final RenderWorld renderWorld;
+private final Character player;
 private final TextureRegion multipleItemsMarker;
 
-ItemsLayer(GameScreen gameScreen) {
-	this.gameScreen = gameScreen;
-	multipleItemsMarker = gameScreen.getAtlasUi().findRegion("multiItem");
+ItemsLayer(Batch batch, GameScreenViewport viewport, RenderWorld renderWorld, AtlasUi atlasUi, Character player) {
+	this.batch = batch;
+	this.viewport = viewport;
+	this.renderWorld = renderWorld;
+	this.player = player;
+	multipleItemsMarker = atlasUi.findRegion("multiItem");
 }
 
 void draw() {
-	HorizontalPlane plane = gameScreen.getCurrentBackendPlane();
-	RenderPlane renderPlane = gameScreen.getRenderPlane();
-	int maxX = gameScreen.getMaxRenderCellX();
-	int maxY = gameScreen.getMaxRenderCellY();
-	gameScreen.batch.begin();
-	for (int x = gameScreen.startCellX; x < maxX; x++) {
-		for (int y = gameScreen.startCellY; y < maxY; y++) {
+	HorizontalPlane plane = player.getPlane();
+	RenderPlane renderPlane = renderWorld.getCurrentPlane();
+	int maxX = viewport.getMaxRenderCellX();
+	int maxY = viewport.getMaxRenderCellY();
+	batch.begin();
+	for (int x = viewport.getStartCellX(); x < maxX; x++) {
+		for (int y = viewport.getStartCellY(); y < maxY; y++) {
 			if (renderPlane.isCellVisible(x, y) && plane.hasAnyItems(x, y)) {
 				// Check for objective view (we could maintain character's own subjective view on items,
 				// but that's difficult and maybe will appear later.
@@ -28,23 +36,23 @@ void draw() {
 				assert items.iterator().hasNext() : items.size();
 				Item item = items.iterator().next();
 				assert item != null;
-				gameScreen.batch.draw(
+				batch.draw(
 					AtlasItems.getInstance().findRegion(item.getType().getResourceName()),
 					x * GameScreen.TILE_SIZE,
 					y * GameScreen.TILE_SIZE
 				);
 				if (items.size() > 1) {
-					gameScreen.batch.draw(multipleItemsMarker, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
+					batch.draw(multipleItemsMarker, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
 				}
 			}
 		}
 	}
-	gameScreen.batch.setShader(GameScreen.drawWithRGB06Shader);
-	for (int x = gameScreen.startCellX; x < maxX; x++) {
-		for (int y = gameScreen.startCellY; y < maxY; y++) {
-			if (gameScreen.renderPlane.hasAnyUnseenItems(x, y)) {
-				for (RememberedItem item : gameScreen.renderPlane.getUnseenItems(x, y)) {
-					gameScreen.batch.draw(
+	batch.setShader(GameScreen.drawWithRGB06Shader);
+	for (int x = viewport.getStartCellX(); x < maxX; x++) {
+		for (int y = viewport.getStartCellY(); y < maxY; y++) {
+			if (renderPlane.hasAnyUnseenItems(x, y)) {
+				for (RememberedItem item : renderPlane.getUnseenItems(x, y)) {
+					batch.draw(
 						getTexture(item.getType()),
 						x * GameScreen.TILE_SIZE,
 						y * GameScreen.TILE_SIZE
@@ -53,8 +61,8 @@ void draw() {
 			}
 		}
 	}
-	gameScreen.batch.end();
-	gameScreen.batch.setShader(GameScreen.defaultShader);
+	batch.end();
+	batch.setShader(GameScreen.defaultShader);
 }
 
 private TextureAtlas.AtlasRegion getTexture(ItemType type) {

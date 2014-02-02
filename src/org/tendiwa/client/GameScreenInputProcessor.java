@@ -18,46 +18,52 @@ import static com.badlogic.gdx.Input.Keys.*;
 
 final class GameScreenInputProcessor extends TendiwaInputProcessor {
 
+private final Volition volition;
+private final Character player;
+private final GameScreenViewport viewport;
 private final WorldMapScreen worldMapScreen;
 private ItemToKeyMapper<Item> mapper = new ItemToKeyMapper<>();
 private ItemSelector itemSelector;
 private CursorPosition cellSelection;
 
 @Inject
-public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiModeManager uiModeManager, final CellSelectionActor cellSelectionActor, final MessageLog messageLog, final WorldMapScreen worldMapScreen, CursorPosition cellSelection, ItemSelector itemSelector, final GameScreen gameScreen, TaskManager taskManager, EventProcessor eventProcessor, final Game game) {
+public GameScreenInputProcessor(final Volition volition, final Character player, final GameScreenViewport viewport, final CursorPosition cursorPosition, final UiModeManager uiModeManager, final CellSelectionActor cellSelectionActor, final MessageLog messageLog, final WorldMapScreen worldMapScreen, CursorPosition cellSelection, ItemSelector itemSelector, final GameScreen gameScreen, TaskManager taskManager, EventProcessor eventProcessor, final Game game) {
 	super(gameScreen, taskManager, eventProcessor);
+	this.volition = volition;
+	this.player = player;
+	this.viewport = viewport;
 	this.worldMapScreen = worldMapScreen;
 	this.cellSelection = cellSelection;
 	this.itemSelector = itemSelector;
 	putAction(LEFT, new UiAction("action.cameraMoveWest") {
 		@Override
 		public void act() {
-			if (gameScreen.startCellX > gameScreen.cameraMoveStep - 1) {
-				gameScreen.centerCamera(gameScreen.centerPixelX - GameScreen.TILE_SIZE, gameScreen.centerPixelY);
+			if (viewport.getStartCellX() > viewport.getCameraMoveStep() - 1) {
+				viewport.centerCamera(viewport.getCenterPixelX() - GameScreen.TILE_SIZE, viewport.getCenterPixelY());
 			}
 		}
 	});
 	putAction(RIGHT, new UiAction("action.cameraMoveEast") {
 		@Override
 		public void act() {
-			if (gameScreen.startCellX < gameScreen.maxStartX) {
-				gameScreen.centerCamera(gameScreen.centerPixelX + GameScreen.TILE_SIZE, gameScreen.centerPixelY);
+			if (viewport.getStartCellX() < viewport.getMaxStartX()) {
+				viewport.centerCamera(viewport.getCenterPixelX() + GameScreen.TILE_SIZE, viewport.getCenterPixelY());
 			}
 		}
 	});
 	putAction(UP, new UiAction("action.cameraMoveNorth") {
 		@Override
 		public void act() {
-			if (gameScreen.startCellY > gameScreen.cameraMoveStep - 1) {
-				gameScreen.centerCamera(gameScreen.centerPixelX, gameScreen.centerPixelY - GameScreen.TILE_SIZE);
+			if (viewport.getStartCellY() > viewport.getCameraMoveStep() - 1) {
+				viewport.centerCamera(viewport.getCenterPixelX(), viewport.getCenterPixelY() - GameScreen.TILE_SIZE);
 			}
 		}
 	});
 	putAction(DOWN, new UiAction("action.cameraMoveSouth") {
 		@Override
 		public void act() {
-			if (gameScreen.startCellY < gameScreen.maxStartY) {
-				gameScreen.centerCamera(gameScreen.centerPixelX, gameScreen.centerPixelY + GameScreen.TILE_SIZE);
+			if (viewport.getStartCellY() < viewport.getMaxStartY()) {
+				viewport.centerCamera(viewport.getCenterPixelX(), viewport.getCenterPixelY() + GameScreen.TILE_SIZE);
 			}
 		}
 	});
@@ -139,14 +145,14 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 		@Override
 		public void act() {
 			if (player.getPlane().hasAnyItems(player.getX(), player.getY())) {
-				Tendiwa.getServer().pushRequest(new RequestPickUp());
+				volition.pickUp();
 			}
 		}
 	});
 	putAction(shift + Q, new UiAction("action.quiver") {
 		@Override
 		public void act() {
-			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+			mapper.update(player.getInventory());
 			GameScreenInputProcessor.this.itemSelector.startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
@@ -165,7 +171,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 	putAction(T, new UiAction("action.throw") {
 		@Override
 		public void act() {
-			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+			mapper.update(player.getInventory());
 			GameScreenInputProcessor.this.itemSelector.startSelection(mapper,
 				new EntityFilter<Item>() {
 					@Override
@@ -181,7 +187,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 							new CellSelection(gameScreen, cursorPosition, cellSelectionActor, new EntitySelectionListener<EnhancedPoint>() {
 								@Override
 								public void execute(EnhancedPoint point) {
-									Tendiwa.getServer().pushRequest(new RequestThrowItem(item.takeSingleItem(), point.x, point.y));
+									volition.propel(item.takeSingleItem(), point.x, point.y);
 								}
 							})
 						);
@@ -207,7 +213,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 						new CellSelection(gameScreen, cursorPosition, cellSelectionActor, new EntitySelectionListener<EnhancedPoint>() {
 							@Override
 							public void execute(EnhancedPoint point) {
-								Tendiwa.getServer().pushRequest(new RequestShoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y));
+								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
 							}
 						})
 					);
@@ -218,7 +224,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 	putAction(W, new UiAction("action.wield") {
 		@Override
 		public void act() {
-			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+			mapper.update(player.getInventory());
 			GameScreenInputProcessor.this.itemSelector.startSelection(mapper,
 				new EntityFilter<Item>() {
 					@Override
@@ -229,7 +235,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 				new EntitySelectionListener<Item>() {
 					@Override
 					public void execute(Item item) {
-						Tendiwa.getServer().pushRequest(new RequestWield(item));
+						volition.wield(item);
 					}
 				}
 			);
@@ -238,7 +244,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 	putAction(shift + W, new UiAction("action.wear") {
 		@Override
 		public void act() {
-			mapper.update(Tendiwa.getPlayerCharacter().getInventory());
+			mapper.update(player.getInventory());
 			GameScreenInputProcessor.this.itemSelector.startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
@@ -247,7 +253,7 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 				}, new EntitySelectionListener<Item>() {
 					@Override
 					public void execute(Item item) {
-						Tendiwa.getServer().pushRequest(new RequestPutOn((UniqueItem) item));
+						volition.putOn((UniqueItem) item);
 					}
 				}
 			);
@@ -256,22 +262,15 @@ public GameScreenInputProcessor(final CursorPosition cursorPosition, final UiMod
 	putAction(shift + S, new UiAction("action.shout") {
 		@Override
 		public void act() {
-			Tendiwa.getServer().pushRequest(new RequestActionWithoutTarget(
+			volition.actionWithoutTarget(
 				(ActionWithoutTarget) Registry.characterAbilities.get("shout").getAction()
-			));
+			);
 		}
 	});
 	putAction(S, new UiAction("action.idle") {
 		@Override
 		public void act() {
-			Tendiwa.getServer().pushRequest(new RequestIdle());
-		}
-	});
-	putAction(shift + SLASH, new UiAction("action.key_hints") {
-		@Override
-		public void act() {
-			GameScreenInputProcessor.this.uiUpdater.update(UiPortion.KEY_HINTS);
-			GameScreenInputProcessor.this.uiUpdater.show(UiPortion.KEY_HINTS);
+			volition.idle();
 		}
 	});
 }
@@ -281,8 +280,8 @@ public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 	if (taskManager.hasCurrentTask()) {
 		return false;
 	}
-	final int cellX = (gameScreen.startPixelX + screenX) / GameScreen.TILE_SIZE;
-	final int cellY = (gameScreen.startPixelY + screenY) / GameScreen.TILE_SIZE;
+	final int cellX = (viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE;
+	final int cellY = (viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE;
 	if (cellX == gameScreen.player.getX() && cellY == gameScreen.player.getY()) {
 		return true;
 	}
@@ -339,14 +338,14 @@ private void moveToOrAttackCharacterInCell(int x, int y) {
 	int dy = player.getY() - y;
 	assert Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
 	if (player.canStepOn(x, y)) {
-		Tendiwa.getServer().pushRequest(new RequestWalk(Directions.shiftToDirection(-dx, -dy)));
+		volition.move(Directions.shiftToDirection(-dx, -dy));
 	} else {
 		Character aim = gameScreen.getCurrentBackendPlane().getCharacter(x, y);
 		boolean isCharacterPresent = aim != null;
 		if (isCharacterPresent) {
 			boolean isHeAnEnemy = aim.isEnemy(player);
 			if (isHeAnEnemy) {
-				Tendiwa.getServer().pushRequest(new RequestAttack(aim));
+				volition.attack(aim);
 			} else {
 				assert false : "This should not happen";
 			}

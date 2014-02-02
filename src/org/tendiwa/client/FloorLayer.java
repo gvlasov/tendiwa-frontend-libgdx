@@ -8,17 +8,16 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
+import org.tendiwa.core.*;
 import org.tendiwa.groovy.Registry;
-import org.tendiwa.core.CardinalDirection;
-import org.tendiwa.core.FloorType;
-import org.tendiwa.core.RenderCell;
-import org.tendiwa.core.Tendiwa;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class FloorLayer {
+private final EnhancedRectangle world;
 private final GameScreen gameScreen;
+private final GameScreenViewport viewport;
 private final TextureAtlas atlasFloors;
 private final SpriteBatch batch;
 private final int transitionsAtlasSize = 1024;
@@ -31,12 +30,14 @@ private Map<FloorType, Integer> floorIndices = new HashMap<>();
 private Map<FloorType, TransitionsToFloor> floorTransitionsProviders;
 private boolean animateLiquidFloor;
 
-public FloorLayer(GameScreen gameScreen) {
+public FloorLayer(EnhancedRectangle world, GameScreen gameScreen, GameScreenViewport viewport) {
+	this.world = world;
 	this.gameScreen = gameScreen;
+	this.viewport = viewport;
 	atlasFloors = new TextureAtlas(Gdx.files.internal("pack/floors.atlas"), true);
 	cacheRegions();
 	batch = new SpriteBatch();
-	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, gameScreen.windowWidth, gameScreen.windowHeight, false);
+	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, viewport.getWindowWidthPixels(), viewport.getWindowHeightPixels(), false);
 	initFloorTransitionsProviders();
 	liquidFloorAnimateShader = GameScreen.createShader(Gdx.files.internal("shaders/liquidFloorAnimate.f.glsl"));
 	uWaveState = liquidFloorAnimateShader.getUniformLocation("waveState");
@@ -61,7 +62,7 @@ void draw() {
 	} else {
 		batch.setShader(GameScreen.defaultShader);
 	}
-	batch.setProjectionMatrix(gameScreen.camera.combined);
+	batch.setProjectionMatrix(viewport.getCamera().combined);
 	batch.begin();
 	drawFloors(false);
 	if (animateLiquidFloor) {
@@ -87,8 +88,8 @@ private float waveState(float frequency) {
 private void drawFloors(boolean liquid) {
 	int maxX = gameScreen.getMaxRenderCellX();
 	int maxY = gameScreen.getMaxRenderCellY();
-	for (int x = gameScreen.startCellX; x < maxX; x++) {
-		for (int y = gameScreen.startCellY; y < maxY; y++) {
+	for (int x = viewport.getStartCellX(); x < maxX; x++) {
+		for (int y = viewport.getStartCellY(); y < maxY; y++) {
 			RenderCell cell = gameScreen.renderPlane.getCell(x, y);
 			if (cell != null && (cell.getFloor().isLiquid() == liquid || !animateLiquidFloor)) {
 				drawFloor(cell.getFloor(), x, y);
@@ -109,8 +110,8 @@ void drawFloor(FloorType floorType, int x, int y) {
 
 private void drawTransitions(boolean liquid) {
 	// Draw transitions
-	for (int x = gameScreen.startCellX; x < gameScreen.getMaxRenderCellX(); x++) {
-		for (int y = gameScreen.startCellY; y < gameScreen.getMaxRenderCellY(); y++) {
+	for (int x = viewport.getStartCellX(); x < gameScreen.getMaxRenderCellX(); x++) {
+		for (int y = viewport.getStartCellY(); y < gameScreen.getMaxRenderCellY(); y++) {
 			RenderCell cell = gameScreen.renderPlane.getCell(x, y);
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
@@ -176,9 +177,9 @@ void drawFloorTransitionsInCell(RenderCell cell, boolean liquid) {
 	FloorType self = cell.getFloor();
 	RenderCell renderCell = gameScreen.renderPlane.getCell(cell.getX(), cell.getY() + 1);
 	// Indices 0 and 2 are swapped
-	floorsFrom4Sides[2] = cell.getY() + 1 < gameScreen.worldHeightCells && renderCell != null ? renderCell.getFloor() : self;
+	floorsFrom4Sides[2] = cell.getY() + 1 < world.getHeight() && renderCell != null ? renderCell.getFloor() : self;
 	renderCell = gameScreen.renderPlane.getCell(cell.getX() + 1, cell.getY());
-	floorsFrom4Sides[1] = cell.getX() + 1 < gameScreen.worldWidthCells && renderCell != null ? renderCell.getFloor() : self;
+	floorsFrom4Sides[1] = cell.getX() + 1 < world.getWidth() && renderCell != null ? renderCell.getFloor() : self;
 	renderCell = gameScreen.renderPlane.getCell(cell.getX(), cell.getY() - 1);
 	floorsFrom4Sides[0] = cell.getY() > 0 && renderCell != null ? renderCell.getFloor() : self;
 	renderCell = gameScreen.renderPlane.getCell(cell.getX() - 1, cell.getY());

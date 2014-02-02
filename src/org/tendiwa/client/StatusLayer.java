@@ -11,11 +11,13 @@ import java.util.List;
 public class StatusLayer {
 private final GameScreen gameScreen;
 private final BitmapFont font;
+private final GameScreenViewport viewport;
 private List<Object> lines = new LinkedList<>();
 private int lineHeight = 18;
 private int padding = 20;
 
-public StatusLayer(final GameScreen gameScreen, FontRegistry fontRegistry, final CursorPosition cursorPosition) {
+public StatusLayer(final GameScreenViewport viewport, final GameScreen gameScreen, FontRegistry fontRegistry, final CursorPosition cursorPosition) {
+	this.viewport = viewport;
 	this.font = fontRegistry.obtain(20, true);
 	this.gameScreen = gameScreen;
 	addLine(new Object() {
@@ -27,7 +29,7 @@ public StatusLayer(final GameScreen gameScreen, FontRegistry fontRegistry, final
 	addLine(new Object() {
 		@Override
 		public String toString() {
-			return "screen at " + gameScreen.startCellX + ":" + gameScreen.startCellY;
+			return "screen at " + viewport.getStartCellX() + ":" + viewport.getStartCellY();
 		}
 	});
 	addLine(new Object() {
@@ -64,8 +66,8 @@ public void draw() {
 		font.draw(
 			gameScreen.batch,
 			line.toString(),
-			gameScreen.startPixelX + padding,
-			gameScreen.startPixelY + padding + lineHeight * lineNumber
+			viewport.getStartPixelX()+ padding,
+			viewport.getStartPixelY() + padding + lineHeight * lineNumber
 		);
 		lineNumber++;
 	}
