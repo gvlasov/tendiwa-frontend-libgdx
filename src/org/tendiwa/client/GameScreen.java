@@ -54,18 +54,16 @@ PostProcessor postProcessor;
 private Map<Integer, GameObject> objects = new HashMap<>();
 private HorizontalPlane currentPlane;
 private RenderWorld renderWorld;
-private EventProcessor eventProcessor;
 private Actor cellSelectionActor;
 
 @Inject
-public GameScreen(CellNetLayer cellNetLayer, ItemsLayer itemsLayer, FloorLayer floorLayer, FloorFieldOfViewLayer floorFieldOfViewLayer, GameScreenViewport viewport, TendiwaUiStage uiStage, GraphicsConfig config, TendiwaStage stage, EventProcessor eventProcessor, GameScreenInputProcessor gameScreenInputProcessor, CursorPosition cellSelection, StatusLayer statusLayer, CellSelectionPlainActor cellSelectionPlainActor) {
+public GameScreen(CellNetLayer cellNetLayer, ItemsLayer itemsLayer, FloorLayer floorLayer, FloorFieldOfViewLayer floorFieldOfViewLayer, GameScreenViewport viewport, TendiwaUiStage uiStage, GraphicsConfig config, TendiwaStage stage, GameScreenInputProcessor gameScreenInputProcessor, CursorPosition cellSelection, StatusLayer statusLayer, CellSelectionPlainActor cellSelectionPlainActor) {
 	this.cellNetLayer = cellNetLayer;
 	this.itemsLayer = itemsLayer;
 	this.floorLayer = floorLayer;
 	this.floorFieldOfViewLayer = floorFieldOfViewLayer;
 	this.viewport = viewport;
 	this.config = config;
-	this.eventProcessor = eventProcessor;
 	this.cellSelection = cellSelection;
 	this.cellSelectionActor = cellSelectionPlainActor;
 
@@ -132,7 +130,6 @@ private void setRenderingMode() {
 
 @Override
 public void render(float delta) {
-	eventProcessor.processEventsUntilRenderNecessity();
 	synchronized (Tendiwa.getLock()) {
 		Actor characterActor = stage.getPlayerCharacterActor();
 		stage.act(Gdx.graphics.getDeltaTime());
@@ -186,18 +183,6 @@ private void drawObjects() {
 	batch.end();
 }
 
-/**
- * Checks if a floor tile should be drawn under certain cell.
- *
- * @param x
- * 	World x coordinate of a cell.
- * @param y
- * 	World y coordinate of a cell.
- * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seenCells, true otherwise.
- */
-boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
-	return !(renderPlane.getCell(x, y).hasWall() && !renderPlane.hasCell(x, y + 1));
-}
 
 public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
 	return new EnhancedPoint(
@@ -263,11 +248,4 @@ public GraphicsConfig getConfig() {
 	return config;
 }
 
-public HorizontalPlane getCurrentBackendPlane() {
-	return currentPlane;
-}
-
-public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {
-	return x >= startScreenCellX && x < startScreenCellX + widthInCells && y >= startScreenCellY && y < startScreenCellY + heightInCells;
-}
 }

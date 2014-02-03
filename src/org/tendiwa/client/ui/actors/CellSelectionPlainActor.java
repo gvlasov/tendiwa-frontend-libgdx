@@ -3,15 +3,19 @@ package org.tendiwa.client.ui.actors;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.core.Chunk;
 import org.tendiwa.core.meta.CellPosition;
 import org.tendiwa.core.meta.Coordinate;
 
+@Singleton
 public class CellSelectionPlainActor extends CellSelectionActor {
 public static Texture texture;
 private final CellPosition player;
 
+@Inject
 public CellSelectionPlainActor(CellPosition player) {
 	this.player = player;
 }
@@ -24,10 +28,6 @@ public static Texture getTexture() {
 		texture = new Texture(pixmap);
 	}
 	return texture;
-}
-
-public void setWorldCoordinates(int worldX, int worldY) {
-	setWorldCoordinates(worldX, worldY);
 }
 
 @Override

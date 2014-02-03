@@ -2,7 +2,9 @@ package org.tendiwa.client.rendering.markers;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.tendiwa.core.RenderBorder;
 import org.tendiwa.core.events.EventFovChange;
 import org.tendiwa.core.observation.EventEmitter;
@@ -17,7 +19,8 @@ public class MarkersRegistry {
 private final Stage stage;
 Collection<Actor> markers = new LinkedList<>();
 
-public MarkersRegistry(Observable model, Stage stage) {
+@Inject
+public MarkersRegistry(Observable model, @Named("tendiwa_stage") Stage stage) {
 	this.stage = stage;
 	model.subscribe(new Observer<EventFovChange>() {
 

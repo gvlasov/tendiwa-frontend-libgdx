@@ -32,7 +32,7 @@ private Runnable onComplete = new Runnable() {
 
 @Inject
 public UiSpells(TendiwaInputProcessor tendiwaInputProcessor, SpellViewFactory spellViewFactory, SpellSelectionListener spellSelectionListener, CursorPosition cellSelection, GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
-	super(UiPortion.SPELLS);
+	super();
 	this.spellViewFactory = spellViewFactory;
 	this.onActionSelected = spellSelectionListener;
 	this.cellSelection = cellSelection;
@@ -55,10 +55,6 @@ public void changeSpells(Collection<Spell> spells) {
 		flowGroup.addActor(spellViewFactory.create(e.getKey(), e.getValue()));
 	}
 
-}
-
-@Override
-public void onShow() {
 }
 
 }

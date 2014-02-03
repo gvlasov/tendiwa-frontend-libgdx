@@ -13,9 +13,11 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.client.rendering.effects.Blood;
 import org.tendiwa.client.rendering.markers.MarkersRegistry;
 import org.tendiwa.client.ui.factories.SoundActorFactory;
+import org.tendiwa.client.ui.factories.WallActorFactory;
 import org.tendiwa.client.ui.model.MessageLog;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
@@ -39,11 +41,12 @@ private static Comparator<Actor> ySorter = new Comparator<Actor>() {
 		return -Math.round(o1.getY()) + Math.round(o2.getY());
 	}
 };
+private final Character player;
 private final RenderWorld renderWorld;
 private final GameScreen gameScreen;
-private final EventProcessor eventProcessor;
 private final SoundActorFactory soundActorFactory;
 private final Seer playerSeer;
+private final WallActorFactory wallActorFactory;
 private final CharacterActorFactory characterActorFactory;
 private final MarkersRegistry markersRegistry;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
@@ -54,13 +57,14 @@ private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
 private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors = HashBasedTable.create();
 
 @Inject
-TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messageLog, final Game game, MarkersRegistry markersRegistry, final Character player, Observable model, final RenderWorld renderWorld, GameScreenViewport viewport, final GameScreen gameScreen, final EventProcessor eventProcessor, SoundActorFactory soundActorFactory, Seer playerSeer) {
+TendiwaStage(WallActorFactory wallActorFactory, CharacterActorFactory characterActorFactory, final MessageLog messageLog, final Game game, MarkersRegistry markersRegistry, @Named("player") final Character player, Observable model, final RenderWorld renderWorld, GameScreenViewport viewport, final GameScreen gameScreen, SoundActorFactory soundActorFactory, Seer playerSeer) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
+	this.wallActorFactory = wallActorFactory;
 	this.characterActorFactory = characterActorFactory;
 	this.markersRegistry = markersRegistry;
+	this.player = player;
 	this.renderWorld = renderWorld;
 	this.gameScreen = gameScreen;
-	this.eventProcessor = eventProcessor;
 	this.soundActorFactory = soundActorFactory;
 	this.playerSeer = playerSeer;
 	setCamera(viewport.getCamera());
@@ -127,8 +131,6 @@ TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messa
 					@Override
 					public void run() {
 						updateCharactersVisibility();
-						eventProcessor.processOneMoreEventInCurrentFrame();
-						eventProcessor.signalEventProcessingDone();
 					}
 				}));
 				characterActor.addAction(sequence);
@@ -140,20 +142,17 @@ TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messa
 					// If this is player moving, then the next event will be
 					// EventFovChange, and to prevent flickering we make the current event
 					// render in the same frame as the previous event.
-					eventProcessor.processOneMoreEventInCurrentFrame();
 				}
-				eventProcessor.signalEventProcessingDone();
 			}
 		}
 	}, EventMove.class);
 	model.subscribe(new Observer<EventInitialTerrain>() {
-
 		@Override
 		public void update(EventInitialTerrain event, EventEmitter<EventInitialTerrain> emitter) {
 			game.setScreen(gameScreen);
 			for (RenderCell cell : event.seenCells) {
 				renderWorld.getCurrentPlane().seeCell(cell);
-				HorizontalPlane plane = gameScreen.getCurrentBackendPlane();
+				HorizontalPlane plane = player.getPlane();
 				if (plane.hasWall(cell.x, cell.y)) {
 					addWallActor(cell.x, cell.y);
 				} else if (plane.hasObject(cell.x, cell.y)) {
@@ -166,7 +165,6 @@ TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messa
 					addBorderObjectActor(border);
 				}
 			}
-			eventProcessor.signalEventProcessingDone();
 		}
 	}, EventInitialTerrain.class);
 	model.subscribe(new Observer<EventItemDisappear>() {
@@ -186,14 +184,12 @@ TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messa
 					@Override
 					public void run() {
 						removeItemActor(event.item);
-						eventProcessor.signalEventProcessingDone();
 					}
 				}));
 				actor.addAction(sequence);
 				addActor(actor);
 			} else {
 				removeItemActor(event.item);
-				eventProcessor.signalEventProcessingDone();
 			}
 		}
 	}, EventItemDisappear.class);
@@ -251,18 +247,19 @@ TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messa
 	}, EventDie.class);
 	model.subscribe(new Observer<EventAttack>() {
 		@Override
-		public void update(EventAttack event, EventEmitter<EventAttack> emitter) {
+		public void update(EventAttack event, final EventEmitter<EventAttack> emitter) {
 
 			CharacterActor characterActor = getCharacterActor(event.attacker);
 			float dx = event.aim.getX() - event.attacker.getX();
 			float dy = event.aim.getY() - event.attacker.getY();
+			final Observer<EventAttack> self = this;
 			characterActor.addAction(sequence(
 				moveBy(-dx * 0.2f, -dy * 0.2f, 0.1f),
 				moveBy(dx * 0.7f, dy * 0.7f, 0.1f),
 				run(new Runnable() {
 					@Override
 					public void run() {
-						eventProcessor.signalEventProcessingDone();
+						emitter.done(self);
 					}
 				}),
 				moveBy(-dx * 0.5f, -dy * 0.5f, 0.2f)
@@ -289,13 +286,13 @@ TendiwaStage(CharacterActorFactory characterActorFactory, final MessageLog messa
 
 		@Override
 		public void update(EventMoveToPlane event, EventEmitter<EventMoveToPlane> emitter) {
-			removeActorsOfPlane(gameScreen.getCurrentBackendPlane().getLevel());
+			removeActorsOfPlane(player.getPlane().getLevel());
 			for (RenderCell cell : event.seenCells) {
-				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
+				if (player.getPlane().hasWall(cell.x, cell.y)) {
 					if (!hasWallActor(cell.x, cell.y)) {
 						addWallActor(cell.x, cell.y);
 					}
-				} else if (gameScreen.getCurrentBackendPlane().hasObject(cell.x, cell.y)) {
+				} else if (player.getPlane().hasObject(cell.x, cell.y)) {
 					addObjectActor(cell.x, cell.y);
 				}
 			}
@@ -383,8 +380,7 @@ public boolean hasActorForItem(Item item) {
  * 	X coordinate of flight end cell in world coordinates.
  * @param toY
  * 	Y coordinate of flight end cell in world coordinates.
- * @return A new ItemActor with MoveToAction and call to {@link EventProcessor#signalEventProcessingDone()} added to
- *         it.
+ * @return A new ItemActor with MoveToAction added to it.
  */
 public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int fromY, int toX, int toY, EventProjectileFly.FlightStyle style) {
 	final Actor actor;
@@ -407,7 +403,6 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 		@Override
 		public void run() {
 			TendiwaStage.this.getRoot().removeActor(actor);
-			eventProcessor.signalEventProcessingDone();
 		}
 	});
 	if (rotating) {
@@ -421,8 +416,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 }
 
 public Actor obtainSoundActor(SoundType soundType, int x, int y) {
-	final SoundActor actor = soundActorFactory.create(soundType, x, y);
-	return actor;
+	return soundActorFactory.create(soundType, x, y);
 }
 
 public void updateCharactersVisibility() {
@@ -450,8 +444,8 @@ public void updateCharactersVisibility() {
  * 	Y coordinate of an actor in world coordinates.
  */
 public void addWallActor(int x, int y) {
-	GameObject gameObject = gameScreen.getCurrentBackendPlane().getGameObject(x, y);
-	WallActor actor = new WallActor(gameScreen, x, y, (WallType) gameObject);
+	GameObject gameObject = player.getPlane().getGameObject(x, y);
+	WallActor actor = wallActorFactory.create(x, y, (WallType) gameObject, renderWorld.getCurrentPlane());
 	wallActors.put(getWallActorKey(x, y), actor);
 //	actor.setVisible(false);
 	addActor(actor);
@@ -491,8 +485,8 @@ public boolean hasWallActor(int x, int y) {
 }
 
 public void addObjectActor(int x, int y) {
-	ObjectActor actor = new ObjectActor(x, y, gameScreen.getCurrentBackendPlane().getGameObject(x, y), renderWorld.getCurrentPlane());
-	plane2actors.put(gameScreen.getCurrentBackendPlane().getLevel(), actor);
+	ObjectActor actor = new ObjectActor(x, y, player.getPlane().getGameObject(x, y), renderWorld.getCurrentPlane());
+	plane2actors.put(player.getPlane().getLevel(), actor);
 	addActor(actor);
 }
 

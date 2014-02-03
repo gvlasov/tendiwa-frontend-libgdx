@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Game;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.client.ui.actors.CellSelectionActor;
 import org.tendiwa.client.ui.controller.CellSelection;
 import org.tendiwa.client.ui.model.CursorPosition;
@@ -27,8 +28,8 @@ private ItemSelector itemSelector;
 private CursorPosition cellSelection;
 
 @Inject
-public GameScreenInputProcessor(final Volition volition, final Character player, final GameScreenViewport viewport, final CursorPosition cursorPosition, final UiModeManager uiModeManager, final CellSelectionActor cellSelectionActor, final MessageLog messageLog, final WorldMapScreen worldMapScreen, CursorPosition cellSelection, ItemSelector itemSelector, final GameScreen gameScreen, TaskManager taskManager, EventProcessor eventProcessor, final Game game) {
-	super(gameScreen, taskManager, eventProcessor);
+public GameScreenInputProcessor(final Volition volition, @Named("player") final Character player, final GameScreenViewport viewport, final CursorPosition cursorPosition, final UiModeManager uiModeManager, final CellSelectionActor cellSelectionActor, final MessageLog messageLog, final WorldMapScreen worldMapScreen, CursorPosition cellSelection, ItemSelector itemSelector, final GameScreen gameScreen, TaskManager taskManager, final Game game) {
+	super(gameScreen, taskManager);
 	this.volition = volition;
 	this.player = player;
 	this.viewport = viewport;
@@ -340,7 +341,7 @@ private void moveToOrAttackCharacterInCell(int x, int y) {
 	if (player.canStepOn(x, y)) {
 		volition.move(Directions.shiftToDirection(-dx, -dy));
 	} else {
-		Character aim = gameScreen.getCurrentBackendPlane().getCharacter(x, y);
+		Character aim = player.getPlane().getCharacter(x, y);
 		boolean isCharacterPresent = aim != null;
 		if (isCharacterPresent) {
 			boolean isHeAnEnemy = aim.isEnemy(player);

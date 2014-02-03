@@ -1,11 +1,15 @@
 package org.tendiwa.client;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.core.Character;
 
+@Singleton
 class TaskManager {
 private final Character player;
 Task currentTask;
 
+@Inject
 TaskManager(Character player) {
 
 	this.player = player;

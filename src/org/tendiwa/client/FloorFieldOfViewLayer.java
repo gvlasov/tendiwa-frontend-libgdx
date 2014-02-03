@@ -7,10 +7,13 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.bitfire.postprocessing.PostProcessor;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.core.RenderCell;
 import org.tendiwa.core.RenderWorld;
 import org.tendiwa.core.meta.CellPosition;
 
+@Singleton
 public class FloorFieldOfViewLayer {
 private final FovEdgeOpaque fovEdgeOpaque;
 private final Mesh fullScreenQuad;
@@ -27,6 +30,7 @@ private int uNotYetSeenCellsAnimationState;
 private int uNotYetSeenCellsTime;
 private boolean renderNotYetSeenCells = false;
 
+@Inject
 FloorFieldOfViewLayer(Batch batch, CellPosition player, RenderWorld renderWorld, FrameBuffer depthTestFrameBuffer, PostProcessor postProcessor, GameScreenViewport viewport) {
 	this.batch = batch;
 	this.player = player;

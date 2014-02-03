@@ -1,6 +1,7 @@
 package org.tendiwa.client.ui.factories;
 
-import org.tendiwa.client.EventProcessor;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.SoundActor;
 import org.tendiwa.client.TendiwaStage;
@@ -9,17 +10,17 @@ import org.tendiwa.core.SoundType;
 
 import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
+@Singleton
 public class SoundActorFactory {
 private final FontRegistry fontRegistry;
 private final ColorFillFactory colorFillFactory;
-private final EventProcessor eventProcessor;
 private final TendiwaStage stage;
 
-SoundActorFactory(FontRegistry fontRegistry, ColorFillFactory colorFillFactory, EventProcessor eventProcessor, TendiwaStage stage) {
+@Inject
+SoundActorFactory(FontRegistry fontRegistry, ColorFillFactory colorFillFactory, TendiwaStage stage) {
 	this.fontRegistry = fontRegistry;
 
 	this.colorFillFactory = colorFillFactory;
-	this.eventProcessor = eventProcessor;
 	this.stage = stage;
 }
 
@@ -33,7 +34,6 @@ public SoundActor create(SoundType type, int x, int y) {
 		@Override
 		public void run() {
 			stage.getRoot().removeActor(actor);
-			eventProcessor.signalEventProcessingDone();
 		}
 	})));
 	return actor;

@@ -8,14 +8,18 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.core.*;
 import org.tendiwa.groovy.Registry;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Singleton
 public class FloorLayer {
 private final EnhancedRectangle world;
+private final RenderWorld renderWorld;
 private final GameScreen gameScreen;
 private final GameScreenViewport viewport;
 private final TextureAtlas atlasFloors;
@@ -30,8 +34,10 @@ private Map<FloorType, Integer> floorIndices = new HashMap<>();
 private Map<FloorType, TransitionsToFloor> floorTransitionsProviders;
 private boolean animateLiquidFloor;
 
-public FloorLayer(EnhancedRectangle world, GameScreen gameScreen, GameScreenViewport viewport) {
+@Inject
+public FloorLayer(EnhancedRectangle world, RenderWorld renderWorld, GameScreen gameScreen, GameScreenViewport viewport) {
 	this.world = world;
+	this.renderWorld = renderWorld;
 	this.gameScreen = gameScreen;
 	this.viewport = viewport;
 	atlasFloors = new TextureAtlas(Gdx.files.internal("pack/floors.atlas"), true);
@@ -86,8 +92,8 @@ private float waveState(float frequency) {
 }
 
 private void drawFloors(boolean liquid) {
-	int maxX = gameScreen.getMaxRenderCellX();
-	int maxY = gameScreen.getMaxRenderCellY();
+	int maxX = viewport.getMaxRenderCellX();
+	int maxY = viewport.getMaxRenderCellY();
 	for (int x = viewport.getStartCellX(); x < maxX; x++) {
 		for (int y = viewport.getStartCellY(); y < maxY; y++) {
 			RenderCell cell = gameScreen.renderPlane.getCell(x, y);
@@ -99,7 +105,7 @@ private void drawFloors(boolean liquid) {
 }
 
 void drawFloor(FloorType floorType, int x, int y) {
-	if (!gameScreen.isFloorUnderWallShouldBeDrawn(x, y)) {
+	if (!isFloorUnderWallShouldBeDrawn(x, y)) {
 		// Don't draw floor on cells that are right under a wall on the edge of field of view,
 		// because drawing one produces an unpleasant and unnatural effect.
 		return;
@@ -107,16 +113,28 @@ void drawFloor(FloorType floorType, int x, int y) {
 	TextureRegion floor = getFloorTextureByCell(floorType, x, y);
 	batch.draw(floor, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
 }
+/**
+ * Checks if a floor tile should be drawn under certain cell.
+ *
+ * @param x
+ * 	World x coordinate of a cell.
+ * @param y
+ * 	World y coordinate of a cell.
+ * @return False if there is a wall in cell {x:y} and cell {x:y+1} is not yet seenCells, true otherwise.
+ */
+boolean isFloorUnderWallShouldBeDrawn(int x, int y) {
+	return !(renderWorld.getCurrentPlane().getCell(x, y).hasWall() && !renderWorld.getCurrentPlane().hasCell(x, y + 1));
+}
 
 private void drawTransitions(boolean liquid) {
 	// Draw transitions
-	for (int x = viewport.getStartCellX(); x < gameScreen.getMaxRenderCellX(); x++) {
-		for (int y = viewport.getStartCellY(); y < gameScreen.getMaxRenderCellY(); y++) {
+	for (int x = viewport.getStartCellX(); x < viewport.getMaxRenderCellX(); x++) {
+		for (int y = viewport.getStartCellY(); y < viewport.getMaxRenderCellY(); y++) {
 			RenderCell cell = gameScreen.renderPlane.getCell(x, y);
 			// (!A || B) — see "Logical implication" in Wikipedia.
 			// Shortly, if there is a wall, then floor under it should need to be drawn for a condition to pass.
 			if (cell != null
-				&& (!cell.hasWall() || gameScreen.isFloorUnderWallShouldBeDrawn(x, y))
+				&& (!cell.hasWall() || isFloorUnderWallShouldBeDrawn(x, y))
 				) {
 				drawFloorTransitionsInCell(cell, liquid);
 			}

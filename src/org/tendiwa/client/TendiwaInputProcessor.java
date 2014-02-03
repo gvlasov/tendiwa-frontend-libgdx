@@ -27,12 +27,10 @@ private Map<KeyCombination, UiAction> combinationToAction = new HashMap<>();
  * order and in generally easier to iterate over).
  */
 private List<Mapping> mappings = new LinkedList<>();
-private EventProcessor eventProcessor;
 
-TendiwaInputProcessor(GameScreen gameScreen, TaskManager taskManager, EventProcessor eventProcessor) {
+TendiwaInputProcessor(GameScreen gameScreen, TaskManager taskManager) {
 	this.gameScreen = gameScreen;
 	this.taskManager = taskManager;
-	this.eventProcessor = eventProcessor;
 }
 
 public static ImmutableList<Mapping> getCurrentMappings() {
@@ -72,7 +70,7 @@ public boolean keyDown(int keycode) {
 	if (keycode == Input.Keys.ESCAPE && taskManager.hasCurrentTask()) {
 		taskManager.cancelCurrentTask();
 	}
-	if (eventProcessor.isEventProcessingGoing() || Server.hasRequestToProcess()) {
+	if (Server.hasRequestToProcess()) {
 		return false;
 	}
 	switch (keycode) {

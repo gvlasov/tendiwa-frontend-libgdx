@@ -22,6 +22,7 @@ import java.util.Map;
 
 public class UiActions extends TendiwaWidget {
 private final GameScreen gameScreen;
+private final Character player;
 private final EntitySelectionListener<CharacterAbility> onActionSelected;
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 ItemToKeyMapper<CharacterAbility> mapper = new ItemToKeyMapper<>();
@@ -36,8 +37,9 @@ private Label.LabelStyle style;
 private EntitySelectionInputProcessor<CharacterAbility> actionInputProcessor;
 
 @Inject
-public UiActions(TendiwaInputProcessor tendiwaInputProcessor, final ActionSelectionListener onActionSelected, GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
-	super(UiPortion.ACTIONS);
+public UiActions(Character player, TendiwaInputProcessor tendiwaInputProcessor, final ActionSelectionListener onActionSelected, GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
+	super();
+	this.player = player;
 	this.onActionSelected = onActionSelected;
 	this.gameScreen = gameScreen;
 	style = new Label.LabelStyle(fontRegistry.obtain(14, false), Color.WHITE);
@@ -57,8 +59,7 @@ public UiActions(TendiwaInputProcessor tendiwaInputProcessor, final ActionSelect
  *
  * @return
  */
-public static Iterable<CharacterAbility> findActionsAroundPlayer() {
-	Character player = Tendiwa.getPlayerCharacter();
+public Iterable<CharacterAbility> findActionsAroundPlayer() {
 	HorizontalPlane plane = player.getPlane();
 	ImmutableSet.Builder<CharacterAbility> builder = ImmutableSet.builder();
 	for (Direction dir : Directions.ALL_DIRECTIONS) {
@@ -77,7 +78,7 @@ public static Iterable<CharacterAbility> findActionsAroundPlayer() {
 
 public void update() {
 	Iterable<CharacterAbility> actionsAroundPlayer = findActionsAroundPlayer();
-	Collection<CharacterAbility> characterActions = Tendiwa.getPlayerCharacter().getAvailableActions();
+	Collection<CharacterAbility> characterActions = player.getAvailableActions();
 	mapper.update(Iterables.concat(actionsAroundPlayer, characterActions));
 	flowGroup.clearChildren();
 	for (Map.Entry<CharacterAbility, java.lang.Character> e : mapper) {
@@ -97,7 +98,4 @@ private WidgetGroup createActionWidget(CharacterAbility action, char character) 
 	return table;
 }
 
-@Override
-public void onShow() {
-}
 }

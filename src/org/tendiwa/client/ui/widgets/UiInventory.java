@@ -8,7 +8,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.google.inject.Inject;
-import org.tendiwa.client.EventProcessor;
 import org.tendiwa.client.TendiwaWidget;
 import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
@@ -22,18 +21,16 @@ import org.tendiwa.core.observation.Observer;
 
 public class UiInventory extends TendiwaWidget {
 private final ItemCollection inventory;
-private final EventProcessor eventProcessor;
 private final Volition volition;
 private final ItemViewFactory itemViewFactory;
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 private Equipment equipment;
 
 @Inject
-public UiInventory(Equipment equipment, ItemCollection inventory, EventProcessor eventProcessor, final Observable model, Volition volition, ColorFillFactory colorFillFactory, ItemViewFactory itemViewFactory) {
+public UiInventory(Equipment equipment, ItemCollection inventory, final Observable model, Volition volition, ColorFillFactory colorFillFactory, ItemViewFactory itemViewFactory) {
 	super();
 	this.equipment = equipment;
 	this.inventory = inventory;
-	this.eventProcessor = eventProcessor;
 	this.volition = volition;
 	this.itemViewFactory = itemViewFactory;
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
@@ -72,7 +69,6 @@ public void update() {
 		itemIcon.addListener(new UnequippedClickListener(item));
 		flowGroup.addActor(itemIcon);
 	}
-	eventProcessor.signalEventProcessingDone();
 }
 
 private class EquippedClickListener extends InputListener {

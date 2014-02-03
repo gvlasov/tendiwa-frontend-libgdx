@@ -5,15 +5,19 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.core.EnhancedPoint;
 
+@Singleton
 public class CursorActor extends Actor {
 private final Texture texture;
 private final GameScreen gameScreen;
 private int worldX;
 private int worldY;
 
+@Inject
 CursorActor(GameScreen gameScreen) {
 	this.gameScreen = gameScreen;
 	texture = buildCursorTexture();

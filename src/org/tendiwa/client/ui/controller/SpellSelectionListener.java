@@ -8,12 +8,14 @@ import org.tendiwa.client.ui.uiModes.UiModeManager;
 import org.tendiwa.core.*;
 
 public class SpellSelectionListener implements EntitySelectionListener<Spell> {
+private final Volition volition;
 private final GameScreen gameScreen;
 private final CursorPosition cursorPosition;
 private final CellSelectionActor cellSelectionActor;
 private final UiModeManager uiModeManager;
 
-SpellSelectionListener(GameScreen gameScreen, CursorPosition cursorPosition, CellSelectionActor cellSelectionActor, UiModeManager uiModeManager) {
+SpellSelectionListener(Volition volition, GameScreen gameScreen, CursorPosition cursorPosition, CellSelectionActor cellSelectionActor, UiModeManager uiModeManager) {
+	this.volition = volition;
 	this.gameScreen = gameScreen;
 	this.cursorPosition = cursorPosition;
 	this.cellSelectionActor = cellSelectionActor;
@@ -26,22 +28,15 @@ public void execute(final Spell characterAbility) {
 	if (action instanceof ActionToCell) {
 		uiModeManager.pushMode(
 			new CellSelection(gameScreen, cursorPosition, cellSelectionActor, new EntitySelectionListener<EnhancedPoint>() {
+
 				@Override
 				public void execute(EnhancedPoint point) {
-					Tendiwa.getServer().pushRequest(new RequestActionToCell(
-						(ActionToCell) action,
-						point.x,
-						point.y
-					));
+					volition.actionToCell((ActionToCell) action, point.x, point.y);
 				}
 			})
 		);
 	} else if (action instanceof ActionWithoutTarget) {
-		Tendiwa.getServer().pushRequest(
-			new RequestActionWithoutTarget(
-				(ActionWithoutTarget) action
-			)
-		);
+		volition.actionWithoutTarget((ActionWithoutTarget) action);
 	}
 }
 }

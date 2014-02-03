@@ -2,12 +2,15 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.client.ui.model.CursorPosition;
 
 import java.util.LinkedList;
 import java.util.List;
 
+@Singleton
 public class StatusLayer {
 private final GameScreen gameScreen;
 private final BitmapFont font;
@@ -16,6 +19,7 @@ private List<Object> lines = new LinkedList<>();
 private int lineHeight = 18;
 private int padding = 20;
 
+@Inject
 public StatusLayer(final GameScreenViewport viewport, final GameScreen gameScreen, FontRegistry fontRegistry, final CursorPosition cursorPosition) {
 	this.viewport = viewport;
 	this.font = fontRegistry.obtain(20, true);

@@ -8,12 +8,14 @@ import org.tendiwa.client.ui.uiModes.UiModeManager;
 import org.tendiwa.core.*;
 
 public class ActionSelectionListener implements EntitySelectionListener<CharacterAbility> {
+private final Volition volition;
 private final UiModeManager uiModeManager;
 private final GameScreen gameScreen;
 private final CursorPosition cursorPosition;
 private final CellSelectionActor cellSelectionActor;
 
-public ActionSelectionListener(UiModeManager uiModeManager, GameScreen gameScreen, CursorPosition cursorPosition, CellSelectionActor cellSelectionActor) {
+public ActionSelectionListener(Volition volition, UiModeManager uiModeManager, GameScreen gameScreen, CursorPosition cursorPosition, CellSelectionActor cellSelectionActor) {
+	this.volition = volition;
 	this.uiModeManager = uiModeManager;
 	this.gameScreen = gameScreen;
 	this.cursorPosition = cursorPosition;
@@ -26,22 +28,15 @@ public void execute(final CharacterAbility characterAbility) {
 	if (action instanceof ActionToCell) {
 		uiModeManager.pushMode(
 			new CellSelection(gameScreen, cursorPosition, cellSelectionActor, new EntitySelectionListener<EnhancedPoint>() {
+
 				@Override
 				public void execute(EnhancedPoint point) {
-					Tendiwa.getServer().pushRequest(new RequestActionToCell(
-						(ActionToCell) action,
-						point.x,
-						point.y
-					));
+					volition.actionToCell((ActionToCell) action, point.x, point.y);
 				}
 			})
 		);
 	} else if (action instanceof ActionWithoutTarget) {
-		Tendiwa.getServer().pushRequest(
-			new RequestActionWithoutTarget(
-				(ActionWithoutTarget) action
-			)
-		);
+		volition.actionWithoutTarget((ActionWithoutTarget) action);
 	}
 }
 }

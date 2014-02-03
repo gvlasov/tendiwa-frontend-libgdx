@@ -33,6 +33,8 @@ UiKeyHints(TendiwaInputProcessor tendiwaInputProcessor, GameScreen gameScreen, F
 		@Override
 		public void act() {
 			UiKeyHints.this.update();
+			setVisible(true);
+			Gdx.input.setInputProcessor(inputProcessor);
 		}
 	});
 }
@@ -63,8 +65,4 @@ private Actor createActionName(String actionNameLocalized) {
 	return new Label(actionNameLocalized, labelStyle);
 }
 
-@Override
-public void onShow() {
-	Gdx.input.setInputProcessor(inputProcessor);
-}
 }

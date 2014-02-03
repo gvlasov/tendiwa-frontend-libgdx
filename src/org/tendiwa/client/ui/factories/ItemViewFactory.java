@@ -6,6 +6,8 @@ import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import org.tendiwa.client.AtlasItems;
 import org.tendiwa.client.TextureRegionFlipper;
 import org.tendiwa.client.ui.fonts.FontRegistry;
@@ -13,9 +15,11 @@ import org.tendiwa.core.Equipment;
 import org.tendiwa.core.Item;
 import org.tendiwa.core.ItemPile;
 
+@Singleton
 public class ItemViewFactory {
 private final Label.LabelStyle amountStyle;
 
+@Inject
 ItemViewFactory(FontRegistry fontRegistry) {
 	amountStyle = new Label.LabelStyle(fontRegistry.obtain(18, false), Color.WHITE);
 }

@@ -12,11 +12,13 @@ import org.tendiwa.core.World;
 import org.tendiwa.groovy.Registry;
 
 public class WorldMapScreen implements Screen {
+private final World world;
 private OrthographicCamera camera;
 private SpriteBatch batch;
 
 @Inject
-WorldMapScreen() {
+WorldMapScreen(World world) {
+	this.world = world;
 	camera = new OrthographicCamera();
 	camera.setToOrtho(true, Tendiwa.getWorldWidth(), Tendiwa.getWorldHeight());
 
@@ -36,7 +38,6 @@ public void render(float delta) {
 	camera.update();
 	batch.setProjectionMatrix(camera.combined);
 	batch.begin();
-	World world = Tendiwa.getWorld();
 	HorizontalPlane plane = world.getDefaultPlane();
 	int width = world.getWidth();
 	int height = world.getHeight();

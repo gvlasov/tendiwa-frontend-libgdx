@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.google.inject.Inject;
 
 public class CellNetLayer {
 private final GameScreenViewport viewport;
@@ -12,6 +13,7 @@ private final GameScreen gameScreen;
 private final OrthographicCamera oneTileWiderCanera;
 private FrameBuffer cellNetFramebuffer;
 
+@Inject
 CellNetLayer(GameScreenViewport viewport, GameScreen gameScreen) {
 	this.viewport = viewport;
 	this.gameScreen = gameScreen;

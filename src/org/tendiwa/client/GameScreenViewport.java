@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.tendiwa.core.EnhancedRectangle;
 import org.tendiwa.core.meta.CellPosition;
@@ -39,6 +40,7 @@ private int centerPixelY;
 private int startPixelX;
 private int startPixelY;
 
+@Inject
 GameScreenViewport(EnhancedRectangle world, CellPosition player) {
 	windowWidth = Gdx.graphics.getWidth();
 	windowHeight = Gdx.graphics.getHeight();
@@ -139,12 +141,15 @@ public int getStartPixelY() {
 	return startPixelY;
 }
 
-int getMaxRenderCellX() {
+public int getMaxRenderCellX() {
 	return startCellX + windowWidthCells + (startPixelX % GameScreen.TILE_SIZE == 0 ? 0 : 1) + (windowWidthCells % 2 == 0 ? 0 : 1);
 }
 
-int getMaxRenderCellY() {
+public int getMaxRenderCellY() {
 	return startCellY + windowHeightCells + (startPixelY % GameScreen.TILE_SIZE == 0 ? 0 : 1) + (windowHeightCells % 2 == 0 ? 0 : 1);
+}
+public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {
+	return x >= startScreenCellX && x < startScreenCellX + widthInCells && y >= startScreenCellY && y < startScreenCellY + heightInCells;
 }
 }
 

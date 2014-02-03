@@ -3,9 +3,13 @@ package org.tendiwa.client;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
 
+@Singleton
 public class ItemsLayer {
 private final Batch batch;
 private final GameScreenViewport viewport;
@@ -13,7 +17,8 @@ private final RenderWorld renderWorld;
 private final Character player;
 private final TextureRegion multipleItemsMarker;
 
-ItemsLayer(Batch batch, GameScreenViewport viewport, RenderWorld renderWorld, AtlasUi atlasUi, Character player) {
+@Inject
+ItemsLayer(@Named("game_screen_batch") Batch batch, GameScreenViewport viewport, RenderWorld renderWorld, AtlasUi atlasUi, Character player) {
 	this.batch = batch;
 	this.viewport = viewport;
 	this.renderWorld = renderWorld;
