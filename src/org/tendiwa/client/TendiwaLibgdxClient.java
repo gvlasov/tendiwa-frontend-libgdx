@@ -1,31 +1,42 @@
 package org.tendiwa.client;
 
-import com.google.inject.Guice;
+import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import org.tendiwa.core.Tendiwa;
 import org.tendiwa.core.TendiwaClient;
 import org.tendiwa.core.Volition;
+import org.tendiwa.core.events.EventSelectPlayerCharacter;
+import org.tendiwa.core.observation.EventEmitter;
+import org.tendiwa.core.observation.Observable;
+import org.tendiwa.core.observation.Observer;
 
 public class TendiwaLibgdxClient implements TendiwaClient {
+
+private static Injector injector;
 private final Volition volition;
+private final Observable model;
 
 @Inject
-TendiwaLibgdxClient(Volition volition) {
+public TendiwaLibgdxClient(Volition volition, Observable model) {
 	this.volition = volition;
+	this.model = model;
 }
 
 public static void main(String[] args) {
 	if (args.length > 0 && args[0].equals("atlas")) {
 		new ResourcesBuilder().buildResources();
 	} else {
-		throw new RuntimeException("Wrong arguments");
+		Tendiwa backend = Tendiwa.newBackend();
+		injector = Tendiwa.getInjector().createChildInjector(new TendiwaLibgdxModule());
+		new TendiwaLibgdxClient(injector.getInstance(Volition.class), backend).startup();
+		backend.start();
 	}
 }
 
 @Override
 public void startup() {
-	Injector clientInjector = Guice.createInjector(new TendiwaLibgdxModule());
 	Languages.init();
-	volition.requestSurroundings();
+	injector.getInstance(LwjglApplication.class);
 }
 }

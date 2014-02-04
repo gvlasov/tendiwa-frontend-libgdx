@@ -15,22 +15,21 @@ import org.tendiwa.client.ui.factories.ItemViewFactory;
 import org.tendiwa.core.*;
 import org.tendiwa.core.events.EventGetItem;
 import org.tendiwa.core.events.EventLoseItem;
+import org.tendiwa.core.events.EventSelectPlayerCharacter;
 import org.tendiwa.core.observation.EventEmitter;
 import org.tendiwa.core.observation.Observable;
 import org.tendiwa.core.observation.Observer;
 
 public class UiInventory extends TendiwaWidget {
-private final ItemCollection inventory;
 private final Volition volition;
 private final ItemViewFactory itemViewFactory;
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
+private ItemCollection inventory;
 private Equipment equipment;
 
 @Inject
-public UiInventory(Equipment equipment, ItemCollection inventory, final Observable model, Volition volition, ColorFillFactory colorFillFactory, ItemViewFactory itemViewFactory) {
+public UiInventory(final Observable model, Volition volition, ColorFillFactory colorFillFactory, ItemViewFactory itemViewFactory) {
 	super();
-	this.equipment = equipment;
-	this.inventory = inventory;
 	this.volition = volition;
 	this.itemViewFactory = itemViewFactory;
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
@@ -49,6 +48,14 @@ public UiInventory(Equipment equipment, ItemCollection inventory, final Observab
 			UiInventory.this.update();
 		}
 	}, EventLoseItem.class);
+	model.subscribe(new Observer<EventSelectPlayerCharacter>() {
+		@Override
+		public void update(EventSelectPlayerCharacter event, EventEmitter<EventSelectPlayerCharacter> emitter) {
+			UiInventory.this.equipment = event.player.getEquipment();
+			UiInventory.this.inventory = event.player.getInventory();
+			UiInventory.this.update();
+		}
+	}, EventSelectPlayerCharacter.class);
 }
 
 public void update() {

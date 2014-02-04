@@ -1,30 +1,32 @@
 package org.tendiwa.client;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.core.*;
 import org.tendiwa.core.meta.Chance;
 
 public class FovEdgeOpaque extends TransitionPregenerator {
-final SpriteBatch batch;
-public final ShaderProgram halfTransparencyShader;
-final ShaderProgram shader;
-public FovEdgeOpaque() {
+public final SpriteBatch batch;
+private final ShaderProgram halfTransparencyShader;
+private final ShaderProgram fovTransitionShader;
+
+@Inject
+public FovEdgeOpaque(
+	@Named("shader_half_transparency") ShaderProgram halfTransparencyShader,
+	@Named("shader_fov_transition") ShaderProgram fovTransitionShader
+) {
 	super(4);
-	shader = new ShaderProgram(
-		SpriteBatch.createDefaultShader().getVertexShaderSource(),
-		Gdx.files.internal("shaders/fovTransition.f.glsl").readString()
-	);
-	ShaderProgram.pedantic = false;
-	if (!shader.isCompiled()) {
-		Tendiwa.getLogger().error(shader.getLog());
+	this.halfTransparencyShader = halfTransparencyShader;
+	this.fovTransitionShader = fovTransitionShader;
+	if (!this.fovTransitionShader.isCompiled()) {
+		throw new RuntimeException(this.fovTransitionShader.getLog());
 	}
 	batch = new SpriteBatch();
-	batch.setShader(shader);
+	batch.setShader(this.fovTransitionShader);
 
-	halfTransparencyShader = GameScreen.createShader(Gdx.files.internal("shaders/fovHalfTransparency.f.glsl"));
 	createTransitions();
 }
 
@@ -68,6 +70,7 @@ protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
 	}
 	return pixmap;
 }
+
 @Override
 public Pixmap createTransition(CardinalDirection dir) {
 	return createTransition(dir, 1.0f);

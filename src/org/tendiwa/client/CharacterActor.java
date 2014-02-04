@@ -29,7 +29,7 @@ private final Character character;
 private final TextureRegion texture;
 private FrameBuffer frameBuffer;
 
-public CharacterActor(Observable model, Character character) {
+public CharacterActor(World world, Observable model, Character character) {
 	this.character = character;
 	setX(character.getX());
 	setY(character.getY());
@@ -41,7 +41,7 @@ public CharacterActor(Observable model, Character character) {
 		String typeName = character.getType().getResourceName();
 		texture = atlasCharacters.findRegion(typeName);
 	}
-	setZIndex(character.getY() * Tendiwa.getWorldWidth() + character.getX());
+	setZIndex(character.getY() * world.getWidth() + character.getX());
 	model.subscribe(new Observer<EventPutOn>() {
 		@Override
 		public void update(EventPutOn event, EventEmitter<EventPutOn> emitter) {

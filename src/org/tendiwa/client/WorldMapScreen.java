@@ -5,9 +5,9 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.core.EntityPlacer;
 import org.tendiwa.core.HorizontalPlane;
-import org.tendiwa.core.Tendiwa;
 import org.tendiwa.core.World;
 import org.tendiwa.groovy.Registry;
 
@@ -17,10 +17,10 @@ private OrthographicCamera camera;
 private SpriteBatch batch;
 
 @Inject
-WorldMapScreen(World world) {
+WorldMapScreen(@Named("current_player_world") World world) {
 	this.world = world;
 	camera = new OrthographicCamera();
-	camera.setToOrtho(true, Tendiwa.getWorldWidth(), Tendiwa.getWorldHeight());
+	camera.setToOrtho(true, world.getWidth(), world.getHeight());
 
 	batch = new SpriteBatch();
 	setRenderOnce();

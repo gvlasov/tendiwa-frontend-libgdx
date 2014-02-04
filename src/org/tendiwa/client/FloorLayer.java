@@ -10,6 +10,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.utils.Array;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
+import org.apache.log4j.Logger;
 import org.tendiwa.core.*;
 import org.tendiwa.groovy.Registry;
 
@@ -18,10 +20,12 @@ import java.util.Map;
 
 @Singleton
 public class FloorLayer {
-private final EnhancedRectangle world;
+private final World world;
 private final RenderWorld renderWorld;
 private final GameScreen gameScreen;
 private final GameScreenViewport viewport;
+private final Logger logger;
+private final ShaderProgram defaultShader;
 private final TextureAtlas atlasFloors;
 private final SpriteBatch batch;
 private final int transitionsAtlasSize = 1024;
@@ -35,17 +39,27 @@ private Map<FloorType, TransitionsToFloor> floorTransitionsProviders;
 private boolean animateLiquidFloor;
 
 @Inject
-public FloorLayer(EnhancedRectangle world, RenderWorld renderWorld, GameScreen gameScreen, GameScreenViewport viewport) {
+public FloorLayer(
+	@Named("current_player_world") World world,
+	RenderWorld renderWorld,
+	GameScreen gameScreen,
+	GameScreenViewport viewport,
+    Logger logger,
+    @Named("shader_liquid_floor_animate") ShaderProgram liquidFloorAnimateShader,
+    @Named("shader_default") ShaderProgram defaultShader
+) {
 	this.world = world;
 	this.renderWorld = renderWorld;
 	this.gameScreen = gameScreen;
 	this.viewport = viewport;
+	this.logger = logger;
+	this.defaultShader = defaultShader;
 	atlasFloors = new TextureAtlas(Gdx.files.internal("pack/floors.atlas"), true);
 	cacheRegions();
 	batch = new SpriteBatch();
 	transitionsFrameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, viewport.getWindowWidthPixels(), viewport.getWindowHeightPixels(), false);
 	initFloorTransitionsProviders();
-	liquidFloorAnimateShader = GameScreen.createShader(Gdx.files.internal("shaders/liquidFloorAnimate.f.glsl"));
+	this.liquidFloorAnimateShader = liquidFloorAnimateShader;
 	uWaveState = liquidFloorAnimateShader.getUniformLocation("waveState");
 }
 
@@ -66,7 +80,7 @@ void draw() {
 		);
 		liquidFloorAnimateShader.end();
 	} else {
-		batch.setShader(GameScreen.defaultShader);
+		batch.setShader(defaultShader);
 	}
 	batch.setProjectionMatrix(viewport.getCamera().combined);
 	batch.begin();
@@ -74,7 +88,7 @@ void draw() {
 	if (animateLiquidFloor) {
 		batch.setShader(liquidFloorAnimateShader);
 		drawFloors(true);
-		batch.setShader(GameScreen.defaultShader);
+		batch.setShader(defaultShader);
 	}
 	drawTransitions(false);
 	if (animateLiquidFloor) {
@@ -83,7 +97,7 @@ void draw() {
 	}
 	batch.end();
 	if (animateLiquidFloor) {
-		batch.setShader(GameScreen.defaultShader);
+		batch.setShader(defaultShader);
 	}
 }
 
@@ -113,6 +127,7 @@ void drawFloor(FloorType floorType, int x, int y) {
 	TextureRegion floor = getFloorTextureByCell(floorType, x, y);
 	batch.draw(floor, x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE);
 }
+
 /**
  * Checks if a floor tile should be drawn under certain cell.
  *
@@ -159,7 +174,7 @@ private void cacheRegions() {
 		if (name2Type.containsKey(region.name)) {
 			floorRegions.get(name2Type.get(region.name)).put(region.index, region);
 		} else {
-			Tendiwa.getLogger().warn("Floor with name " + region.name + "_" + region.index + " has its sprite, but it is not declared in ontology");
+			logger.warn("Floor with name " + region.name + "_" + region.index + " has its sprite, but it is not declared in ontology");
 		}
 	}
 	for (Map.Entry<String, FloorType> e : name2Type.entrySet()) {

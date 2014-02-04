@@ -13,10 +13,6 @@ public class TendiwaLibgdxClientProvider implements TendiwaClientProvider {
 @Override
 public TendiwaClient getClient() {
 	Injector injector = Guice.createInjector(new TendiwaLibgdxModule());
-	new LwjglApplication(
-		injector.getInstance(Game.class),
-		injector.getInstance(LwjglApplicationConfiguration.class)
-	);
 	return injector.getInstance(TendiwaLibgdxClient.class);
 }
 }

@@ -4,7 +4,8 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.tendiwa.core.EnhancedRectangle;
+import com.google.inject.name.Named;
+import org.tendiwa.core.World;
 import org.tendiwa.core.meta.CellPosition;
 
 @Singleton
@@ -12,22 +13,8 @@ public class GameScreenViewport {
 private final int windowWidth;
 private final int windowHeight;
 private final int windowWidthCells;
-
-public int getMaxStartX() {
-	return maxStartX;
-}
-
-public int getMaxStartY() {
-	return maxStartY;
-}
-
 private final int windowHeightCells;
 private final int maxStartX;
-
-public int getCameraMoveStep() {
-	return cameraMoveStep;
-}
-
 private final int cameraMoveStep = 1;
 private final int maxStartY;
 private final int maxPixelX;
@@ -41,7 +28,7 @@ private int startPixelX;
 private int startPixelY;
 
 @Inject
-GameScreenViewport(EnhancedRectangle world, CellPosition player) {
+GameScreenViewport(@Named("current_player_world") World world, @Named("player") CellPosition player) {
 	windowWidth = Gdx.graphics.getWidth();
 	windowHeight = Gdx.graphics.getHeight();
 	windowWidthCells = (int) Math.ceil(((float) windowWidth) / GameScreen.TILE_SIZE);
@@ -55,6 +42,18 @@ GameScreenViewport(EnhancedRectangle world, CellPosition player) {
 
 	centerCamera(player.getX() * GameScreen.TILE_SIZE, player.getY() * GameScreen.TILE_SIZE);
 	camera.update();
+}
+
+public int getMaxStartX() {
+	return maxStartX;
+}
+
+public int getMaxStartY() {
+	return maxStartY;
+}
+
+public int getCameraMoveStep() {
+	return cameraMoveStep;
 }
 
 public int getWindowWidthPixels() {
@@ -148,6 +147,7 @@ public int getMaxRenderCellX() {
 public int getMaxRenderCellY() {
 	return startCellY + windowHeightCells + (startPixelY % GameScreen.TILE_SIZE == 0 ? 0 : 1) + (windowHeightCells % 2 == 0 ? 0 : 1);
 }
+
 public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {
 	return x >= startScreenCellX && x < startScreenCellX + widthInCells && y >= startScreenCellY && y < startScreenCellY + heightInCells;
 }

@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
@@ -16,8 +17,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.tendiwa.client.rendering.effects.Blood;
 import org.tendiwa.client.rendering.markers.MarkersRegistry;
-import org.tendiwa.client.ui.factories.SoundActorFactory;
-import org.tendiwa.client.ui.factories.WallActorFactory;
+import org.tendiwa.client.ui.factories.*;
 import org.tendiwa.client.ui.model.MessageLog;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
@@ -46,6 +46,12 @@ private final RenderWorld renderWorld;
 private final GameScreen gameScreen;
 private final SoundActorFactory soundActorFactory;
 private final Seer playerSeer;
+private final BorderObjectActorFactory borderObjectActorFactory;
+private final ItemActorFactory itemActorFactory;
+private final ProjectileActorFactory projectileActorFactory;
+private final ObjectActorFactory objectActorFactory;
+private final TimeStream timeStream;
+private final World world;
 private final WallActorFactory wallActorFactory;
 private final CharacterActorFactory characterActorFactory;
 private final MarkersRegistry markersRegistry;
@@ -57,8 +63,30 @@ private Multimap<Integer, Actor> plane2actors = HashMultimap.create();
 private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors = HashBasedTable.create();
 
 @Inject
-TendiwaStage(WallActorFactory wallActorFactory, CharacterActorFactory characterActorFactory, final MessageLog messageLog, final Game game, MarkersRegistry markersRegistry, @Named("player") final Character player, Observable model, final RenderWorld renderWorld, GameScreenViewport viewport, final GameScreen gameScreen, SoundActorFactory soundActorFactory, Seer playerSeer) {
-	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, gameScreen.batch);
+TendiwaStage(
+	TimeStream timeStream,
+	@Named("game_screen_batch") Batch batch,
+	@Named("current_player_world") final World world,
+	WallActorFactory wallActorFactory,
+	CharacterActorFactory characterActorFactory,
+	final MessageLog messageLog,
+	final Game game,
+	MarkersRegistry markersRegistry,
+	@Named("player") final Character player,
+	@Named("tendiwa") Observable model,
+	final RenderWorld renderWorld,
+	GameScreenViewport viewport,
+	final GameScreen gameScreen,
+	SoundActorFactory soundActorFactory,
+	@Named("player_seer") Seer playerSeer,
+	BorderObjectActorFactory borderObjectActorFactory,
+	final ItemActorFactory itemActorFactory,
+	final ProjectileActorFactory projectileActorFactory,
+	final ObjectActorFactory objectActorFactory
+) {
+	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, batch);
+	this.timeStream = timeStream;
+	this.world = world;
 	this.wallActorFactory = wallActorFactory;
 	this.characterActorFactory = characterActorFactory;
 	this.markersRegistry = markersRegistry;
@@ -67,6 +95,10 @@ TendiwaStage(WallActorFactory wallActorFactory, CharacterActorFactory characterA
 	this.gameScreen = gameScreen;
 	this.soundActorFactory = soundActorFactory;
 	this.playerSeer = playerSeer;
+	this.borderObjectActorFactory = borderObjectActorFactory;
+	this.itemActorFactory = itemActorFactory;
+	this.projectileActorFactory = projectileActorFactory;
+	this.objectActorFactory = objectActorFactory;
 	setCamera(viewport.getCamera());
 	initializeActors();
 	model.subscribe(new Observer<EventFovChange>() {
@@ -104,7 +136,7 @@ TendiwaStage(WallActorFactory wallActorFactory, CharacterActorFactory characterA
 		@Override
 		public void update(EventMove event, EventEmitter<EventMove> emitter) {
 			Actor characterActor = getCharacterActor(event.character);
-			int index = event.character.getY() * Tendiwa.getWorldWidth() + event.character.getX();
+			int index = event.character.getY() * world.getWidth() + event.character.getX();
 			sortActorsByY();
 
 			if (gameScreen.getConfig().animationsEnabled) {
@@ -171,10 +203,11 @@ TendiwaStage(WallActorFactory wallActorFactory, CharacterActorFactory characterA
 
 		@Override
 		public void update(final EventItemDisappear event, EventEmitter<EventItemDisappear> emitter) {
-			Actor actor = obtainItemActor(
+			Actor actor = itemActorFactory.create(
 				event.x,
 				event.y,
-				event.item
+				event.item,
+				renderWorld.getCurrentPlane()
 			);
 			if (gameScreen.getConfig().animationsEnabled) {
 				AlphaAction alphaAction = new AlphaAction();
@@ -302,7 +335,6 @@ TendiwaStage(WallActorFactory wallActorFactory, CharacterActorFactory characterA
 }
 
 private void initializeActors() {
-	TimeStream timeStream = gameScreen.backendWorld.getPlayer().getTimeStream();
 	for (Character character : timeStream.getCharacters()) {
 		CharacterActor actor = createCharacterActor(character);
 		characterActors.put(character, actor);
@@ -347,18 +379,6 @@ public com.badlogic.gdx.scenes.scene2d.Actor getPlayerCharacterActor() {
 	return playerCharacterActor;
 }
 
-/**
- * Returns an existing ItemActor for a {@link org.tendiwa.core.RememberedItem}, or creates a new ItemActor for a
- * RememberedItem and returns it.
- *
- * @param item
- * 	A remembered item.
- * @return An existing or a new ItemActor.
- */
-public Actor obtainItemActor(int x, int y, Item item) {
-	return new ItemActor(x, y, item, renderWorld.getCurrentPlane());
-}
-
 public void removeItemActor(Item item) {
 	getRoot().removeActor(itemActors.get(item));
 }
@@ -388,12 +408,12 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 	Action action;
 	boolean rotating = false;
 	if (style == EventProjectileFly.FlightStyle.CAST && item instanceof Item) {
-		actor = obtainItemActor(fromX, fromY, (Item) item);
+		actor = itemActorFactory.create(fromX, fromY, (Item) item, renderWorld.getCurrentPlane());
 		rotating = true;
 	} else if (item instanceof SpellProjectile) {
 		actor = new SpellProjectileFireballActor(fromX, fromY);
 	} else {
-		actor = new ProjectileActor(item, fromX, fromY, toX, toY, renderWorld.getCurrentPlane());
+		actor = projectileActorFactory.create(item, fromX, fromY, toX, toY, renderWorld.getCurrentPlane());
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
@@ -449,7 +469,7 @@ public void addWallActor(int x, int y) {
 	wallActors.put(getWallActorKey(x, y), actor);
 //	actor.setVisible(false);
 	addActor(actor);
-	actor.setZIndex(y * Tendiwa.getWorldWidth() + x);
+	actor.setZIndex(y * world.getWidth() + x);
 }
 
 public void removeWallActor(int x, int y) {
@@ -468,7 +488,7 @@ public void removeWallActor(int x, int y) {
  * @return A key which is a hash of 2 coordinates.
  */
 private int getWallActorKey(int x, int y) {
-	return x * gameScreen.backendWorld.getHeight() + y;
+	return x * world.getHeight() + y;
 }
 
 /**
@@ -485,7 +505,12 @@ public boolean hasWallActor(int x, int y) {
 }
 
 public void addObjectActor(int x, int y) {
-	ObjectActor actor = new ObjectActor(x, y, player.getPlane().getGameObject(x, y), renderWorld.getCurrentPlane());
+	ObjectActor actor = objectActorFactory.create(
+		x,
+		y,
+		player.getPlane().getGameObject(x, y),
+		renderWorld.getCurrentPlane()
+	);
 	plane2actors.put(player.getPlane().getLevel(), actor);
 	addActor(actor);
 }
@@ -503,18 +528,18 @@ public WallActor getWallActor(int worldX, int worldY) {
 
 public BorderObjectActor addBorderObjectActor(RenderBorder border) {
 	assert border.getObject() != null;
-	BorderObjectActor actor = new BorderObjectActor(
+	BorderObjectActor actor = borderObjectActorFactory.create(
 		border,
 		border.getObject(),
 		renderWorld.getCurrentPlane()
 	);
-	borderObjectActors.put(Chunk.cellHash(border.getX(), border.getY(), Tendiwa.getWorldHeight()), border.getSide(), actor);
+	borderObjectActors.put(Chunk.cellHash(border.getX(), border.getY(), world.getHeight()), border.getSide(), actor);
 	addActor(actor);
 	return actor;
 }
 
 public void removeBorderObjectActor(int worldX, int worldY, CardinalDirection side) {
-	BorderObjectActor removedActor = borderObjectActors.remove(Chunk.cellHash(worldX, worldY, Tendiwa.getWorldHeight()), side);
+	BorderObjectActor removedActor = borderObjectActors.remove(Chunk.cellHash(worldX, worldY, world.getHeight()), side);
 	getRoot().removeActor(removedActor);
 }
 

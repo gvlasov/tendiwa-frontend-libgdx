@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.core.Chunk;
 import org.tendiwa.core.meta.CellPosition;
@@ -16,7 +17,7 @@ public static Texture texture;
 private final CellPosition player;
 
 @Inject
-public CellSelectionPlainActor(CellPosition player) {
+public CellSelectionPlainActor(@Named("player") CellPosition player) {
 	this.player = player;
 }
 

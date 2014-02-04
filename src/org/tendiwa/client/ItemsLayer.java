@@ -3,6 +3,7 @@ package org.tendiwa.client;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
@@ -15,14 +16,26 @@ private final Batch batch;
 private final GameScreenViewport viewport;
 private final RenderWorld renderWorld;
 private final Character player;
+private final ShaderProgram drawWithRgb06Shader;
+private final ShaderProgram defaultShader;
 private final TextureRegion multipleItemsMarker;
 
 @Inject
-ItemsLayer(@Named("game_screen_batch") Batch batch, GameScreenViewport viewport, RenderWorld renderWorld, AtlasUi atlasUi, Character player) {
+ItemsLayer(
+	@Named("game_screen_batch") Batch batch,
+	GameScreenViewport viewport,
+	RenderWorld renderWorld,
+	AtlasUi atlasUi,
+	@Named("player") Character player,
+    @Named("shader_draw_with_rgb_06") ShaderProgram drawWithRgb06Shader,
+    @Named("shader_default") ShaderProgram defaultShader
+) {
 	this.batch = batch;
 	this.viewport = viewport;
 	this.renderWorld = renderWorld;
 	this.player = player;
+	this.drawWithRgb06Shader = drawWithRgb06Shader;
+	this.defaultShader = defaultShader;
 	multipleItemsMarker = atlasUi.findRegion("multiItem");
 }
 
@@ -52,7 +65,7 @@ void draw() {
 			}
 		}
 	}
-	batch.setShader(GameScreen.drawWithRGB06Shader);
+	batch.setShader(drawWithRgb06Shader);
 	for (int x = viewport.getStartCellX(); x < maxX; x++) {
 		for (int y = viewport.getStartCellY(); y < maxY; y++) {
 			if (renderPlane.hasAnyUnseenItems(x, y)) {
@@ -67,7 +80,7 @@ void draw() {
 		}
 	}
 	batch.end();
-	batch.setShader(GameScreen.defaultShader);
+	batch.setShader(defaultShader);
 }
 
 private TextureAtlas.AtlasRegion getTexture(ItemType type) {

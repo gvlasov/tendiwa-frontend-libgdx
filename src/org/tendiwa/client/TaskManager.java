@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.tendiwa.core.Character;
 
 @Singleton
@@ -10,7 +11,7 @@ private final Character player;
 Task currentTask;
 
 @Inject
-TaskManager(Character player) {
+TaskManager(@Named("player") Character player) {
 
 	this.player = player;
 }

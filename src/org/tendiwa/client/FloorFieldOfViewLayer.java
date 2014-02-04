@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.tendiwa.core.RenderCell;
 import org.tendiwa.core.RenderWorld;
 import org.tendiwa.core.meta.CellPosition;
@@ -25,20 +26,34 @@ private final CellPosition player;
 private final RenderWorld renderWorld;
 private final FrameBuffer depthTestFrameBuffer;
 private final PostProcessor postProcessor;
+private final ShaderProgram halfTransparencyShader;
+private final ShaderProgram writeOpaqueToDepthShader;
 private final GameScreenViewport viewport;
 private int uNotYetSeenCellsAnimationState;
 private int uNotYetSeenCellsTime;
 private boolean renderNotYetSeenCells = false;
 
 @Inject
-FloorFieldOfViewLayer(Batch batch, CellPosition player, RenderWorld renderWorld, FrameBuffer depthTestFrameBuffer, PostProcessor postProcessor, GameScreenViewport viewport) {
+FloorFieldOfViewLayer(
+	@Named("game_screen_batch") Batch batch,
+	@Named("player") CellPosition player,
+	RenderWorld renderWorld,
+	@Named("game_screen_depth_test_fb") FrameBuffer depthTestFrameBuffer,
+	@Named("game_screen_default_post_processor") PostProcessor postProcessor,
+	@Named("shader_half_transparency") ShaderProgram halfTransparencyShader,
+	@Named("shader_write_opaque_to_depth") ShaderProgram writeOpaqueToDepthShader,
+	GameScreenViewport viewport,
+	FovEdgeOpaque fovEdgeOpaque
+) {
 	this.batch = batch;
 	this.player = player;
 	this.renderWorld = renderWorld;
 	this.depthTestFrameBuffer = depthTestFrameBuffer;
 	this.postProcessor = postProcessor;
+	this.halfTransparencyShader = halfTransparencyShader;
+	this.writeOpaqueToDepthShader = writeOpaqueToDepthShader;
 	this.viewport = viewport;
-	fovEdgeOpaque = new FovEdgeOpaque();
+	this.fovEdgeOpaque = fovEdgeOpaque;
 	fullScreenQuad = createFullScreenQuad();
 	notYetSeenShader = new ShaderProgram(
 		Gdx.files.internal("shaders/noTransformation.v.glsl"),
@@ -88,7 +103,7 @@ public void draw() {
 	Gdx.gl.glColorMask(true, true, true, true);
 
 	// Draw transitions to unseen cells (half-transparent)
-	fovEdgeOpaque.batch.setShader(fovEdgeOpaque.halfTransparencyShader);
+	fovEdgeOpaque.batch.setShader(halfTransparencyShader);
 	fovEdgeOpaque.batch.begin();
 	for (int x = viewport.getStartCellX(); x < maxRenderCellX; x++) {
 		for (int y = viewport.getStartCellY(); y < maxRenderCellY; y++) {
@@ -128,7 +143,7 @@ public void draw() {
 	Gdx.gl.glClearDepthf(1.0f);
 	Gdx.gl.glClear(GL10.GL_DEPTH_BUFFER_BIT);
 	Gdx.gl.glDepthFunc(GL10.GL_LESS);
-	fovEdgeOpaque.batch.setShader(WallActor.writeOpaqueToDepthShader);
+	fovEdgeOpaque.batch.setShader(writeOpaqueToDepthShader);
 	fovEdgeOpaque.batch.begin();
 	Gdx.gl.glDepthMask(true);
 	for (int x = viewport.getStartCellX(); x < maxRenderCellX; x++) {

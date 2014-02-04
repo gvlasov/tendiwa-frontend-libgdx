@@ -6,6 +6,7 @@ import org.tendiwa.client.TendiwaWidget;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.events.EventGetDamage;
+import org.tendiwa.core.events.EventSelectPlayerCharacter;
 import org.tendiwa.core.observation.EventEmitter;
 import org.tendiwa.core.observation.Observable;
 import org.tendiwa.core.observation.Observer;
@@ -19,7 +20,7 @@ private final int height;
 private int hp;
 private int maxHp;
 
-private UiHealthBar(Observable model, Character player, ColorFillFactory colorFillFactory) {
+private UiHealthBar(Observable model, ColorFillFactory colorFillFactory) {
 	super();
 	this.width = 200;
 	this.height = 16;
@@ -37,8 +38,14 @@ private UiHealthBar(Observable model, Character player, ColorFillFactory colorFi
 			emitter.done(this);
 		}
 	}, EventGetDamage.class);
-	changeHp(player.getHp());
-	changeMaxHp(player.getMaxHP());
+	model.subscribe(new Observer<EventSelectPlayerCharacter>() {
+		@Override
+		public void update(EventSelectPlayerCharacter event, EventEmitter<EventSelectPlayerCharacter> emitter) {
+			changeHp(event.player.getHp());
+			changeMaxHp(event.player.getMaxHP());
+		}
+	}, EventSelectPlayerCharacter.class);
+
 }
 
 public void changeHp(int hp) {

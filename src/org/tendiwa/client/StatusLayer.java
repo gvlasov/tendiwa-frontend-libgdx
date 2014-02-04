@@ -1,9 +1,11 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.client.ui.model.CursorPosition;
 
@@ -14,13 +16,15 @@ import java.util.List;
 public class StatusLayer {
 private final GameScreen gameScreen;
 private final BitmapFont font;
+private final Batch batch;
 private final GameScreenViewport viewport;
 private List<Object> lines = new LinkedList<>();
 private int lineHeight = 18;
 private int padding = 20;
 
 @Inject
-public StatusLayer(final GameScreenViewport viewport, final GameScreen gameScreen, FontRegistry fontRegistry, final CursorPosition cursorPosition) {
+public StatusLayer(@Named("game_screen_batch") Batch batch, final GameScreenViewport viewport, final GameScreen gameScreen, FontRegistry fontRegistry, final CursorPosition cursorPosition) {
+	this.batch = batch;
 	this.viewport = viewport;
 	this.font = fontRegistry.obtain(20, true);
 	this.gameScreen = gameScreen;
@@ -63,19 +67,19 @@ public StatusLayer(final GameScreenViewport viewport, final GameScreen gameScree
 }
 
 public void draw() {
-	gameScreen.batch.begin();
+	batch.begin();
 	int lineNumber = 0;
 	for (Object line : lines) {
 
 		font.draw(
-			gameScreen.batch,
+			batch,
 			line.toString(),
 			viewport.getStartPixelX()+ padding,
 			viewport.getStartPixelY() + padding + lineHeight * lineNumber
 		);
 		lineNumber++;
 	}
-	gameScreen.batch.end();
+	batch.end();
 }
 
 private void addLine(Object line) {

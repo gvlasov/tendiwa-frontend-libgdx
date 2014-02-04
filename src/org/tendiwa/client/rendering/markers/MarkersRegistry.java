@@ -5,6 +5,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import org.tendiwa.client.TendiwaStage;
 import org.tendiwa.core.RenderBorder;
 import org.tendiwa.core.events.EventFovChange;
 import org.tendiwa.core.observation.EventEmitter;
@@ -20,7 +21,7 @@ private final Stage stage;
 Collection<Actor> markers = new LinkedList<>();
 
 @Inject
-public MarkersRegistry(Observable model, @Named("tendiwa_stage") Stage stage) {
+public MarkersRegistry(@Named("tendiwa")Observable model, TendiwaStage stage) {
 	this.stage = stage;
 	model.subscribe(new Observer<EventFovChange>() {
 

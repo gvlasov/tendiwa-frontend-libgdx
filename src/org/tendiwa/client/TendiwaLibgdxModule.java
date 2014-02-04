@@ -2,18 +2,28 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import com.badlogic.gdx.graphics.g2d.Batch;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.Scopes;
+import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.tendiwa.client.ui.actors.CellSelectionActor;
 import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
+import org.tendiwa.client.ui.factories.ShaderProgramFactory;
 import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.client.ui.model.CursorPosition;
-import org.tendiwa.core.Character;
 import org.tendiwa.core.dependencies.PlayerCharacterProvider;
 import org.tendiwa.core.dependencies.WorldProvider;
+import org.tendiwa.core.meta.CellPosition;
 
 public class TendiwaLibgdxModule extends AbstractModule {
 
@@ -32,13 +42,76 @@ protected void configure() {
 	bind(FontRegistry.class).in(Scopes.SINGLETON);
 	bind(CellSelectionActor.class).to(CellSelectionPlainActor.class).in(Scopes.SINGLETON);
 	bind(GameScreenViewport.class).in(Scopes.SINGLETON);
-	bind(Character.class).annotatedWith(Names.named("player")).toProvider(PlayerCharacterProvider.class);
-	bind(PlayerCharacterProvider.class).in(Scopes.SINGLETON);
 	bind(WorldProvider.class).in(Scopes.SINGLETON);
+	bind(Batch.class)
+		.annotatedWith(Names.named("game_screen_batch"))
+		.to(SpriteBatch.class);
+	bind(CellPosition.class)
+		.annotatedWith(Names.named("player"))
+		.toProvider(PlayerCharacterProvider.class);
+	bind(FreeTypeFontGenerator.class)
+		.toProvider(FreeTypeFontGeneratorProvider.class)
+		.in(Scopes.SINGLETON);
+	bind(FrameBuffer.class)
+		.annotatedWith(Names.named("game_screen_depth_test_fb"))
+		.toProvider(DepthTestFramebufferProvider.class);
+	bind(PostProcessor.class)
+		.annotatedWith(Names.named("game_screen_default_post_processor"))
+		.toProvider(PostProcessorProvider.class);
 	try {
 		bind(LwjglApplication.class).toConstructor(LwjglApplication.class.getConstructor(ApplicationListener.class, LwjglApplicationConfiguration.class));
 	} catch (NoSuchMethodException e) {
 		e.printStackTrace();
 	}
 }
+
+@Provides
+@Named("shader_half_transparency")
+private ShaderProgram provideHalfTransparencyShader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/fovHalfTransparency.f.glsl"));
 }
+
+@Provides
+@Named("shader_draw_with_rgb_06")
+private ShaderProgram provideDrawWithRgb06Shader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
+}
+
+@Provides
+@Named("shader_fov_transition")
+private ShaderProgram provideFovTransitionShader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/fovTransition.f.glsl"));
+}
+
+@Provides
+@Named("shader_write_opaque_to_depth")
+private ShaderProgram provideWriteOpaqueToDepthShader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
+}
+
+@Provides
+@Named("shader_draw_opaque_to_depth_05")
+private ShaderProgram provideDrawOpaqueToDepth05Shader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl"));
+}
+
+@Provides
+@Named("shader_draw_with_depth_0")
+private ShaderProgram provideDrawWithDepthOShader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
+}
+
+@Provides
+@Named("shader_opaque_0_transparent_05_depth")
+private ShaderProgram provideOpaque0Transparent05DepthShader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
+}
+
+@Provides
+@Named("shader_liquid_floor_animate")
+private ShaderProgram provideLiquidFloorAnimateShader(ShaderProgramFactory factory) {
+	return factory.create(Gdx.files.internal("shaders/liquidFloorAnimate.f.glsl"));
+}
+
+}
+

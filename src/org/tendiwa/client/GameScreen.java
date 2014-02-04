@@ -6,15 +6,15 @@ import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
-import com.bitfire.utils.ShaderLoader;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import org.apache.log4j.Logger;
 import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.core.Character;
@@ -26,10 +26,7 @@ import java.util.Map;
 public class GameScreen implements Screen {
 
 public static final int TILE_SIZE = 32;
-static final ShaderProgram defaultShader = SpriteBatch.createDefaultShader();
-static final ShaderProgram drawWithRGB06Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithRGB06.f.glsl"));
-final SpriteBatch batch;
-final FrameBuffer depthTestFrameBuffer;
+private final Batch batch;
 private final TextureAtlas atlasObjects;
 private final FloorLayer floorLayer;
 private final FloorFieldOfViewLayer floorFieldOfViewLayer;
@@ -42,22 +39,42 @@ private final StatusLayer statusLayer;
 private final GameScreenViewport viewport;
 private final GraphicsConfig config;
 private final CursorPosition cellSelection;
+private final PostProcessor postProcessor;
 RenderPlane renderPlane;
 /**
  * The World object in backend (not always consistent with current animation state, so you shouldn't read from it
  * directly unless absolutely necessary. For listening for changes in the world use {@link
  * org.tendiwa.core.observation.Event}s.
  */
-World backendWorld;
-Character player;
-PostProcessor postProcessor;
+private World backendWorld;
+private Character player;
 private Map<Integer, GameObject> objects = new HashMap<>();
 private HorizontalPlane currentPlane;
 private RenderWorld renderWorld;
 private Actor cellSelectionActor;
+private final Logger logger;
 
 @Inject
-public GameScreen(CellNetLayer cellNetLayer, ItemsLayer itemsLayer, FloorLayer floorLayer, FloorFieldOfViewLayer floorFieldOfViewLayer, GameScreenViewport viewport, TendiwaUiStage uiStage, GraphicsConfig config, TendiwaStage stage, GameScreenInputProcessor gameScreenInputProcessor, CursorPosition cellSelection, StatusLayer statusLayer, CellSelectionPlainActor cellSelectionPlainActor) {
+public GameScreen(
+	@Named("game_screen_default_post_processor") PostProcessor postProcessor,
+	@Named("current_player_world") World world,
+	@Named("game_screen_batch") Batch batch,
+	CellNetLayer cellNetLayer,
+	ItemsLayer itemsLayer,
+	FloorLayer floorLayer,
+	FloorFieldOfViewLayer floorFieldOfViewLayer,
+	GameScreenViewport viewport,
+	TendiwaUiStage uiStage,
+	GraphicsConfig config,
+	TendiwaStage stage,
+	GameScreenInputProcessor gameScreenInputProcessor,
+	CursorPosition cellSelection,
+	StatusLayer statusLayer,
+	CellSelectionPlainActor cellSelectionPlainActor,
+    Logger logger
+) {
+	this.postProcessor = postProcessor;
+	this.backendWorld = world;
 	this.cellNetLayer = cellNetLayer;
 	this.itemsLayer = itemsLayer;
 	this.floorLayer = floorLayer;
@@ -66,20 +83,13 @@ public GameScreen(CellNetLayer cellNetLayer, ItemsLayer itemsLayer, FloorLayer f
 	this.config = config;
 	this.cellSelection = cellSelection;
 	this.cellSelectionActor = cellSelectionPlainActor;
+	this.logger = logger;
 
 	atlasObjects = new TextureAtlas(Gdx.files.internal("pack/objects.atlas"), true);
 
 	TransitionPregenerator.initTileTextureRegionProvider(100);
 
-	// Sprite batch for drawing to world.
-	batch = new SpriteBatch();
-
-	depthTestFrameBuffer = new FrameBuffer(
-		Pixmap.Format.RGBA8888,
-		viewport.getWindowWidthPixels(),
-		viewport.getWindowHeightPixels(),
-		true
-	);
+	this.batch = batch;
 
 	this.stage = stage;
 
@@ -89,35 +99,9 @@ public GameScreen(CellNetLayer cellNetLayer, ItemsLayer itemsLayer, FloorLayer f
 	this.uiStage = uiStage;
 	inputMultiplexer = new InputMultiplexer(uiStage, gameScreenInputProcessor);
 	Gdx.input.setInputProcessor(inputMultiplexer);
-	initPostProcessor();
 
 }
 
-public static ShaderProgram createShader(FileHandle file) {
-	ShaderProgram shader = new ShaderProgram(defaultShader.getVertexShaderSource(), file.readString());
-	if (!shader.isCompiled()) {
-		Tendiwa.getLogger().error(shader.getLog());
-		throw new RuntimeException("Could not compile a shader");
-	}
-	return shader;
-}
-
-private void initPostProcessor() {
-	ShaderLoader.BasePath = "shaders/postprocessing/";
-	ShaderLoader.Pedantic = false;
-	postProcessor = new PostProcessor(false, false, true);
-//	CrtMonitor effect = new CrtMonitor(1024, 768, true, true, CrtScreen.RgbMode.ChromaticAberrations, 0);
-
-//	Bloom bloom = new Bloom(1024, 768);
-//	Curvature curve = new Curvature();
-//	curve.setDistortion(0.5f);
-//	bloom.setBloomIntesity(1.0f);
-//	postProcessor.addEffect(curve);
-//	postProcessor.addEffect(bloom);
-//	CrtMonitor effect1 = new CrtMonitor(1024, 768, false, true, CrtScreen.RgbMode.ChromaticAberrations, 8);
-//	effect1.setTime(1);
-//	postProcessor.addEffect(effect1);
-}
 
 /**
  * Sets continuous rendering. Needed for restoration of this Screen after switching from another screen with
@@ -182,7 +166,6 @@ private void drawObjects() {
 	}
 	batch.end();
 }
-
 
 public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
 	return new EnhancedPoint(

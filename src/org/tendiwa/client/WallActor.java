@@ -1,7 +1,6 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
-
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.Batch;
@@ -12,6 +11,8 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import com.bitfire.postprocessing.PostProcessor;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 import org.tendiwa.groovy.Registry;
@@ -25,12 +26,13 @@ import java.util.Map;
  */
 public class WallActor extends Actor {
 public static final Map<WallType, WallImageCache> caches = new HashMap<>();
-static final ShaderProgram writeOpaqueToDepthShader = GameScreen.createShader(Gdx.files.internal("shaders/writeOpaqueToDepth.f.glsl"));
-static final ShaderProgram drawOpaqueToDepth05Shader = new ShaderProgram(GameScreen.defaultShader.getVertexShaderSource(), Gdx.files.internal("shaders/drawOpaqueToDepth05.glsl").readString());
-static final ShaderProgram drawWithDepth0Shader = GameScreen.createShader(Gdx.files.internal("shaders/drawWithDepth0.f.glsl"));
-static final ShaderProgram opaque0Transparent05DepthShader = GameScreen.createShader(Gdx.files.internal("shaders/opaque0transparent05depth.f.glsl"));
-static final TransitionPregenerator fovEdgeOnWallToUnseen = new FovEdgeTransparent();
-static final TransitionPregenerator fovEdgeOnWallToNotYetSeen = new FovEdgeOpaque();
+private final ShaderProgram writeOpaqueToDepthShader;
+private final ShaderProgram drawOpaqueToDepth05Shader;
+private final ShaderProgram drawWithDepth0Shader;
+private final ShaderProgram opaque0Transparent05DepthShader;
+private final ShaderProgram defaultShader;
+private final TransitionPregenerator fovEdgeOnWallToUnseen;
+private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 private static final Map<WallType, Integer> wallHeights;
 private static final FrameBuffer depthTestFrameBuffer;
 private static final Batch depthTestBatch;
@@ -72,13 +74,37 @@ private final int y;
 private final int x;
 private final WallType type;
 
-public WallActor(PostProcessor postProcessor, RenderWorld renderWorld, FloorLayer floorLayer, Character player, GameScreenViewport viewport, RenderPlane renderPlane, int x, int y, WallType type) {
+public WallActor(
+	@Assisted int x,
+	@Assisted int y,
+	@Assisted WallType type,
+	@Assisted RenderPlane renderPlane,
+	PostProcessor postProcessor,
+	RenderWorld renderWorld,
+	FloorLayer floorLayer,
+	Character player,
+	GameScreenViewport viewport,
+	@Named("shader_write_opaque_to_depth") ShaderProgram writeOpaqueToDepthShader,
+	@Named("shader_draw_opaque_to_depth_05") ShaderProgram drawOpaqueToDepth05Shader,
+	@Named("shader_draw_with_depth_0") ShaderProgram drawWithDepth0Shader,
+	@Named("shader_opaque_0_transparent_05_depth") ShaderProgram opaque0Transparent05DepthShader,
+	@Named("shader_default") ShaderProgram defaultShader,
+	FovEdgeTransparent fovEdgeOnWallToUnseen,
+	FovEdgeOpaque fovEdgeOnWallToNotYetSeen
+) {
 	this.postProcessor = postProcessor;
 	this.renderWorld = renderWorld;
 	this.floorLayer = floorLayer;
 	this.player = player;
 	this.viewport = viewport;
 	this.renderPlane = renderPlane;
+	this.writeOpaqueToDepthShader = writeOpaqueToDepthShader;
+	this.drawOpaqueToDepth05Shader = drawOpaqueToDepth05Shader;
+	this.drawWithDepth0Shader = drawWithDepth0Shader;
+	this.opaque0Transparent05DepthShader = opaque0Transparent05DepthShader;
+	this.defaultShader = defaultShader;
+	this.fovEdgeOnWallToUnseen = fovEdgeOnWallToUnseen;
+	this.fovEdgeOnWallToNotYetSeen = fovEdgeOnWallToNotYetSeen;
 	this.type = type;
 	this.x = x;
 	this.y = y;
@@ -293,7 +319,7 @@ private void generateImage(RenderCell cell, RenderCell cellFromSouth, int imageH
 	// Draw seenCells walls again above the 0.5 depth mask, but now with rgb *= 0.6 so masked pixels appear darker
 	Gdx.gl.glColorMask(true, true, true, true);
 	Gdx.gl.glDepthFunc(GL10.GL_EQUAL);
-	depthTestBatch.setShader(GameScreen.drawWithRGB06Shader);
+//	depthTestBatch.setShader(GameScreen.drawWithRGB06Shader);
 	depthTestBatch.begin();
 	if (cell.isVisible()) {
 		depthTestBatch.draw(wall, 0, 0);
@@ -303,7 +329,7 @@ private void generateImage(RenderCell cell, RenderCell cellFromSouth, int imageH
 	Gdx.gl.glDepthMask(false);
 	Gdx.gl.glDisable(GL10.GL_DEPTH_TEST);
 
-	depthTestBatch.setShader(GameScreen.defaultShader);
+	depthTestBatch.setShader(defaultShader);
 
 	depthTestFrameBuffer.end();
 	cache.putImage(imageHash, depthTestFrameBuffer);

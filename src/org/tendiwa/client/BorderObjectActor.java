@@ -2,21 +2,38 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
-import org.tendiwa.core.*;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
+import org.tendiwa.core.Border;
+import org.tendiwa.core.BorderObject;
+import org.tendiwa.core.RenderPlane;
 
 public class BorderObjectActor extends Actor {
 private final BorderObject borderObject;
 private final RenderPlane renderPlane;
+private final ShaderProgram drawWithRgb06Shader;
+private final ShaderProgram defaultShader;
 private final Border border;
 private TextureAtlas.AtlasRegion atlasRegion;
 private int worldPixelX;
 private int worldPixelY;
 
-public BorderObjectActor(Border border, BorderObject borderObject, RenderPlane renderPlane) {
+@Inject
+public BorderObjectActor(
+	@Assisted Border border,
+	@Assisted BorderObject borderObject,
+	@Assisted RenderPlane renderPlane,
+	@Named("shader_draw_with_rb_06") ShaderProgram drawWithRgb06Shader,
+	@Named("shader_default") ShaderProgram defaultShader
+) {
 	this.border = border;
 	this.borderObject = borderObject;
 	this.renderPlane = renderPlane;
+	this.drawWithRgb06Shader = drawWithRgb06Shader;
+	this.defaultShader = defaultShader;
 	setX(border.x);
 	setY(border.y);
 	atlasRegion = AtlasBorderObjects.getInstance().findRegion(borderObject.getType().getResourceName() + (border.side.isVertical() ? "_hor" : "_ver"));
@@ -37,7 +54,7 @@ public void draw(Batch batch, float parentAlpha) {
 	boolean shaderWasChanged = false;
 	if (!renderPlane.isBorderVisible(border)) {
 		shaderWasChanged = true;
-		batch.setShader(GameScreen.drawWithRGB06Shader);
+		batch.setShader(drawWithRgb06Shader);
 	}
 	batch.draw(
 		atlasRegion,
@@ -45,7 +62,7 @@ public void draw(Batch batch, float parentAlpha) {
 		worldPixelY
 	);
 	if (shaderWasChanged) {
-		batch.setShader(GameScreen.defaultShader);
+		batch.setShader(defaultShader);
 	}
 }
 }

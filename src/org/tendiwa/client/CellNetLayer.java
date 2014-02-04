@@ -3,18 +3,22 @@ package org.tendiwa.client;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 
 public class CellNetLayer {
+private final Batch batch;
 private final GameScreenViewport viewport;
 private final GameScreen gameScreen;
 private final OrthographicCamera oneTileWiderCanera;
 private FrameBuffer cellNetFramebuffer;
 
 @Inject
-CellNetLayer(GameScreenViewport viewport, GameScreen gameScreen) {
+CellNetLayer(@Named("game_screen_batch") Batch batch, GameScreenViewport viewport, GameScreen gameScreen) {
+	this.batch = batch;
 	this.viewport = viewport;
 	this.gameScreen = gameScreen;
 	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, viewport.getWindowWidthPixels() + GameScreen.TILE_SIZE, viewport.getWindowHeightPixels() + GameScreen.TILE_SIZE, false);
@@ -51,8 +55,8 @@ void buildNet() {
  * Copies contents of the dedicated framebuffer to the {@link GameScreen}'s batch.
  */
 void draw() {
-	gameScreen.batch.begin();
-	gameScreen.batch.draw(cellNetFramebuffer.getColorBufferTexture(), viewport.getStartCellX() * GameScreen.TILE_SIZE, viewport.getStartCellY() * GameScreen.TILE_SIZE);
-	gameScreen.batch.end();
+	batch.begin();
+	batch.draw(cellNetFramebuffer.getColorBufferTexture(), viewport.getStartCellX() * GameScreen.TILE_SIZE, viewport.getStartCellY() * GameScreen.TILE_SIZE);
+	batch.end();
 }
 }
