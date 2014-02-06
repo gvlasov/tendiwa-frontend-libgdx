@@ -4,21 +4,21 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputMultiplexer;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.apache.log4j.Logger;
 import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
+import org.tendiwa.core.events.EventInitialTerrain;
+import org.tendiwa.core.observation.EventEmitter;
+import org.tendiwa.core.observation.Observable;
+import org.tendiwa.core.observation.Observer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,10 +52,11 @@ private Map<Integer, GameObject> objects = new HashMap<>();
 private HorizontalPlane currentPlane;
 private RenderWorld renderWorld;
 private Actor cellSelectionActor;
-private final Logger logger;
 
 @Inject
 public GameScreen(
+	@Named("tendiwa") Observable model,
+	final TendiwaLibgdxClient game,
 	@Named("game_screen_default_post_processor") PostProcessor postProcessor,
 	@Named("current_player_world") World world,
 	@Named("game_screen_batch") Batch batch,
@@ -67,11 +68,10 @@ public GameScreen(
 	TendiwaUiStage uiStage,
 	GraphicsConfig config,
 	TendiwaStage stage,
-	GameScreenInputProcessor gameScreenInputProcessor,
+	@Named("default") InputProcessor gameScreenInputProcessor,
 	CursorPosition cellSelection,
 	StatusLayer statusLayer,
-	CellSelectionPlainActor cellSelectionPlainActor,
-    Logger logger
+	CellSelectionPlainActor cellSelectionPlainActor
 ) {
 	this.postProcessor = postProcessor;
 	this.backendWorld = world;
@@ -83,11 +83,8 @@ public GameScreen(
 	this.config = config;
 	this.cellSelection = cellSelection;
 	this.cellSelectionActor = cellSelectionPlainActor;
-	this.logger = logger;
 
 	atlasObjects = new TextureAtlas(Gdx.files.internal("pack/objects.atlas"), true);
-
-	TransitionPregenerator.initTileTextureRegionProvider(100);
 
 	this.batch = batch;
 
@@ -99,9 +96,14 @@ public GameScreen(
 	this.uiStage = uiStage;
 	inputMultiplexer = new InputMultiplexer(uiStage, gameScreenInputProcessor);
 	Gdx.input.setInputProcessor(inputMultiplexer);
+	model.subscribe(new Observer<EventInitialTerrain>() {
+		@Override
+		public void update(EventInitialTerrain event, EventEmitter<EventInitialTerrain> emitter) {
+			game.setScreen(GameScreen.this);
+		}
+	}, EventInitialTerrain.class);
 
 }
-
 
 /**
  * Sets continuous rendering. Needed for restoration of this Screen after switching from another screen with
@@ -165,13 +167,6 @@ private void drawObjects() {
 		}
 	}
 	batch.end();
-}
-
-public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
-	return new EnhancedPoint(
-		(viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE,
-		(viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE
-	);
 }
 
 private TextureAtlas.AtlasRegion getObjectTextureByCell(int x, int y) {

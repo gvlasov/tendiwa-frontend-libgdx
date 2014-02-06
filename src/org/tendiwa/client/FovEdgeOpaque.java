@@ -15,10 +15,11 @@ private final ShaderProgram fovTransitionShader;
 
 @Inject
 public FovEdgeOpaque(
+	@Named("transitions") TileTextureRegionProvider tileTextureRegionProvider,
 	@Named("shader_half_transparency") ShaderProgram halfTransparencyShader,
 	@Named("shader_fov_transition") ShaderProgram fovTransitionShader
 ) {
-	super(4);
+	super(tileTextureRegionProvider, 4);
 	this.halfTransparencyShader = halfTransparencyShader;
 	this.fovTransitionShader = fovTransitionShader;
 	if (!this.fovTransitionShader.isCompiled()) {

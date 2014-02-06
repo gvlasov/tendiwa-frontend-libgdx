@@ -1,4 +1,4 @@
-package org.tendiwa.client;
+package org.tendiwa.client.ui.input;
 
 import com.badlogic.gdx.Input;
 

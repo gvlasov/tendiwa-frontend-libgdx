@@ -14,14 +14,12 @@ import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 public class SoundActorFactory {
 private final FontRegistry fontRegistry;
 private final ColorFillFactory colorFillFactory;
-private final TendiwaStage stage;
 
 @Inject
-SoundActorFactory(FontRegistry fontRegistry, ColorFillFactory colorFillFactory, TendiwaStage stage) {
+SoundActorFactory(FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
 	this.fontRegistry = fontRegistry;
 
 	this.colorFillFactory = colorFillFactory;
-	this.stage = stage;
 }
 
 public SoundActor create(SoundType type, int x, int y) {
@@ -33,7 +31,7 @@ public SoundActor create(SoundType type, int x, int y) {
 	actor.addAction(sequence(rotateBy(90, 0.3f), run(new Runnable() {
 		@Override
 		public void run() {
-			stage.getRoot().removeActor(actor);
+			actor.getParent().removeActor(actor);
 		}
 	})));
 	return actor;

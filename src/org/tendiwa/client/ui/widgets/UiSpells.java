@@ -8,15 +8,14 @@ import org.tendiwa.client.*;
 import org.tendiwa.client.ui.controller.SpellSelectionListener;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.SpellViewFactory;
-import org.tendiwa.client.ui.fonts.FontRegistry;
-import org.tendiwa.client.ui.model.CursorPosition;
+import org.tendiwa.client.ui.input.InputToActionMapper;
+import org.tendiwa.client.ui.input.KeyboardAction;
 import org.tendiwa.core.Spell;
 
 import java.util.Collection;
 import java.util.Map;
 
 public class UiSpells extends TendiwaWidget {
-private final CursorPosition cellSelection;
 private final GameScreen gameScreen;
 private final SpellViewFactory spellViewFactory;
 private final EntitySelectionListener<Spell> onActionSelected;
@@ -31,15 +30,20 @@ private Runnable onComplete = new Runnable() {
 };
 
 @Inject
-public UiSpells(TendiwaInputProcessor tendiwaInputProcessor, SpellViewFactory spellViewFactory, SpellSelectionListener spellSelectionListener, CursorPosition cellSelection, GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
+public UiSpells(
+	InputToActionMapper actionMapper,
+	SpellViewFactory spellViewFactory,
+	SpellSelectionListener spellSelectionListener,
+	GameScreen gameScreen,
+	ColorFillFactory colorFillFactory
+) {
 	super();
 	this.spellViewFactory = spellViewFactory;
 	this.onActionSelected = spellSelectionListener;
-	this.cellSelection = cellSelection;
 	this.gameScreen = gameScreen;
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	add(flowGroup).expand().fill();
-	tendiwaInputProcessor.putAction(Input.Keys.Z, new UiAction("action.castMenu") {
+	actionMapper.putAction(Input.Keys.Z, new KeyboardAction("action.castMenu") {
 		@Override
 		public void act() {
 			UiSpells.this.setVisible(true);

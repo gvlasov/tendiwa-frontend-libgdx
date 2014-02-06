@@ -5,6 +5,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import org.tendiwa.core.EnhancedPoint;
 import org.tendiwa.core.World;
 import org.tendiwa.core.meta.CellPosition;
 
@@ -74,7 +75,7 @@ public int getWindowHeightPixels() {
  * @param y
  * 	Y coordinate in pixels
  */
-void centerCamera(int x, int y) {
+public void centerCamera(int x, int y) {
 	if (x < windowWidth / 2) {
 		x = windowWidth / 2;
 	}
@@ -150,6 +151,13 @@ public int getMaxRenderCellY() {
 
 public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {
 	return x >= startScreenCellX && x < startScreenCellX + widthInCells && y >= startScreenCellY && y < startScreenCellY + heightInCells;
+}
+
+public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
+	return new EnhancedPoint(
+		(startPixelX + screenX) / GameScreen.TILE_SIZE,
+		(startPixelY + screenY) / GameScreen.TILE_SIZE
+	);
 }
 }
 

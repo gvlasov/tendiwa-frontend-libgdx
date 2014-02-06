@@ -1,7 +1,7 @@
 package org.tendiwa.client.ui.widgets;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -10,10 +10,13 @@ import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.client.*;
 import org.tendiwa.client.ui.controller.ActionSelectionListener;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.fonts.FontRegistry;
+import org.tendiwa.client.ui.input.InputToActionMapper;
+import org.tendiwa.client.ui.input.KeyboardAction;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
 
@@ -21,35 +24,37 @@ import java.util.Collection;
 import java.util.Map;
 
 public class UiActions extends TendiwaWidget {
-private final GameScreen gameScreen;
 private final Character player;
-private final EntitySelectionListener<CharacterAbility> onActionSelected;
 VerticalFlowGroup flowGroup = new VerticalFlowGroup();
 ItemToKeyMapper<CharacterAbility> mapper = new ItemToKeyMapper<>();
-private Runnable onComplete = new Runnable() {
-	@Override
-	public void run() {
-		UiActions.this.setVisible(false);
-		Gdx.input.setInputProcessor(gameScreen.getInputProcessor());
-	}
-};
 private Label.LabelStyle style;
-private EntitySelectionInputProcessor<CharacterAbility> actionInputProcessor;
 
 @Inject
-public UiActions(Character player, TendiwaInputProcessor tendiwaInputProcessor, final ActionSelectionListener onActionSelected, GameScreen gameScreen, FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
+public UiActions(
+	Character player,
+	InputToActionMapper actionMapper,
+	final ActionSelectionListener onActionSelected,
+	FontRegistry fontRegistry,
+	ColorFillFactory colorFillFactory,
+	@Named("default") final InputProcessor defaultInputProcessor,
+	final Input gdxInput
+) {
 	super();
 	this.player = player;
-	this.onActionSelected = onActionSelected;
-	this.gameScreen = gameScreen;
 	style = new Label.LabelStyle(fontRegistry.obtain(14, false), Color.WHITE);
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	add(flowGroup).expand().fill();
-	tendiwaInputProcessor.putAction(Input.Keys.A, new UiAction("action.actionsMenu") {
+	actionMapper.putAction(Input.Keys.A, new KeyboardAction("action.actionsMenu") {
 		@Override
 		public void act() {
-			UiActions.this.setVisible(true);
-			Gdx.input.setInputProcessor(new EntitySelectionInputProcessor<>(mapper, onActionSelected, onComplete));
+			setVisible(true);
+			gdxInput.setInputProcessor(new EntitySelectionInputProcessor<>(mapper, onActionSelected, new Runnable() {
+				@Override
+				public void run() {
+					setVisible(false);
+					gdxInput.setInputProcessor(defaultInputProcessor);
+				}
+			}));
 		}
 	});
 }

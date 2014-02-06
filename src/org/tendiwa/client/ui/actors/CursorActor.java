@@ -8,18 +8,19 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.tendiwa.client.GameScreen;
+import org.tendiwa.client.GameScreenViewport;
 import org.tendiwa.core.EnhancedPoint;
 
 @Singleton
 public class CursorActor extends Actor {
 private final Texture texture;
-private final GameScreen gameScreen;
+private final GameScreenViewport viewport;
 private int worldX;
 private int worldY;
 
 @Inject
-CursorActor(GameScreen gameScreen) {
-	this.gameScreen = gameScreen;
+CursorActor(GameScreenViewport viewport) {
+	this.viewport = viewport;
 	texture = buildCursorTexture();
 }
 
@@ -28,7 +29,7 @@ void setWorldCoords(int worldX, int worldY) {
 	this.worldY = worldY;
 }
 void updateCursorCoords() {
-	EnhancedPoint point = gameScreen.screenPixelToWorldCell(Gdx.input.getX(), Gdx.input.getY());
+	EnhancedPoint point = viewport.screenPixelToWorldCell(Gdx.input.getX(), Gdx.input.getY());
 	worldX = point.x;
 	worldY = point.y;
 }

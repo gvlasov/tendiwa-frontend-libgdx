@@ -1,10 +1,10 @@
-package org.tendiwa.client;
+package org.tendiwa.client.ui.input;
 
 public class Mapping {
 private final KeyCombination combination;
-private final UiAction action;
+private final KeyboardAction action;
 
-Mapping(KeyCombination combination, UiAction action) {
+Mapping(KeyCombination combination, KeyboardAction action) {
 	this.combination = combination;
 	this.action = action;
 }
@@ -13,7 +13,7 @@ public KeyCombination getCombination() {
 	return combination;
 }
 
-public UiAction getAction() {
+public KeyboardAction getAction() {
 	return action;
 }
 }

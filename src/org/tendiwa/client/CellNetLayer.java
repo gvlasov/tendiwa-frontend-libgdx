@@ -12,15 +12,13 @@ import com.google.inject.name.Named;
 public class CellNetLayer {
 private final Batch batch;
 private final GameScreenViewport viewport;
-private final GameScreen gameScreen;
 private final OrthographicCamera oneTileWiderCanera;
 private FrameBuffer cellNetFramebuffer;
 
 @Inject
-CellNetLayer(@Named("game_screen_batch") Batch batch, GameScreenViewport viewport, GameScreen gameScreen) {
+CellNetLayer(@Named("game_screen_batch") Batch batch, GameScreenViewport viewport) {
 	this.batch = batch;
 	this.viewport = viewport;
-	this.gameScreen = gameScreen;
 	cellNetFramebuffer = new FrameBuffer(Pixmap.Format.RGBA8888, viewport.getWindowWidthPixels() + GameScreen.TILE_SIZE, viewport.getWindowHeightPixels() + GameScreen.TILE_SIZE, false);
 	oneTileWiderCanera = new OrthographicCamera(Gdx.graphics.getWidth() + GameScreen.TILE_SIZE, Gdx.graphics.getHeight() + GameScreen.TILE_SIZE);
 	oneTileWiderCanera.setToOrtho(true, viewport.getWindowWidthPixels() + GameScreen.TILE_SIZE, viewport.getWindowHeightPixels() + GameScreen.TILE_SIZE);

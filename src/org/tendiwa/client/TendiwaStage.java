@@ -16,7 +16,6 @@ import com.google.common.collect.Table;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.tendiwa.client.rendering.effects.Blood;
-import org.tendiwa.client.rendering.markers.MarkersRegistry;
 import org.tendiwa.client.ui.factories.*;
 import org.tendiwa.client.ui.model.MessageLog;
 import org.tendiwa.core.*;
@@ -43,18 +42,17 @@ private static Comparator<Actor> ySorter = new Comparator<Actor>() {
 };
 private final Character player;
 private final RenderWorld renderWorld;
-private final GameScreen gameScreen;
 private final SoundActorFactory soundActorFactory;
 private final Seer playerSeer;
 private final BorderObjectActorFactory borderObjectActorFactory;
 private final ItemActorFactory itemActorFactory;
 private final ProjectileActorFactory projectileActorFactory;
 private final ObjectActorFactory objectActorFactory;
+private final GraphicsConfig config;
 private final TimeStream timeStream;
 private final World world;
 private final WallActorFactory wallActorFactory;
 private final CharacterActorFactory characterActorFactory;
-private final MarkersRegistry markersRegistry;
 private Map<Character, CharacterActor> characterActors = new HashMap<>();
 private com.badlogic.gdx.scenes.scene2d.Actor playerCharacterActor;
 private Map<Item, Actor> itemActors = new HashMap<>();
@@ -71,40 +69,42 @@ TendiwaStage(
 	CharacterActorFactory characterActorFactory,
 	final MessageLog messageLog,
 	final Game game,
-	MarkersRegistry markersRegistry,
 	@Named("player") final Character player,
 	@Named("tendiwa") Observable model,
 	final RenderWorld renderWorld,
 	GameScreenViewport viewport,
-	final GameScreen gameScreen,
 	SoundActorFactory soundActorFactory,
 	@Named("player_seer") Seer playerSeer,
 	BorderObjectActorFactory borderObjectActorFactory,
 	final ItemActorFactory itemActorFactory,
 	final ProjectileActorFactory projectileActorFactory,
-	final ObjectActorFactory objectActorFactory
+	final ObjectActorFactory objectActorFactory,
+    final BorderMarkerFactory borderMarkerFactory,
+    final GraphicsConfig config
 ) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, batch);
 	this.timeStream = timeStream;
 	this.world = world;
 	this.wallActorFactory = wallActorFactory;
 	this.characterActorFactory = characterActorFactory;
-	this.markersRegistry = markersRegistry;
 	this.player = player;
 	this.renderWorld = renderWorld;
-	this.gameScreen = gameScreen;
 	this.soundActorFactory = soundActorFactory;
 	this.playerSeer = playerSeer;
 	this.borderObjectActorFactory = borderObjectActorFactory;
 	this.itemActorFactory = itemActorFactory;
 	this.projectileActorFactory = projectileActorFactory;
 	this.objectActorFactory = objectActorFactory;
+	this.config = config;
 	setCamera(viewport.getCamera());
 	initializeActors();
 	model.subscribe(new Observer<EventFovChange>() {
 
 		@Override
 		public void update(EventFovChange event, EventEmitter<EventFovChange> emitter) {
+			for (Border border : event.seenBorders) {
+				borderMarkerFactory.create(border);
+			}
 			for (Integer coord : event.unseenCells) {
 //				if (gameScreen.getCurrentBackendPlane().hasWall(cell.x, cell.y)) {
 //					gameScreen.getStage().removeWallActor(cell.x, cell.y);
@@ -139,7 +139,7 @@ TendiwaStage(
 			int index = event.character.getY() * world.getWidth() + event.character.getX();
 			sortActorsByY();
 
-			if (gameScreen.getConfig().animationsEnabled) {
+			if (config.animationsEnabled) {
 				Action action;
 				if (event.movingStyle == MovingStyle.STEP) {
 					action = new MoveToAction();
@@ -181,7 +181,6 @@ TendiwaStage(
 	model.subscribe(new Observer<EventInitialTerrain>() {
 		@Override
 		public void update(EventInitialTerrain event, EventEmitter<EventInitialTerrain> emitter) {
-			game.setScreen(gameScreen);
 			for (RenderCell cell : event.seenCells) {
 				renderWorld.getCurrentPlane().seeCell(cell);
 				HorizontalPlane plane = player.getPlane();
@@ -209,7 +208,7 @@ TendiwaStage(
 				event.item,
 				renderWorld.getCurrentPlane()
 			);
-			if (gameScreen.getConfig().animationsEnabled) {
+			if (config.animationsEnabled) {
 				AlphaAction alphaAction = new AlphaAction();
 				alphaAction.setAlpha(0.0f);
 				alphaAction.setDuration(0.1f);
@@ -543,7 +542,4 @@ public void removeBorderObjectActor(int worldX, int worldY, CardinalDirection si
 	getRoot().removeActor(removedActor);
 }
 
-public MarkersRegistry getMarkersRegistry() {
-	return markersRegistry;
-}
 }

@@ -2,11 +2,14 @@ package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.tendiwa.core.*;
 import org.tendiwa.core.meta.Chance;
 
 /**
- * This class generates textures of transitions to a certain ammunitionType of floor and provides access to them.
+ * This class generates textures of transitions to a certain type of floor and provides access to them.
  */
 public class TransitionsToFloor extends TransitionPregenerator {
 private static final PixmapTextureAtlas pixmapTextureAtlasFloors;
@@ -21,8 +24,12 @@ private final FloorType floorType;
  * @param floorType
  * 	Type of a floor whose pixels will be in transitions obtained from this object.
  */
-TransitionsToFloor(FloorType floorType) {
-	super(4);
+@Inject
+TransitionsToFloor(
+	@Named("transitions") TileTextureRegionProvider tileTextureRegionProvider,
+	@Assisted FloorType floorType
+) {
+	super(tileTextureRegionProvider, 4);
 	this.floorType = floorType;
 	createTransitions();
 }

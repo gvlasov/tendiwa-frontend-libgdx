@@ -26,7 +26,7 @@ public BorderObjectActor(
 	@Assisted Border border,
 	@Assisted BorderObject borderObject,
 	@Assisted RenderPlane renderPlane,
-	@Named("shader_draw_with_rb_06") ShaderProgram drawWithRgb06Shader,
+	@Named("shader_draw_with_rgb_06") ShaderProgram drawWithRgb06Shader,
 	@Named("shader_default") ShaderProgram defaultShader
 ) {
 	this.border = border;

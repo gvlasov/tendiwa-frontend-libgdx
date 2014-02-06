@@ -6,6 +6,7 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.client.ui.widgets.*;
+import org.tendiwa.client.extensions.std.keyHints.KeyHints;
 
 public class SuseikaWidgetsPlacer implements WidgetsPlacer {
 private final Injector injector;
@@ -41,10 +42,10 @@ public void placeWidgets(Stage stage, Table table) {
 	actions.update();
 //	log.update();
 
-	UiKeyHints uiKeyHints = injector.getInstance(UiKeyHints.class);
-	stage.addActor(uiKeyHints);
-	uiKeyHints.update();
-	uiKeyHints.setVisible(false);
+	KeyHints keyHints = injector.getInstance(KeyHints.class);
+	stage.addActor(keyHints);
+	keyHints.update();
+	keyHints.setVisible(false);
 
 }
 }

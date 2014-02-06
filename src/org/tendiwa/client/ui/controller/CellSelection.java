@@ -1,8 +1,12 @@
 package org.tendiwa.client.ui.controller;
 
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputProcessor;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import com.google.inject.name.Named;
 import org.tendiwa.client.EntitySelectionListener;
-import org.tendiwa.client.GameScreen;
+import org.tendiwa.client.GameScreenViewport;
 import org.tendiwa.client.ui.actors.CellSelectionActor;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiMode;
@@ -10,31 +14,24 @@ import org.tendiwa.core.EnhancedPoint;
 
 public class CellSelection extends UiMode {
 private final EntitySelectionListener<EnhancedPoint> entitySelectionListener;
+private final Input gdxInput;
+private final GameScreenViewport viewport;
 private final CursorPosition model;
 private final CellSelectionActor view;
-private GameScreen gameScreen;
 
-/**
- * Adds a listener that will wait for a cell to be selected with {@link CursorPosition#selectCurrentCell()}.
- *
- * @param entitySelectionListener
- * 	A listener that will wait for a cell to be selected.
- */
-public CellSelection(GameScreen gameScreen, CursorPosition model, CellSelectionActor view, EntitySelectionListener<EnhancedPoint> entitySelectionListener) {
-	this.gameScreen = gameScreen;
+@Inject
+public CellSelection(
+	GameScreenViewport viewport,
+	CursorPosition model,
+	CellSelectionActor view,
+	@Assisted EntitySelectionListener<EnhancedPoint> entitySelectionListener,
+	Input gdxInput
+) {
+	this.viewport = viewport;
 	this.model = model;
 	this.view = view;
 	this.entitySelectionListener = entitySelectionListener;
-}
-
-@Override
-public void start() {
-
-}
-
-@Override
-public void cleanup() {
-
+	this.gdxInput = gdxInput;
 }
 
 @Override
@@ -69,7 +66,7 @@ public boolean keyTyped(char character) {
 	} else if (character == 'n') {
 		model.moveCursorBy(1, 1);
 	} else if (character == 'f' || character == ' ') {
-		entitySelectionListener.execute(model.getPoint());
+		selectCurrentCell();
 	} else {
 		return false;
 	}
@@ -78,8 +75,13 @@ public boolean keyTyped(char character) {
 
 @Override
 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-	entitySelectionListener.execute(model.getPoint());
+	selectCurrentCell();
 	return true;
+}
+
+private void selectCurrentCell() {
+	gdxInput.setInputProcessor(defaultInputProcessor);
+	entitySelectionListener.execute(model.getPoint());
 }
 
 @Override
@@ -94,7 +96,7 @@ public boolean touchDragged(int screenX, int screenY, int pointer) {
 
 @Override
 public boolean mouseMoved(int screenX, int screenY) {
-	EnhancedPoint point = gameScreen.screenPixelToWorldCell(screenX, screenY);
+	EnhancedPoint point = viewport.screenPixelToWorldCell(screenX, screenY);
 	model.setPoint(point);
 	view.setWorldCoordinates(point.x, point.y);
 	return true;

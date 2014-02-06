@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import org.tendiwa.client.ui.factories.TileTextureRegionProviderFactory;
 import org.tendiwa.core.WallType;
 
 /**
@@ -47,12 +50,17 @@ private int slots;
  * @param slots
  * 	How many wall images may be cached.
  */
-WallImageCache(WallType type, int slots) {
+@Inject
+WallImageCache(
+	TileTextureRegionProviderFactory factory,
+	@Assisted WallType type,
+	@Assisted int slots
+) {
 	this.slots = slots;
 	regions = new TextureRegion[slots];
 	TextureAtlas.AtlasRegion region = AtlasWalls.getInstance().findRegion(type.getResourceName());
 	assert region != null : type.getResourceName();
-	regionProvider = new TileTextureRegionProvider(slots, region.getRegionWidth(), region.getRegionHeight());
+	regionProvider = factory.create(slots, region.getRegionWidth(), region.getRegionHeight());
 	for (int i = 0; i < slots; i++) {
 		regions[i] = regionProvider.obtainFboTextureRegion();
 	}

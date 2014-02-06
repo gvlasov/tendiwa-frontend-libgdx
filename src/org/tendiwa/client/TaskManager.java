@@ -6,7 +6,7 @@ import com.google.inject.name.Named;
 import org.tendiwa.core.Character;
 
 @Singleton
-class TaskManager {
+public class TaskManager {
 private final Character player;
 Task currentTask;
 
@@ -16,7 +16,7 @@ TaskManager(@Named("player") Character player) {
 	this.player = player;
 }
 
-boolean trySettingTask(Task task) {
+public boolean trySettingTask(Task task) {
 	if (currentTask == null) {
 		currentTask = task;
 		return true;

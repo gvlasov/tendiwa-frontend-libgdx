@@ -1,15 +1,27 @@
 package org.tendiwa.client.ui.uiModes;
 
-import com.badlogic.gdx.InputProcessor;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
+import org.tendiwa.client.ui.input.ActionsAdder;
+import org.tendiwa.client.ui.input.InputToActionMapper;
+import org.tendiwa.client.ui.input.TendiwaInputProcessor;
+import org.tendiwa.client.ui.input.TendiwaInputProcessorFactory;
 
-public abstract class UiMode implements InputProcessor {
-private UiModeManager manager;
+public class UiMode {
+final TendiwaInputProcessor inputProcessor;
+private final UiModeManager manager;
 
-void setModeManager(UiModeManager manager) {
+@Inject
+UiMode(
+	TendiwaInputProcessorFactory factory,
+	InputToActionMapper mapper,
+	UiModeManager manager,
+	@Assisted ActionsAdder adder
+) {
+	adder.addTo(mapper);
+	this.inputProcessor = factory.create(mapper);
 	this.manager = manager;
 }
-
-public abstract void start();
 
 protected void abort() {
 	if (!manager.isModeLast(this)) {
@@ -18,5 +30,7 @@ protected void abort() {
 	manager.popMode();
 }
 
-public abstract void cleanup();
+public TendiwaInputProcessor getInputProcessor() {
+	return inputProcessor;
+}
 }

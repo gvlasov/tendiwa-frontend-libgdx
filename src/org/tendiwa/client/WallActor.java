@@ -11,8 +11,12 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.utils.Array;
 import com.bitfire.postprocessing.PostProcessor;
+import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
+import org.tendiwa.client.ui.factories.TileTextureRegionProviderFactory;
+import org.tendiwa.client.ui.factories.WallImageCacheFactory;
+import org.tendiwa.client.ui.factories.WallImageCacheRegistry;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 import org.tendiwa.groovy.Registry;
@@ -25,18 +29,9 @@ import java.util.Map;
  * there is a lot of spaghetti code concerning walls and I don't know how to get rid of it.
  */
 public class WallActor extends Actor {
-public static final Map<WallType, WallImageCache> caches = new HashMap<>();
-private final ShaderProgram writeOpaqueToDepthShader;
-private final ShaderProgram drawOpaqueToDepth05Shader;
-private final ShaderProgram drawWithDepth0Shader;
-private final ShaderProgram opaque0Transparent05DepthShader;
-private final ShaderProgram defaultShader;
-private final TransitionPregenerator fovEdgeOnWallToUnseen;
-private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 private static final Map<WallType, Integer> wallHeights;
 private static final FrameBuffer depthTestFrameBuffer;
 private static final Batch depthTestBatch;
-private static final int NUMBER_OF_SLOTS_IN_CACHE = 144;
 static int maxHeight = 0;
 
 static {
@@ -64,6 +59,13 @@ static {
 	depthTestBatch = new OrthoBatch(maxWidth, maxHeight);
 }
 
+private final ShaderProgram writeOpaqueToDepthShader;
+private final ShaderProgram drawOpaqueToDepth05Shader;
+private final ShaderProgram drawWithDepth0Shader;
+private final ShaderProgram opaque0Transparent05DepthShader;
+private final ShaderProgram defaultShader;
+private final TransitionPregenerator fovEdgeOnWallToUnseen;
+private final TransitionPregenerator fovEdgeOnWallToNotYetSeen;
 private final PostProcessor postProcessor;
 private final RenderWorld renderWorld;
 private final FloorLayer floorLayer;
@@ -71,18 +73,20 @@ private final Character player;
 private final GameScreenViewport viewport;
 private final RenderPlane renderPlane;
 private final int y;
+private final WallImageCacheRegistry wallImageCacheRegistry;
 private final int x;
 private final WallType type;
 
+@Inject
 public WallActor(
-	@Assisted int x,
-	@Assisted int y,
+	@Assisted("x") int x,
+	@Assisted("y") int y,
 	@Assisted WallType type,
 	@Assisted RenderPlane renderPlane,
-	PostProcessor postProcessor,
+	@Named("game_screen_default_post_processor") PostProcessor postProcessor,
 	RenderWorld renderWorld,
 	FloorLayer floorLayer,
-	Character player,
+	@Named("player") Character player,
 	GameScreenViewport viewport,
 	@Named("shader_write_opaque_to_depth") ShaderProgram writeOpaqueToDepthShader,
 	@Named("shader_draw_opaque_to_depth_05") ShaderProgram drawOpaqueToDepth05Shader,
@@ -90,7 +94,8 @@ public WallActor(
 	@Named("shader_opaque_0_transparent_05_depth") ShaderProgram opaque0Transparent05DepthShader,
 	@Named("shader_default") ShaderProgram defaultShader,
 	FovEdgeTransparent fovEdgeOnWallToUnseen,
-	FovEdgeOpaque fovEdgeOnWallToNotYetSeen
+	FovEdgeOpaque fovEdgeOnWallToNotYetSeen,
+	WallImageCacheRegistry wallImageCacheRegistry
 ) {
 	this.postProcessor = postProcessor;
 	this.renderWorld = renderWorld;
@@ -108,22 +113,9 @@ public WallActor(
 	this.type = type;
 	this.x = x;
 	this.y = y;
+	this.wallImageCacheRegistry = wallImageCacheRegistry;
 	setX(x);
 	setY(y);
-}
-
-/**
- * Lazily returns a cache for this ammunitionType of wall. Each {@link WallType} has its own cache object.
- *
- * @return A new cache, or an existing one.
- */
-private WallImageCache getCache() {
-	WallImageCache wallImageCache = caches.get(type);
-	if (wallImageCache == null) {
-		wallImageCache = new WallImageCache(type, NUMBER_OF_SLOTS_IN_CACHE);
-		caches.put(type, wallImageCache);
-	}
-	return wallImageCache;
 }
 
 /**
@@ -216,7 +208,7 @@ public void draw(Batch batch, float parentAlpha) {
 		return;
 	}
 
-	WallImageCache cache = getCache();
+	WallImageCache cache = wallImageCacheRegistry.obtain(type);
 	RenderCell cell = renderPlane.getCell(x, y);
 	RenderCell cellFromSouth = renderPlane.getCell(x, y + 1);
 	int imageHash = getWallHash();

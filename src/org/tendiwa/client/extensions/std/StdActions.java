@@ -1,11 +1,12 @@
-package org.tendiwa.client;
+package org.tendiwa.client.extensions.std;
 
 import com.badlogic.gdx.Game;
-import com.google.inject.Inject;
+import com.badlogic.gdx.Input;
 import com.google.inject.name.Named;
-import org.tendiwa.client.ui.actors.CellSelectionActor;
+import org.tendiwa.client.*;
 import org.tendiwa.client.ui.controller.CellSelection;
-import org.tendiwa.client.ui.model.CursorPosition;
+import org.tendiwa.client.ui.factories.CellSelectionFactory;
+import org.tendiwa.client.ui.input.*;
 import org.tendiwa.client.ui.model.MessageLog;
 import org.tendiwa.client.ui.uiModes.UiModeManager;
 import org.tendiwa.core.*;
@@ -16,27 +17,56 @@ import org.tendiwa.groovy.Registry;
 import java.util.LinkedList;
 
 import static com.badlogic.gdx.Input.Keys.*;
+import static org.tendiwa.client.ui.input.InputToActionMapper.*;
 
-final class GameScreenInputProcessor extends TendiwaInputProcessor {
-
-private final Volition volition;
+public class StdActions implements ActionsAdder {
 private final Character player;
 private final GameScreenViewport viewport;
+private final UiModeManager uiModeManager;
+private final MessageLog messageLog;
 private final WorldMapScreen worldMapScreen;
-private ItemToKeyMapper<Item> mapper = new ItemToKeyMapper<>();
-private ItemSelector itemSelector;
-private CursorPosition cellSelection;
+private final ItemSelector itemSelector;
+private final GameScreen gameScreen;
+private final TaskManager taskManager;
+private final Game game;
+private final CellSelectionFactory cellSelectionFactory;
+private final Volition volition;
+private final ItemToKeyMapper<Item> mapper;
 
-@Inject
-public GameScreenInputProcessor(final Volition volition, @Named("player") final Character player, final GameScreenViewport viewport, final CursorPosition cursorPosition, final UiModeManager uiModeManager, final CellSelectionActor cellSelectionActor, final MessageLog messageLog, final WorldMapScreen worldMapScreen, CursorPosition cellSelection, ItemSelector itemSelector, final GameScreen gameScreen, TaskManager taskManager, final Game game) {
-	super(gameScreen, taskManager);
-	this.volition = volition;
+
+StdActions(
+	@Named("player") final Character player,
+	final GameScreenViewport viewport,
+	final UiModeManager uiModeManager,
+	final MessageLog messageLog,
+	final WorldMapScreen worldMapScreen,
+	ItemSelector itemSelector,
+	final GameScreen gameScreen,
+	TaskManager taskManager,
+	final Game game,
+	final CellSelectionFactory cellSelectionFactory,
+	Volition volition,
+    ItemToKeyMapper<Item> mapper
+) {
+
 	this.player = player;
 	this.viewport = viewport;
+	this.uiModeManager = uiModeManager;
+	this.messageLog = messageLog;
 	this.worldMapScreen = worldMapScreen;
-	this.cellSelection = cellSelection;
 	this.itemSelector = itemSelector;
-	putAction(LEFT, new UiAction("action.cameraMoveWest") {
+	this.gameScreen = gameScreen;
+	this.taskManager = taskManager;
+	this.game = game;
+	this.cellSelectionFactory = cellSelectionFactory;
+	this.volition = volition;
+	this.mapper = mapper;
+}
+
+@Override
+public void addTo(InputToActionMapper actionMapper) {
+
+	actionMapper.putAction(LEFT, new KeyboardAction("action.cameraMoveWest") {
 		@Override
 		public void act() {
 			if (viewport.getStartCellX() > viewport.getCameraMoveStep() - 1) {
@@ -44,7 +74,7 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			}
 		}
 	});
-	putAction(RIGHT, new UiAction("action.cameraMoveEast") {
+	actionMapper.putAction(RIGHT, new KeyboardAction("action.cameraMoveEast") {
 		@Override
 		public void act() {
 			if (viewport.getStartCellX() < viewport.getMaxStartX()) {
@@ -52,7 +82,7 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			}
 		}
 	});
-	putAction(UP, new UiAction("action.cameraMoveNorth") {
+	actionMapper.putAction(UP, new KeyboardAction("action.cameraMoveNorth") {
 		@Override
 		public void act() {
 			if (viewport.getStartCellY() > viewport.getCameraMoveStep() - 1) {
@@ -60,7 +90,7 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			}
 		}
 	});
-	putAction(DOWN, new UiAction("action.cameraMoveSouth") {
+	actionMapper.putAction(DOWN, new KeyboardAction("action.cameraMoveSouth") {
 		@Override
 		public void act() {
 			if (viewport.getStartCellY() < viewport.getMaxStartY()) {
@@ -68,58 +98,58 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			}
 		}
 	});
-	putAction(H, new UiAction("action.stepWest") {
+	actionMapper.putAction(H, new KeyboardAction("action.stepWest") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY());
 		}
 	});
-	putAction(L, new UiAction("action.stepEast") {
+	actionMapper.putAction(L, new KeyboardAction("action.stepEast") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY());
 		}
 	});
-	putAction(J, new UiAction("action.stepSouth") {
+	actionMapper.putAction(J, new KeyboardAction("action.stepSouth") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX(), player.getY() + 1);
 		}
 
 	});
-	putAction(K, new UiAction("action.stepNorth") {
+	actionMapper.putAction(K, new KeyboardAction("action.stepNorth") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX(), player.getY() - 1);
 		}
 
 	});
-	putAction(Y, new UiAction("action.stepNorthWest") {
+	actionMapper.putAction(Y, new KeyboardAction("action.stepNorthWest") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY() - 1);
 		}
 	});
-	putAction(U, new UiAction("action.stepNorthEast") {
+	actionMapper.putAction(U, new KeyboardAction("action.stepNorthEast") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY() - 1);
 		}
 	});
 
-	putAction(B, new UiAction("action.stepSouthWest") {
+	actionMapper.putAction(B, new KeyboardAction("action.stepSouthWest") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY() + 1);
 		}
 	});
-	putAction(N, new UiAction("action.stepSouthEast") {
+	actionMapper.putAction(N, new KeyboardAction("action.stepSouthEast") {
 		@Override
 		public void act() {
 			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY() + 1);
 		}
 	});
-	putAction(F9, new UiAction("action.toggleWorldMapScreen") {
+	actionMapper.putAction(F9, new KeyboardAction("action.toggleWorldMapScreen") {
 		@Override
 		public void act() {
 			if (game.getScreen() == gameScreen) {
@@ -129,20 +159,20 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			}
 		}
 	});
-	putAction(F10, new UiAction("action.toggleAnimations") {
+	actionMapper.putAction(F10, new KeyboardAction("action.toggleAnimations") {
 		@Override
 		public void act() {
 			gameScreen.getConfig().toggleAnimations();
 			messageLog.pushMessage("Animations " + (gameScreen.getConfig().animationsEnabled ? "enabled" : "disabled") + ".");
 		}
 	});
-	putAction(F11, new UiAction("action.toggleStatusBar") {
+	actionMapper.putAction(F11, new KeyboardAction("action.toggleStatusBar") {
 		@Override
 		public void act() {
 			gameScreen.toggleStatusbar();
 		}
 	});
-	putAction(G, new UiAction("action.pickUp") {
+	actionMapper.putAction(G, new KeyboardAction("action.pickUp") {
 		@Override
 		public void act() {
 			if (player.getPlane().hasAnyItems(player.getX(), player.getY())) {
@@ -150,11 +180,11 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			}
 		}
 	});
-	putAction(shift + Q, new UiAction("action.quiver") {
+	actionMapper.putAction(shift + Q, new KeyboardAction("action.quiver") {
 		@Override
 		public void act() {
 			mapper.update(player.getInventory());
-			GameScreenInputProcessor.this.itemSelector.startSelection(mapper, new EntityFilter<Item>() {
+			itemSelector.startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
 						return Items.isShootable(entity.getType());
@@ -169,11 +199,11 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			);
 		}
 	});
-	putAction(T, new UiAction("action.throw") {
+	actionMapper.putAction(T, new KeyboardAction("action.throw") {
 		@Override
 		public void act() {
 			mapper.update(player.getInventory());
-			GameScreenInputProcessor.this.itemSelector.startSelection(mapper,
+			itemSelector.startSelection(mapper,
 				new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
@@ -184,20 +214,19 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 					@Override
 					public void execute(final Item item) {
 						game.setScreen(gameScreen);
-						uiModeManager.pushMode(
-							new CellSelection(gameScreen, cursorPosition, cellSelectionActor, new EntitySelectionListener<EnhancedPoint>() {
-								@Override
-								public void execute(EnhancedPoint point) {
-									volition.propel(item.takeSingleItem(), point.x, point.y);
-								}
-							})
-						);
+						CellSelection mode = cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
+							@Override
+							public void execute(EnhancedPoint point) {
+								volition.propel(item.takeSingleItem(), point.x, point.y);
+							}
+						});
+						uiModeManager.pushMode(mode);
 					}
 				}
 			);
 		}
 	});
-	putAction(F, new UiAction("action.fire") {
+	actionMapper.putAction(F, new KeyboardAction("action.fire") {
 		@Override
 		public void act() {
 			final UniqueItem rangedWeapon = (UniqueItem) player.getEquipment().getWieldedWeaponThatIs(new Condition<Item>() {
@@ -210,23 +239,22 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			if (rangedWeapon != null && quiveredItem != null && Items.isShootable(quiveredItem.getType())) {
 				final Shootable shootable = Items.asShootable(quiveredItem.getType());
 				if (shootable.getAmmunitionType() == (Items.asRangedWeapon(rangedWeapon.getType())).getAmmunitionType()) {
-					uiModeManager.pushMode(
-						new CellSelection(gameScreen, cursorPosition, cellSelectionActor, new EntitySelectionListener<EnhancedPoint>() {
-							@Override
-							public void execute(EnhancedPoint point) {
-								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
-							}
-						})
-					);
+					CellSelection mode = cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
+						@Override
+						public void execute(EnhancedPoint point) {
+							volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
+						}
+					});
+					uiModeManager.pushMode(mode);
 				}
 			}
 		}
 	});
-	putAction(W, new UiAction("action.wield") {
+	actionMapper.putAction(W, new KeyboardAction("action.wield") {
 		@Override
 		public void act() {
 			mapper.update(player.getInventory());
-			GameScreenInputProcessor.this.itemSelector.startSelection(mapper,
+			itemSelector.startSelection(mapper,
 				new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
@@ -242,11 +270,11 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			);
 		}
 	});
-	putAction(shift + W, new UiAction("action.wear") {
+	actionMapper.putAction(shift + W, new KeyboardAction("action.wear") {
 		@Override
 		public void act() {
 			mapper.update(player.getInventory());
-			GameScreenInputProcessor.this.itemSelector.startSelection(mapper, new EntityFilter<Item>() {
+			itemSelector.startSelection(mapper, new EntityFilter<Item>() {
 					@Override
 					public boolean check(Item entity) {
 						return Items.isWearable(entity.getType());
@@ -260,7 +288,7 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			);
 		}
 	});
-	putAction(shift + S, new UiAction("action.shout") {
+	actionMapper.putAction(shift + S, new KeyboardAction("action.shout") {
 		@Override
 		public void act() {
 			volition.actionWithoutTarget(
@@ -268,60 +296,58 @@ public GameScreenInputProcessor(final Volition volition, @Named("player") final 
 			);
 		}
 	});
-	putAction(S, new UiAction("action.idle") {
+	actionMapper.putAction(S, new KeyboardAction("action.idle") {
 		@Override
 		public void act() {
 			volition.idle();
 		}
 	});
-}
-
-@Override
-public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-	if (taskManager.hasCurrentTask()) {
-		return false;
-	}
-	final int cellX = (viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE;
-	final int cellY = (viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE;
-	if (cellX == player.getX() && cellY == player.getY()) {
-		return true;
-	}
-	LinkedList<EnhancedPoint> path = Paths.getPath(
-		player.getX(), player.getY(),
-		cellX, cellY,
-		player.getPathWalkerOverCharacters(),
-		100
-	);
-	if (path == null || path.size() == 0) {
-		return true;
-	}
-	taskManager.trySettingTask(new Task() {
-		public boolean forcedEnd = false;
-
+	actionMapper.putMouseAction(Input.Buttons.LEFT, new MouseAction("actions.mouse.go_or_attack") {
 		@Override
-		public boolean ended() {
-			return forcedEnd || player.getX() == cellX && player.getY() == cellY;
-		}
+		public void act(int screenX, int screenY) {
 
-		@Override
-		public void execute() {
+			final int cellX = (viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE;
+			final int cellY = (viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE;
+			if (cellX == player.getX() && cellY == player.getY()) {
+				return;
+			}
 			LinkedList<EnhancedPoint> path = Paths.getPath(
 				player.getX(), player.getY(),
 				cellX, cellY,
 				player.getPathWalkerOverCharacters(),
 				100
 			);
-			if (path == null) {
-				forcedEnd = true;
+			if (path == null || path.size() == 0) {
 				return;
 			}
-			if (!path.isEmpty()) {
-				EnhancedPoint nextStep = path.removeFirst();
-				moveToOrAttackCharacterInCell(nextStep.x, nextStep.y);
-			}
+			taskManager.trySettingTask(new Task() {
+				public boolean forcedEnd = false;
+
+				@Override
+				public boolean ended() {
+					return forcedEnd || player.getX() == cellX && player.getY() == cellY;
+				}
+
+				@Override
+				public void execute() {
+					LinkedList<EnhancedPoint> path = Paths.getPath(
+						player.getX(), player.getY(),
+						cellX, cellY,
+						player.getPathWalkerOverCharacters(),
+						100
+					);
+					if (path == null) {
+						forcedEnd = true;
+						return;
+					}
+					if (!path.isEmpty()) {
+						EnhancedPoint nextStep = path.removeFirst();
+						moveToOrAttackCharacterInCell(nextStep.x, nextStep.y);
+					}
+				}
+			});
 		}
 	});
-	return true;
 }
 
 /**

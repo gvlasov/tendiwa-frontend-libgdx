@@ -14,21 +14,16 @@ import org.tendiwa.core.CardinalDirection;
  */
 public abstract class TransitionPregenerator {
 final static int TILE_SIZE = GameScreen.TILE_SIZE;
-private static TileTextureRegionProvider regionProvider;
+private final TileTextureRegionProvider regionProvider;
 private final TextureRegion[] textures;
 private final int variationsPerTransition;
 private final int totalTransitionTextures;
 
-public TransitionPregenerator(int variationsPerTransition) {
+public TransitionPregenerator(TileTextureRegionProvider tileTextureRegionProvider, int variationsPerTransition) {
 	this.variationsPerTransition = variationsPerTransition;
 	totalTransitionTextures = variationsPerTransition * 4;
 	textures = new TextureRegion[totalTransitionTextures];
-}
-
-static void initTileTextureRegionProvider(int numberOfPlaces) {
-	if (regionProvider == null) {
-		regionProvider = new TileTextureRegionProvider(numberOfPlaces, TILE_SIZE, TILE_SIZE);
-	}
+	this.regionProvider = tileTextureRegionProvider;
 }
 
 protected void createTransitions() {

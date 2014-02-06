@@ -7,6 +7,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.math.MathUtils;
+import com.google.inject.Inject;
+import com.google.inject.assistedinject.Assisted;
 
 /**
  * This class manages a single framebuffer and maps its TextureRegions to indices from 0 to {@code numberOfIndices-1},
@@ -23,9 +25,14 @@ private final int tileSizeY;
 private final int maxNumber;
 private int lastClaimedRegionNumber = 0;
 
-public TileTextureRegionProvider(int numberOfPlaces, int tileSizeX, int tileSizeY) {
+@Inject
+public TileTextureRegionProvider(
+	@Assisted("numberOfRegions") int numberOfRegions,
+	@Assisted("regionWidth") int tileSizeX,
+	@Assisted("regionHeight") int tileSizeY
+) {
 	int fboDimension = MathUtils.nextPowerOfTwo(
-		(int) Math.ceil(Math.sqrt(numberOfPlaces * tileSizeX * tileSizeY))
+		(int) Math.ceil(Math.sqrt(numberOfRegions * tileSizeX * tileSizeY))
 	);
 	this.tileSizeX = tileSizeX;
 	this.tileSizeY = tileSizeY;

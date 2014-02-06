@@ -19,8 +19,8 @@ private final ShaderProgram defaultShader;
 
 @Inject
 public ObjectActor(
-	@Assisted int x,
-	@Assisted int y,
+	@Assisted("x") int x,
+	@Assisted("y") int y,
 	@Assisted GameObject gameObject,
 	@Assisted RenderPlane renderPlane,
 	@Named("shader_draw_with_rgb_06") ShaderProgram drawWithRgb06Shader,

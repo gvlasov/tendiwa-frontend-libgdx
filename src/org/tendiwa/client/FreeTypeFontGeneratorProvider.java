@@ -7,6 +7,6 @@ import com.google.inject.Provider;
 public class FreeTypeFontGeneratorProvider implements Provider<FreeTypeFontGenerator> {
 @Override
 public FreeTypeFontGenerator get() {
-	return new FreeTypeFontGenerator(Gdx.files.internal("default.fnt"));
+	return new FreeTypeFontGenerator(Gdx.files.internal("assets/DejaVuSansMono.ttf"));
 }
 }
