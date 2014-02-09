@@ -40,7 +40,6 @@ public ItemActor(
 
 @Override
 public void draw(Batch batch, float parentAlpha) {
-	super.draw(batch, parentAlpha);
 	boolean shaderWasChanged = false;
 	if (renderPlane.isCellUnseen((int) getX(), (int) getY())) {
 		shaderWasChanged = true;

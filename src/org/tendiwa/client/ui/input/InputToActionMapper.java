@@ -7,23 +7,20 @@ import com.google.inject.Inject;
 import java.util.*;
 
 public class InputToActionMapper implements Iterable<Mapping> {
-public static final int ctrl = 1 << 8;
-public static final int alt = 1 << 9;
-public static final int shift = 1 << 10;
 private final Input gdxInput;
-private Map<KeyCombination, KeyboardAction> combinationToAction = new HashMap<>();
+private Map<KeyCombination, NonPointerAction> combinationToAction = new HashMap<>();
 /**
  * Contains same data as {@link InputToActionMapper#combinationToAction}, but in form of list (so it has a defined order
  * and is generally easier to iterate over).
  */
 private List<Mapping> mappings = new LinkedList<>();
 private Map<Integer, MouseAction> mouseActions = new HashMap<>();
+private MouseAction mouseMovedAction;
 
 @Inject
 InputToActionMapper(
 	Input gdxInput
 ) {
-
 	this.gdxInput = gdxInput;
 }
 
@@ -34,7 +31,7 @@ InputToActionMapper(
  * 	An integer which is a sum of 4 parameters: <ul><li>Keycode (from {@link Input.Keys})</li><li>{@code isCtrl ? 1 << 8
  * 	: 0}</li><li>{@code isAlt ? 1 << 9 : 0}</li><li>{@code isShift ? 1 << 10 : 0}</li></ul>
  */
-public void putAction(int combination, KeyboardAction action) {
+public void putAction(int combination, NonPointerAction action) {
 	Mapping mapping = new Mapping(KeyCombinationPool.obtainCombination(combination), action);
 	assert !combinationToAction.containsKey(mapping.getCombination());
 	combinationToAction.put(mapping.getCombination(), mapping.getAction());
@@ -50,7 +47,7 @@ public ImmutableList<Mapping> getMappings() {
 	return ImmutableList.copyOf(mappings);
 }
 
-public KeyboardAction getAction(int keycode) {
+public NonPointerAction getAction(int keycode) {
 	switch (keycode) {
 		case Input.Keys.SHIFT_LEFT:
 		case Input.Keys.SHIFT_RIGHT:
@@ -66,7 +63,7 @@ public KeyboardAction getAction(int keycode) {
 		gdxInput.isKeyPressed(Input.Keys.ALT_LEFT) || gdxInput.isKeyPressed(Input.Keys.ALT_RIGHT),
 		gdxInput.isKeyPressed(Input.Keys.SHIFT_LEFT) || gdxInput.isKeyPressed(Input.Keys.SHIFT_RIGHT)
 	);
-	KeyboardAction action = combinationToAction.get(combination);
+	NonPointerAction action = combinationToAction.get(combination);
 	if (action == null) {
 		return null;
 	} else {
@@ -82,6 +79,20 @@ public MouseAction getMouseAction(int button) {
 @Override
 public Iterator<Mapping> iterator() {
 	return mappings.iterator();
+}
+
+public void putMouseMovedAction(MouseAction mouseAction) {
+	mouseMovedAction = mouseAction;
+}
+
+public MouseAction getMouseMoveAction() {
+	return mouseMovedAction;
+}
+
+public void addMapping(InputMapping mapping, NonPointerAction action) {
+	if (mapping instanceof KeyboardInputMapping) {
+		putAction(((KeyboardInputMapping) mapping).getKeyhash(), action);
+	}
 }
 
 private static class KeyCombinationPool {
@@ -100,17 +111,17 @@ private static class KeyCombinationPool {
 
 	static int computeCompositeKeyCode(int keycode, boolean ctrl, boolean alt, boolean shift) {
 		return keycode
-			+ (ctrl ? InputToActionMapper.ctrl : 0)
-			+ (alt ? InputToActionMapper.alt : 0)
-			+ (shift ? InputToActionMapper.shift : 0);
+			+ (ctrl ? Modifiers.ctrl : 0)
+			+ (alt ? Modifiers.alt : 0)
+			+ (shift ? Modifiers.shift : 0);
 	}
 
 	static KeyCombination obtainCombination(int combination) {
 		return obtainCombination(
-			combination % (InputToActionMapper.ctrl),
-			(combination & InputToActionMapper.ctrl) == InputToActionMapper.ctrl,
-			(combination & InputToActionMapper.alt) == InputToActionMapper.alt,
-			(combination & InputToActionMapper.shift) == InputToActionMapper.shift
+			combination % (Modifiers.ctrl),
+			(combination & Modifiers.ctrl) == Modifiers.ctrl,
+			(combination & Modifiers.alt) == Modifiers.alt,
+			(combination & Modifiers.shift) == Modifiers.shift
 		);
 	}
 }

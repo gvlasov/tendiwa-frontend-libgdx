@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.google.inject.Inject;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.ItemViewFactory;
 import org.tendiwa.client.ui.fonts.FontRegistry;
@@ -14,7 +15,12 @@ private final Label label;
 private final ItemViewFactory itemViewFactory;
 private Image itemIcon;
 
-public UiQuiver(ItemViewFactory itemViewFactory, ColorFillFactory colorFillFactory, FontRegistry fontRegistry) {
+@Inject
+public UiQuiver(
+	ItemViewFactory itemViewFactory,
+	ColorFillFactory colorFillFactory,
+	FontRegistry fontRegistry
+) {
 	super();
 	this.itemViewFactory = itemViewFactory;
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());

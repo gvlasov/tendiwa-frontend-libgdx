@@ -20,16 +20,12 @@ UiModeManager(
 
 public void pushMode(UiMode mode) {
 	modes.push(mode);
-	gdxInput.setInputProcessor(mode.inputProcessor);
-}
-
-public boolean isModeLast(UiMode uiMode) {
-	return modes.peek() == uiMode;
+	gdxInput.setInputProcessor(mode);
 }
 
 public void popMode() {
 	modes.pop();
-	gdxInput.setInputProcessor(modes.peek().inputProcessor);
+	gdxInput.setInputProcessor(modes.peek());
 
 }
 

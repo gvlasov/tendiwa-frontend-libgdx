@@ -1,4 +1,4 @@
-package org.tendiwa.client.ui.actors;
+package org.tendiwa.client.ui.cellSelection;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
 

@@ -3,7 +3,7 @@ package org.tendiwa.client.rendering.markers;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import org.tendiwa.client.GameScreen;
-import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionPlainActor;
 
 public class CellMarker extends Actor {
 CellMarker(int x, int y) {

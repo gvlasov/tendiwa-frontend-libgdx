@@ -1,7 +1,9 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
+import org.tendiwa.client.ui.input.ActionsAdder;
+import org.tendiwa.client.ui.input.InputToActionMapper;
+import org.tendiwa.client.ui.uiModes.UiMode;
 
 /**
  * Processes keypresses, decides which entity was chosen with a keypress and then passes that entity to code listening
@@ -10,7 +12,7 @@ import com.badlogic.gdx.InputProcessor;
  * @param <T>
  * 	Type of entity. Common examples are {@link org.tendiwa.core.Item}s or Spells.
  */
-public class EntitySelectionInputProcessor<T> implements InputProcessor {
+public class EntitySelectionInputProcessor<T> implements UiMode {
 private final ItemToKeyMapper<T> itemToKeyMapper;
 private final EntitySelectionListener<T> onNextItemSelected;
 private final Runnable onComplete;
@@ -27,7 +29,11 @@ private final Runnable onComplete;
  * 	A listener that is executed when selection was cancelled or done. If selection was successfully done (i.e. not
  * 	cancelled), then it is executed <b>before</b> {@code onNextItemSelected}.
  */
-public EntitySelectionInputProcessor(ItemToKeyMapper<T> itemToKeyMapper, EntitySelectionListener<T> onNextItemSelected, Runnable onComplete) {
+public EntitySelectionInputProcessor(
+	ItemToKeyMapper<T> itemToKeyMapper,
+	EntitySelectionListener<T> onNextItemSelected,
+	Runnable onComplete
+) {
 	this.itemToKeyMapper = itemToKeyMapper;
 	this.onNextItemSelected = onNextItemSelected;
 	this.onComplete = onComplete;
@@ -82,5 +88,15 @@ public boolean mouseMoved(int screenX, int screenY) {
 @Override
 public boolean scrolled(int amount) {
 	return false;
+}
+
+@Override
+public InputToActionMapper getMapper() {
+	throw new UnsupportedOperationException();
+}
+
+@Override
+public void addMappings(ActionsAdder adder) {
+	throw new UnsupportedOperationException();
 }
 }

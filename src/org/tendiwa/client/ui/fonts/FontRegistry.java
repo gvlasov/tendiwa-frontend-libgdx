@@ -28,10 +28,11 @@ public BitmapFont obtain(int size, boolean flipped) {
 		fonts.get(size).put(flipped, new HashMap<String, BitmapFont>());
 	}
 	BitmapFont bitmapFont = fonts.get(size).get(flipped).get(defaultCharacters);
-	if (bitmapFont != null) {
+	if (bitmapFont == null) {
 		bitmapFont = generator.generateFont(size, defaultCharacters, flipped);
 		fonts.get(size).get(flipped).put(defaultCharacters, bitmapFont);
 	}
+	assert bitmapFont != null;
 	return bitmapFont;
 }
 

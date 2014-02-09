@@ -31,7 +31,7 @@ private Label.LabelStyle style;
 
 @Inject
 public UiActions(
-	Character player,
+	@Named("player") Character player,
 	InputToActionMapper actionMapper,
 	final ActionSelectionListener onActionSelected,
 	FontRegistry fontRegistry,

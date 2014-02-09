@@ -3,6 +3,7 @@ package org.tendiwa.client.ui.widgets;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.ScrollPane;
+import com.google.inject.Inject;
 import org.tendiwa.client.DefaultSkin;
 import org.tendiwa.client.HorizontalFlowGroup;
 import org.tendiwa.client.TendiwaWidget;
@@ -14,12 +15,15 @@ import java.util.List;
 
 public class UiLog extends TendiwaWidget {
 
-private static UiLog INSTANCE;
 private Label.LabelStyle style;
 private List<String> messages = new LinkedList<>();
 private HorizontalFlowGroup flowGroup = new HorizontalFlowGroup();
 
-public UiLog(FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
+@Inject
+public UiLog(
+	FontRegistry fontRegistry,
+	ColorFillFactory colorFillFactory
+) {
 	super();
 	setBackground(colorFillFactory.create(Color.DARK_GRAY).getDrawable());
 	final ScrollPane scrollPane = new ScrollPane(flowGroup, DefaultSkin.getInstance());
@@ -28,7 +32,6 @@ public UiLog(FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
 	scrollPane.setSmoothScrolling(false);
 	add(scrollPane).expand().fill();
 }
-
 
 public void pushText(String text) {
 	messages.add(text);

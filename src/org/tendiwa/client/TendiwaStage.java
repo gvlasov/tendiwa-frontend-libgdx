@@ -62,13 +62,12 @@ private Table<Integer, CardinalDirection, BorderObjectActor> borderObjectActors 
 
 @Inject
 TendiwaStage(
-	TimeStream timeStream,
+	@Named("player") TimeStream timeStream,
 	@Named("game_screen_batch") Batch batch,
 	@Named("current_player_world") final World world,
 	WallActorFactory wallActorFactory,
 	CharacterActorFactory characterActorFactory,
 	final MessageLog messageLog,
-	final Game game,
 	@Named("player") final Character player,
 	@Named("tendiwa") Observable model,
 	final RenderWorld renderWorld,
@@ -226,7 +225,6 @@ TendiwaStage(
 		}
 	}, EventItemDisappear.class);
 	model.subscribe(new Observer<EventSound>() {
-
 		@Override
 		public void update(EventSound event, EventEmitter<EventSound> emitter) {
 			Actor actor = obtainSoundActor(
@@ -337,7 +335,7 @@ private void initializeActors() {
 	for (Character character : timeStream.getCharacters()) {
 		CharacterActor actor = createCharacterActor(character);
 		characterActors.put(character, actor);
-		if (character.isPlayer()) {
+		if (character == player) {
 			playerCharacterActor = actor;
 		}
 	}
@@ -374,7 +372,7 @@ public CharacterActor getCharacterActor(Character character) {
 	return characterActors.get(character);
 }
 
-public com.badlogic.gdx.scenes.scene2d.Actor getPlayerCharacterActor() {
+public Actor getPlayerCharacterActor() {
 	return playerCharacterActor;
 }
 

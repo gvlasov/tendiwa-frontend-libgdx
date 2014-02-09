@@ -14,7 +14,6 @@ import java.util.List;
 
 @Singleton
 public class StatusLayer {
-private final GameScreen gameScreen;
 private final BitmapFont font;
 private final Batch batch;
 private final GameScreenViewport viewport;
@@ -23,11 +22,15 @@ private int lineHeight = 18;
 private int padding = 20;
 
 @Inject
-public StatusLayer(@Named("game_screen_batch") Batch batch, final GameScreenViewport viewport, final GameScreen gameScreen, FontRegistry fontRegistry, final CursorPosition cursorPosition) {
+public StatusLayer(
+	@Named("game_screen_batch") Batch batch,
+	final GameScreenViewport viewport,
+	FontRegistry fontRegistry,
+	final CursorPosition cursorPosition
+) {
 	this.batch = batch;
 	this.viewport = viewport;
 	this.font = fontRegistry.obtain(20, true);
-	this.gameScreen = gameScreen;
 	addLine(new Object() {
 		@Override
 		public String toString() {
@@ -74,7 +77,7 @@ public void draw() {
 		font.draw(
 			batch,
 			line.toString(),
-			viewport.getStartPixelX()+ padding,
+			viewport.getStartPixelX() + padding,
 			viewport.getStartPixelY() + padding + lineHeight * lineNumber
 		);
 		lineNumber++;

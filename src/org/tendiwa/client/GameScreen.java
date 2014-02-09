@@ -11,9 +11,7 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
 import org.tendiwa.client.ui.model.CursorPosition;
-import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
 import org.tendiwa.core.events.EventInitialTerrain;
 import org.tendiwa.core.observation.EventEmitter;
@@ -39,19 +37,15 @@ private final StatusLayer statusLayer;
 private final GameScreenViewport viewport;
 private final GraphicsConfig config;
 private final CursorPosition cellSelection;
+private final RenderWorld renderWorld;
 private final PostProcessor postProcessor;
-RenderPlane renderPlane;
 /**
  * The World object in backend (not always consistent with current animation state, so you shouldn't read from it
  * directly unless absolutely necessary. For listening for changes in the world use {@link
  * org.tendiwa.core.observation.Event}s.
  */
 private World backendWorld;
-private Character player;
 private Map<Integer, GameObject> objects = new HashMap<>();
-private HorizontalPlane currentPlane;
-private RenderWorld renderWorld;
-private Actor cellSelectionActor;
 
 @Inject
 public GameScreen(
@@ -71,7 +65,7 @@ public GameScreen(
 	@Named("default") InputProcessor gameScreenInputProcessor,
 	CursorPosition cellSelection,
 	StatusLayer statusLayer,
-	CellSelectionPlainActor cellSelectionPlainActor
+    RenderWorld renderWorld
 ) {
 	this.postProcessor = postProcessor;
 	this.backendWorld = world;
@@ -82,7 +76,7 @@ public GameScreen(
 	this.viewport = viewport;
 	this.config = config;
 	this.cellSelection = cellSelection;
-	this.cellSelectionActor = cellSelectionPlainActor;
+	this.renderWorld = renderWorld;
 
 	atlasObjects = new TextureAtlas(Gdx.files.internal("pack/objects.atlas"), true);
 
@@ -102,7 +96,6 @@ public GameScreen(
 			game.setScreen(GameScreen.this);
 		}
 	}, EventInitialTerrain.class);
-
 }
 
 /**
@@ -151,7 +144,7 @@ private void drawObjects() {
 	for (int x = 0; x < viewport.getWindowWidthPixels() / TILE_SIZE + (viewport.getCenterPixelX() == viewport.getMaxPixelX() ? 0 : 1); x++) {
 		// Objects are drawn for one additional row to see high objects
 		for (int y = 0; y < viewport.getWindowHeightPixels() / TILE_SIZE + (viewport.getCenterPixelY() == viewport.getMaxPixelY() || viewport.getCenterPixelY() == viewport.getMaxPixelY() - TILE_SIZE ? 0 : 2); y++) {
-			RenderCell cell = renderPlane.getCell(viewport.getStartCellX() + x, viewport.getStartCellY() + y);
+			RenderCell cell = renderWorld.getCurrentPlane().getCell(viewport.getStartCellX() + x, viewport.getStartCellY() + y);
 			if (cell != null) {
 				// If the frontend has already received this cell from backend
 				if (cell.isVisible()) {

@@ -1,4 +1,4 @@
-package org.tendiwa.client.ui.actors;
+package org.tendiwa.client.ui.cellSelection;
 
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -33,7 +33,7 @@ public static Texture getTexture() {
 
 @Override
 public void draw(Batch batch, float parentAlpha) {
-	batch.begin();
+//	batch.begin();
 	Coordinate[] vector = Chunk.vector(
 		player.getX(),
 		player.getY(),
@@ -41,8 +41,8 @@ public void draw(Batch batch, float parentAlpha) {
 		worldY
 	);
 	for (Coordinate coord : vector) {
-		batch.draw(texture, coord.x * GameScreen.TILE_SIZE, coord.y * GameScreen.TILE_SIZE);
+		batch.draw(getTexture(), coord.x * GameScreen.TILE_SIZE, coord.y * GameScreen.TILE_SIZE);
 	}
-	batch.end();
+//	batch.end();
 }
 }

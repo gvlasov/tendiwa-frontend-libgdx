@@ -8,6 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.client.TendiwaWidget;
 import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
@@ -28,7 +29,12 @@ private ItemCollection inventory;
 private Equipment equipment;
 
 @Inject
-public UiInventory(final Observable model, Volition volition, ColorFillFactory colorFillFactory, ItemViewFactory itemViewFactory) {
+public UiInventory(
+	@Named("tendiwa") final Observable model,
+	Volition volition,
+	ColorFillFactory colorFillFactory,
+	ItemViewFactory itemViewFactory
+) {
 	super();
 	this.volition = volition;
 	this.itemViewFactory = itemViewFactory;
@@ -60,6 +66,8 @@ public UiInventory(final Observable model, Volition volition, ColorFillFactory c
 
 public void update() {
 	flowGroup.clearChildren();
+	assert equipment != null;
+	assert inventory != null;
 	for (final Item item : equipment) {
 		Widget itemIcon = itemViewFactory.createItemImage(item);
 		itemIcon.setColor(Color.RED);

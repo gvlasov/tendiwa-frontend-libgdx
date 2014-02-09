@@ -4,7 +4,6 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Input;
 import com.google.inject.name.Named;
 import org.tendiwa.client.*;
-import org.tendiwa.client.ui.controller.CellSelection;
 import org.tendiwa.client.ui.factories.CellSelectionFactory;
 import org.tendiwa.client.ui.input.*;
 import org.tendiwa.client.ui.model.MessageLog;
@@ -17,12 +16,10 @@ import org.tendiwa.groovy.Registry;
 import java.util.LinkedList;
 
 import static com.badlogic.gdx.Input.Keys.*;
-import static org.tendiwa.client.ui.input.InputToActionMapper.*;
 
 public class StdActions implements ActionsAdder {
 private final Character player;
 private final GameScreenViewport viewport;
-private final UiModeManager uiModeManager;
 private final MessageLog messageLog;
 private final WorldMapScreen worldMapScreen;
 private final ItemSelector itemSelector;
@@ -32,7 +29,6 @@ private final Game game;
 private final CellSelectionFactory cellSelectionFactory;
 private final Volition volition;
 private final ItemToKeyMapper<Item> mapper;
-
 
 StdActions(
 	@Named("player") final Character player,
@@ -46,12 +42,11 @@ StdActions(
 	final Game game,
 	final CellSelectionFactory cellSelectionFactory,
 	Volition volition,
-    ItemToKeyMapper<Item> mapper
+	ItemToKeyMapper<Item> mapper
 ) {
 
 	this.player = player;
 	this.viewport = viewport;
-	this.uiModeManager = uiModeManager;
 	this.messageLog = messageLog;
 	this.worldMapScreen = worldMapScreen;
 	this.itemSelector = itemSelector;
@@ -180,7 +175,7 @@ public void addTo(InputToActionMapper actionMapper) {
 			}
 		}
 	});
-	actionMapper.putAction(shift + Q, new KeyboardAction("action.quiver") {
+	actionMapper.putAction(Modifiers.shift + Q, new KeyboardAction("action.quiver") {
 		@Override
 		public void act() {
 			mapper.update(player.getInventory());
@@ -214,13 +209,12 @@ public void addTo(InputToActionMapper actionMapper) {
 					@Override
 					public void execute(final Item item) {
 						game.setScreen(gameScreen);
-						CellSelection mode = cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
+						cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
 							@Override
 							public void execute(EnhancedPoint point) {
 								volition.propel(item.takeSingleItem(), point.x, point.y);
 							}
-						});
-						uiModeManager.pushMode(mode);
+						}).start();
 					}
 				}
 			);
@@ -239,13 +233,12 @@ public void addTo(InputToActionMapper actionMapper) {
 			if (rangedWeapon != null && quiveredItem != null && Items.isShootable(quiveredItem.getType())) {
 				final Shootable shootable = Items.asShootable(quiveredItem.getType());
 				if (shootable.getAmmunitionType() == (Items.asRangedWeapon(rangedWeapon.getType())).getAmmunitionType()) {
-					CellSelection mode = cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
+					cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
 						@Override
 						public void execute(EnhancedPoint point) {
 							volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
 						}
-					});
-					uiModeManager.pushMode(mode);
+					}).start();
 				}
 			}
 		}
@@ -270,7 +263,7 @@ public void addTo(InputToActionMapper actionMapper) {
 			);
 		}
 	});
-	actionMapper.putAction(shift + W, new KeyboardAction("action.wear") {
+	actionMapper.putAction(Modifiers.shift + W, new KeyboardAction("action.wear") {
 		@Override
 		public void act() {
 			mapper.update(player.getInventory());
@@ -288,7 +281,7 @@ public void addTo(InputToActionMapper actionMapper) {
 			);
 		}
 	});
-	actionMapper.putAction(shift + S, new KeyboardAction("action.shout") {
+	actionMapper.putAction(Modifiers.shift + S, new KeyboardAction("action.shout") {
 		@Override
 		public void act() {
 			volition.actionWithoutTarget(

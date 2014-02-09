@@ -16,11 +16,15 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.apache.log4j.Logger;
-import org.tendiwa.client.ui.actors.CellSelectionActor;
-import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionPlainActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionUiModeProvider;
 import org.tendiwa.client.ui.factories.*;
 import org.tendiwa.client.ui.fonts.FontRegistry;
+import org.tendiwa.client.ui.input.DefaultInputProcessorProvider;
+import org.tendiwa.client.ui.input.TendiwaInputProcessorFactory;
 import org.tendiwa.client.ui.model.CursorPosition;
+import org.tendiwa.client.ui.uiModes.UiMode;
 import org.tendiwa.core.dependencies.PlayerCharacterProvider;
 import org.tendiwa.core.dependencies.WorldProvider;
 import org.tendiwa.core.factories.RenderPlaneFactory;
@@ -46,7 +50,8 @@ protected void configure() {
 	bind(WorldProvider.class).in(Scopes.SINGLETON);
 	bind(InputProcessor.class)
 		.annotatedWith(Names.named("default"))
-		.to(GameScreenInputProcessor.class);
+		.toProvider(DefaultInputProcessorProvider.class)
+		.in(Scopes.SINGLETON);
 	bind(Batch.class)
 		.annotatedWith(Names.named("game_screen_batch"))
 		.to(SpriteBatch.class);
@@ -68,9 +73,13 @@ protected void configure() {
 		.annotatedWith(Names.named("transitions"))
 		.toProvider(TransitionsTileTextureRegionProvider.class)
 		.in(Scopes.SINGLETON);
-	bind(Input.class)
-		.toProvider(InputProvider.class)
+	bind(UiMode.class)
+		.annotatedWith(Names.named("cell_selection"))
+		.toProvider(CellSelectionUiModeProvider.class)
 		.in(Scopes.SINGLETON);
+	bind(Input.class)
+		.toProvider(InputProvider.class);
+//		.in(Scopes.SINGLETON);
 	install(new FactoryModuleBuilder()
 		.build(BorderObjectActorFactory.class));
 	install(new FactoryModuleBuilder()
@@ -93,8 +102,9 @@ protected void configure() {
 		.build(BorderMarkerFactory.class));
 	install(new FactoryModuleBuilder()
 		.build(CellSelectionFactory.class));
+	install(new FactoryModuleBuilder()
+		.build(TendiwaInputProcessorFactory.class));
 
-	bind(LwjglApplication.class).to(TendiwaApplication.class);
 	bind(LwjglApplication.class).to(TendiwaApplication.class);
 }
 

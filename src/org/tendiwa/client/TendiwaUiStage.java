@@ -14,29 +14,36 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.google.inject.Inject;
-import org.tendiwa.client.ui.actors.CellSelectionActor;
 import org.tendiwa.client.ui.actors.CursorActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionActor;
 
 public class TendiwaUiStage extends Stage {
 private static Skin skin;
+private final WidgetsPlacer widgetsPlacer;
+private final Table table;
 
 @Inject
-TendiwaUiStage(WidgetsPlacer widgetsPlacer, CellSelectionActor celSelectionActor, CursorActor cursorActor) {
+TendiwaUiStage(
+	WidgetsPlacer widgetsPlacer,
+	CellSelectionActor celSelectionActor,
+	CursorActor cursorActor
+) {
 	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, new SpriteBatch());
+	this.widgetsPlacer = widgetsPlacer;
 	OrthographicCamera camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	camera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	setCamera(camera);
 	initializeStyles();
 
-	Table table = createTable();
+	table = createTable();
 	table.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	addActor(celSelectionActor);
 	addActor(cursorActor);
 	addActor(table);
 	widgetsPlacer.placeWidgets(this, table);
-
 }
-
+void buildUi() {
+}
 
 private static void initializeStyles() {
 	// Lazily

@@ -2,9 +2,10 @@ package org.tendiwa.client.ui.widgets;
 
 import com.badlogic.gdx.graphics.Color;
 import com.esotericsoftware.tablelayout.Cell;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import org.tendiwa.client.TendiwaWidget;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
-import org.tendiwa.core.Character;
 import org.tendiwa.core.events.EventGetDamage;
 import org.tendiwa.core.events.EventSelectPlayerCharacter;
 import org.tendiwa.core.observation.EventEmitter;
@@ -20,7 +21,11 @@ private final int height;
 private int hp;
 private int maxHp;
 
-private UiHealthBar(Observable model, ColorFillFactory colorFillFactory) {
+@Inject
+private UiHealthBar(
+	@Named("tendiwa") Observable model,
+	ColorFillFactory colorFillFactory
+) {
 	super();
 	this.width = 200;
 	this.height = 16;

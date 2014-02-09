@@ -55,8 +55,8 @@ private Texture buildCursorTexture() {
 
 @Override
 public void draw(Batch batch, float parentAlpha) {
-	batch.begin();
+//	batch.begin();
 	batch.draw(getTexture(), getWorldX() * GameScreen.TILE_SIZE, getWorldY() * GameScreen.TILE_SIZE);
-	batch.end();
+//	batch.end();
 }
 }

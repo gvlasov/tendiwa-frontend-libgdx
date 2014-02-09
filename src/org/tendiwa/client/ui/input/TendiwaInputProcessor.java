@@ -1,20 +1,19 @@
 package org.tendiwa.client.ui.input;
 
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
 import com.google.inject.Inject;
-import com.google.inject.assistedinject.Assisted;
 import org.tendiwa.client.TaskManager;
+import org.tendiwa.client.ui.uiModes.UiMode;
 import org.tendiwa.core.Server;
 
-public class TendiwaInputProcessor implements InputProcessor {
+public class TendiwaInputProcessor implements UiMode {
 private final TaskManager taskManager;
 private final InputToActionMapper mapper;
 
 @Inject
 TendiwaInputProcessor(
 	TaskManager taskManager,
-	@Assisted InputToActionMapper mapper
+	InputToActionMapper mapper
 ) {
 	this.taskManager = taskManager;
 	this.mapper = mapper;
@@ -28,7 +27,7 @@ public boolean keyDown(int keycode) {
 	if (Server.hasRequestToProcess()) {
 		return false;
 	}
-	KeyboardAction action = mapper.getAction(keycode);
+	NonPointerAction action = mapper.getAction(keycode);
 	if (action != null) {
 		action.act();
 		return true;
@@ -48,20 +47,20 @@ public boolean keyTyped(char character) {
 
 @Override
 public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-	if (taskManager.hasCurrentTask()) {
-		return false;
-	}
-	MouseAction mouseAction = mapper.getMouseAction(button);
-	if (mouseAction != null) {
-		mouseAction.act(screenX, screenY);
-		return true;
-	}
 	return false;
 }
 
 @Override
 public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-	return false;
+	if (taskManager.hasCurrentTask()) {
+		return false;
+	}
+	MouseAction mouseAction = mapper.getMouseAction(button);
+	if (mouseAction == null) {
+		return false;
+	}
+	mouseAction.act(screenX, screenY);
+	return true;
 }
 
 @Override
@@ -71,7 +70,12 @@ public boolean touchDragged(int screenX, int screenY, int pointer) {
 
 @Override
 public boolean mouseMoved(int screenX, int screenY) {
-	return false;
+	MouseAction mouseMoveAction = mapper.getMouseMoveAction();
+	if (mouseMoveAction == null) {
+		return false;
+	}
+	mouseMoveAction.act(screenX, screenY);
+	return true;
 }
 
 @Override
@@ -79,8 +83,15 @@ public boolean scrolled(int amount) {
 	return false;
 }
 
+@Override
 public InputToActionMapper getMapper() {
 	return mapper;
 }
+
+@Override
+public void addMappings(ActionsAdder adder) {
+	adder.addTo(mapper);
+}
+
 }
 

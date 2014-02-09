@@ -6,7 +6,7 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import org.tendiwa.client.GameScreen;
-import org.tendiwa.client.ui.actors.CellSelectionPlainActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionPlainActor;
 import org.tendiwa.core.Border;
 import org.tendiwa.core.CardinalDirection;
 import org.tendiwa.core.events.EventFovChange;

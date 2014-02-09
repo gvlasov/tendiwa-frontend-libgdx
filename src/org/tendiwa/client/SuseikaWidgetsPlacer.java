@@ -3,49 +3,66 @@ package org.tendiwa.client;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
-import org.tendiwa.client.ui.fonts.FontRegistry;
+import com.google.inject.Singleton;
+import org.tendiwa.client.extensions.std.keyHints.KeyHintsWidget;
+import org.tendiwa.client.extensions.std.spells.SpellsWidget;
 import org.tendiwa.client.ui.widgets.*;
-import org.tendiwa.client.extensions.std.keyHints.KeyHints;
 
+@Singleton
 public class SuseikaWidgetsPlacer implements WidgetsPlacer {
-private final Injector injector;
-private FontRegistry fontRegistry;
+private final UiActions actions;
+private final SpellsWidget spells;
+private final UiInventory inventory;
+private final UiLog log;
+private final UiHealthBar hpBar;
+private final UiQuiver quiver;
+private final KeyHintsWidget keyHintsWidget;
 
 @Inject
-SuseikaWidgetsPlacer(Injector injector) {
+SuseikaWidgetsPlacer(
+	UiActions actions,
+	SpellsWidget spells,
+	UiInventory inventory,
+	UiLog log,
+	UiHealthBar hpBar,
+	UiQuiver quiver,
+	KeyHintsWidget keyHintsWidget
 
-	this.injector = injector;
+) {
+	this.actions = actions;
+	this.spells = spells;
+	this.inventory = inventory;
+	this.log = log;
+	this.hpBar = hpBar;
+	this.quiver = quiver;
+	this.keyHintsWidget = keyHintsWidget;
 }
 
 @Override
-public void placeWidgets(Stage stage, Table table) {
-	UiActions actions = injector.getInstance(UiActions.class);
+public void placeWidgets(
+	Stage stage,
+	Table table
+) {
 	actions.setVisible(false);
 
-	UiSpells spells = injector.getInstance(UiSpells.class);
 	spells.setVisible(false);
 
-	UiInventory inventory = injector.getInstance(UiInventory.class);
-	UiLog log = injector.getInstance(UiLog.class);
-	UiHealthBar hpBar = injector.getInstance(UiHealthBar.class);
 //	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
 	table.add(hpBar).expand().right().top().pad(5).colspan(1);
 	table.row();
-	UiQuiver uiQuiver = injector.getInstance(UiQuiver.class);
-	table.add(uiQuiver).expand().right().bottom().pad(5).colspan(3);
+	table.add(quiver).expand().right().bottom().pad(5).colspan(3);
 	table.row();
 	table.add(actions).left().bottom().pad(5).size(200, 100);
 	table.add(spells).pad(5).size(200, 100);
 	table.add(inventory).right().bottom().pad(5).size(200, 100);
-	inventory.update();
-	actions.update();
+//	inventory.update();
+//	actions.update();
+
 //	log.update();
 
-	KeyHints keyHints = injector.getInstance(KeyHints.class);
-	stage.addActor(keyHints);
-	keyHints.update();
-	keyHints.setVisible(false);
+	stage.addActor(keyHintsWidget);
+//	keyHintsWidget.update();
+	keyHintsWidget.setVisible(false);
 
 }
 }
