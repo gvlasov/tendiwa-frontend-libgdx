@@ -1,24 +1,16 @@
 package org.tendiwa.client.ui.cellSelection;
 
 import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.google.inject.Inject;
+import org.tendiwa.client.ui.model.CursorPosition;
 
 public abstract class CellSelectionActor extends Actor {
-protected int worldY;
-protected int worldX;
+protected final CursorPosition cursorPosition;
 
-protected CellSelectionActor() {
-}
-
-public void deactivate() {
-	setVisible(false);
-}
-
-public void activate() {
-	setVisible(true);
-}
-
-public void setWorldCoordinates(int worldX, int worldY) {
-	this.worldX = worldX;
-	this.worldY = worldY;
+@Inject
+CellSelectionActor(
+	CursorPosition cursorPosition
+) {
+	this.cursorPosition = cursorPosition;
 }
 }

@@ -8,18 +8,16 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import org.tendiwa.client.TendiwaWidget;
 import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.ItemViewFactory;
 import org.tendiwa.core.*;
-import org.tendiwa.core.events.EventGetItem;
-import org.tendiwa.core.events.EventLoseItem;
-import org.tendiwa.core.events.EventSelectPlayerCharacter;
-import org.tendiwa.core.observation.EventEmitter;
-import org.tendiwa.core.observation.Observable;
+import org.tendiwa.core.events.*;
+import org.tendiwa.core.observation.Finishable;
 import org.tendiwa.core.observation.Observer;
+import org.tendiwa.core.observation.ThreadProxy;
+import org.tendiwa.core.volition.Volition;
 
 public class UiInventory extends TendiwaWidget {
 private final Volition volition;
@@ -30,7 +28,7 @@ private Equipment equipment;
 
 @Inject
 public UiInventory(
-	@Named("tendiwa") final Observable model,
+	ThreadProxy model,
 	Volition volition,
 	ColorFillFactory colorFillFactory,
 	ItemViewFactory itemViewFactory
@@ -43,25 +41,55 @@ public UiInventory(
 	add(flowGroup).expand().fill();
 	model.subscribe(new Observer<EventGetItem>() {
 		@Override
-		public void update(EventGetItem event, EventEmitter<EventGetItem> emitter) {
+		public void update(EventGetItem event, Finishable<EventGetItem> emitter) {
 			UiInventory.this.update();
 			emitter.done(this);
 		}
 	}, EventGetItem.class);
 	model.subscribe(new Observer<EventLoseItem>() {
 		@Override
-		public void update(EventLoseItem event, EventEmitter<EventLoseItem> emitter) {
+		public void update(EventLoseItem event, Finishable<EventLoseItem> emitter) {
 			UiInventory.this.update();
+			emitter.done(this);
 		}
 	}, EventLoseItem.class);
-	model.subscribe(new Observer<EventSelectPlayerCharacter>() {
+	model.subscribe(new Observer<EventInitialTerrain>() {
 		@Override
-		public void update(EventSelectPlayerCharacter event, EventEmitter<EventSelectPlayerCharacter> emitter) {
+		public void update(EventInitialTerrain event, Finishable<EventInitialTerrain> emitter) {
 			UiInventory.this.equipment = event.player.getEquipment();
 			UiInventory.this.inventory = event.player.getInventory();
 			UiInventory.this.update();
+			emitter.done(this);
 		}
-	}, EventSelectPlayerCharacter.class);
+	}, EventInitialTerrain.class);
+	model.subscribe(new Observer<EventWield>() {
+		@Override
+		public void update(EventWield event, Finishable<EventWield> emitter) {
+			UiInventory.this.update();
+			emitter.done(this);
+		}
+	}, EventWield.class);
+	model.subscribe(new Observer<EventPutOn>() {
+		@Override
+		public void update(EventPutOn event, Finishable<EventPutOn> emitter) {
+			UiInventory.this.update();
+			emitter.done(this);
+		}
+	}, EventPutOn.class);
+	model.subscribe(new Observer<EventTakeOff>() {
+		@Override
+		public void update(EventTakeOff event, Finishable<EventTakeOff> emitter) {
+			UiInventory.this.update();
+			emitter.done(this);
+		}
+	}, EventTakeOff.class);
+	model.subscribe(new Observer<EventUnwield>() {
+		@Override
+		public void update(EventUnwield event, Finishable<EventUnwield> emitter) {
+			UiInventory.this.update();
+			emitter.done(this);
+		}
+	}, EventUnwield.class);
 }
 
 public void update() {

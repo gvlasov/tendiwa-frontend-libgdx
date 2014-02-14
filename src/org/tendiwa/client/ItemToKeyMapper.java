@@ -2,6 +2,7 @@ package org.tendiwa.client;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.inject.Inject;
 
 import java.util.*;
 
@@ -16,8 +17,8 @@ private static final char[] charsMappingOrder = new char[]{
 	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
 	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
 };
-BiMap<T, Character> itemsToChars = HashBiMap.create();
-List<Character> freeCharacters = new ArrayList<>();
+private final BiMap<T, Character> itemsToChars = HashBiMap.create();
+private final List<Character> freeCharacters = new ArrayList<>();
 private Comparator<Character> comparator = new Comparator<Character>() {
 
 	@Override
@@ -41,6 +42,7 @@ private Comparator<Character> comparator = new Comparator<Character>() {
 	}
 };
 
+@Inject
 public ItemToKeyMapper() {
 	for (char ch : charsMappingOrder) {
 		freeCharacters.add(ch);

@@ -15,7 +15,7 @@ import org.tendiwa.core.events.EventPutOn;
 import org.tendiwa.core.events.EventTakeOff;
 import org.tendiwa.core.events.EventUnwield;
 import org.tendiwa.core.events.EventWield;
-import org.tendiwa.core.observation.EventEmitter;
+import org.tendiwa.core.observation.Finishable;
 import org.tendiwa.core.observation.Observable;
 import org.tendiwa.core.observation.Observer;
 
@@ -29,7 +29,11 @@ private final Character character;
 private final TextureRegion texture;
 private FrameBuffer frameBuffer;
 
-public CharacterActor(World world, Observable model, Character character) {
+public CharacterActor(
+	World world,
+	Observable model,
+	Character character
+) {
 	this.character = character;
 	setX(character.getX());
 	setY(character.getY());
@@ -44,41 +48,45 @@ public CharacterActor(World world, Observable model, Character character) {
 	setZIndex(character.getY() * world.getWidth() + character.getX());
 	model.subscribe(new Observer<EventPutOn>() {
 		@Override
-		public void update(EventPutOn event, EventEmitter<EventPutOn> emitter) {
+		public void update(EventPutOn event, Finishable<EventPutOn> emitter) {
 			if (event.character == CharacterActor.this.character
 				&& event.character.getType().hasAspect(CharacterAspect.HUMANOID)
 				) {
 				updateTexture();
+				emitter.done(this);
 			}
 		}
 	}, EventPutOn.class);
 	model.subscribe(new Observer<EventTakeOff>() {
 		@Override
-		public void update(EventTakeOff event, EventEmitter<EventTakeOff> emitter) {
+		public void update(EventTakeOff event, Finishable<EventTakeOff> emitter) {
 			if (event.character == CharacterActor.this.character
 				&& event.character.getType().hasAspect(CharacterAspect.HUMANOID)
 				) {
 				updateTexture();
+				emitter.done(this);
 			}
 		}
 	}, EventTakeOff.class);
 	model.subscribe(new Observer<EventWield>() {
 		@Override
-		public void update(EventWield event, EventEmitter<EventWield> emitter) {
+		public void update(EventWield event, Finishable<EventWield> emitter) {
 			if (event.character == CharacterActor.this.character
 				&& event.character.getType().hasAspect(CharacterAspect.HUMANOID)
 				) {
 				updateTexture();
+				emitter.done(this);
 			}
 		}
 	}, EventWield.class);
 	model.subscribe(new Observer<EventUnwield>() {
 		@Override
-		public void update(EventUnwield event, EventEmitter<EventUnwield> emitter) {
+		public void update(EventUnwield event, Finishable<EventUnwield> emitter) {
 			if (event.character == CharacterActor.this.character
 				&& event.character.getType().hasAspect(CharacterAspect.HUMANOID)
 				) {
 				updateTexture();
+				emitter.done(this);
 			}
 		}
 	}, EventUnwield.class);

@@ -7,7 +7,10 @@ import com.google.inject.Inject;
 
 public class TendiwaApplication extends LwjglApplication {
 @Inject
-public TendiwaApplication(Game screenSwitcher, LwjglApplicationConfiguration config) {
+public TendiwaApplication(
+	Game screenSwitcher,
+	LwjglApplicationConfiguration config
+) {
 	super(screenSwitcher, config);
 }
 

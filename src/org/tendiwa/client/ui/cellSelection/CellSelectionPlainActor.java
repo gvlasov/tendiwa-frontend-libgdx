@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.GameScreen;
+import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.core.Chunk;
 import org.tendiwa.core.meta.CellPosition;
 import org.tendiwa.core.meta.Coordinate;
@@ -17,11 +18,12 @@ public static Texture texture;
 private final CellPosition player;
 
 @Inject
-public CellSelectionPlainActor(@Named("player") CellPosition player) {
+public CellSelectionPlainActor(@Named("player") CellPosition player, CursorPosition cursorPosition) {
+	super(cursorPosition);
 	this.player = player;
 }
 
-public static Texture getTexture() {
+public Texture getTexture() {
 	if (texture == null) {
 		Pixmap pixmap = new Pixmap(GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, Pixmap.Format.RGBA8888);
 		pixmap.setColor(0, 1, 0, 0.3f);
@@ -37,8 +39,8 @@ public void draw(Batch batch, float parentAlpha) {
 	Coordinate[] vector = Chunk.vector(
 		player.getX(),
 		player.getY(),
-		worldX,
-		worldY
+		cursorPosition.getWorldX(),
+		cursorPosition.getWorldY()
 	);
 	for (Coordinate coord : vector) {
 		batch.draw(getTexture(), coord.x * GameScreen.TILE_SIZE, coord.y * GameScreen.TILE_SIZE);

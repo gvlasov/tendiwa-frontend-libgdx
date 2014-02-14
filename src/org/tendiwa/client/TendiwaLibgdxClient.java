@@ -4,6 +4,9 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import org.tendiwa.client.extensions.std.StdModule;
+import org.tendiwa.client.extensions.std.actions.ActionsWidgetModule;
+import org.tendiwa.client.extensions.std.spells.SpellsWidgetModule;
 import org.tendiwa.core.Tendiwa;
 
 public class TendiwaLibgdxClient extends Game {
@@ -20,7 +23,12 @@ public static void main(String[] args) {
 	} else {
 		Tendiwa backend = Tendiwa.newBackend();
 		backend.start();
-		injector = Tendiwa.getInjector().createChildInjector(new TendiwaLibgdxModule());
+		injector = Tendiwa.getInjector().createChildInjector(
+			new TendiwaLibgdxModule(),
+			new ActionsWidgetModule(),
+			new StdModule(),
+			new SpellsWidgetModule()
+		);
 		injector.getInstance(LwjglApplication.class);
 	}
 }

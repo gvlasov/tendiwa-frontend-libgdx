@@ -8,6 +8,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
@@ -16,12 +19,15 @@ import com.google.inject.assistedinject.FactoryModuleBuilder;
 import com.google.inject.name.Named;
 import com.google.inject.name.Names;
 import org.apache.log4j.Logger;
+import org.tendiwa.client.extensions.std.SuseikaWidgetsPlacer;
+import org.tendiwa.client.ui.*;
 import org.tendiwa.client.ui.cellSelection.CellSelectionActor;
 import org.tendiwa.client.ui.cellSelection.CellSelectionPlainActor;
 import org.tendiwa.client.ui.cellSelection.CellSelectionUiModeProvider;
 import org.tendiwa.client.ui.factories.*;
 import org.tendiwa.client.ui.fonts.FontRegistry;
-import org.tendiwa.client.ui.input.DefaultInputProcessorProvider;
+import org.tendiwa.client.ui.input.DefaultUiModeProvider;
+import org.tendiwa.client.ui.input.InputToActionMapper;
 import org.tendiwa.client.ui.input.TendiwaInputProcessorFactory;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiMode;
@@ -35,7 +41,8 @@ public class TendiwaLibgdxModule extends AbstractModule {
 @Override
 protected void configure() {
 	bind(TendiwaStage.class).in(Scopes.SINGLETON);
-	bind(TaskManager.class).in(Scopes.SINGLETON);
+	bind(TaskManager.class)
+		.in(Scopes.SINGLETON);
 	bind(GameScreen.class).in(Scopes.SINGLETON);
 	bind(Game.class).to(TendiwaLibgdxClient.class).in(Scopes.SINGLETON);
 	bind(CursorPosition.class).in(Scopes.SINGLETON);
@@ -45,16 +52,23 @@ protected void configure() {
 	bind(GraphicsConfig.class).toInstance(ConfigManager.getGraphicsConfig());
 	bind(ApplicationListener.class).to(ScreensSwitcher.class).in(Scopes.SINGLETON);
 	bind(FontRegistry.class).in(Scopes.SINGLETON);
-	bind(CellSelectionActor.class).to(CellSelectionPlainActor.class).in(Scopes.SINGLETON);
+	bind(CellSelectionActor.class).
+		to(CellSelectionPlainActor.class).
+		in(Scopes.SINGLETON);
 	bind(GameScreenViewport.class).in(Scopes.SINGLETON);
 	bind(WorldProvider.class).in(Scopes.SINGLETON);
-	bind(InputProcessor.class)
+	bind(Screen.class)
+		.annotatedWith(Names.named("game"))
+		.to(GameScreen.class)
+		.in(Scopes.SINGLETON);
+	bind(UiMode.class)
 		.annotatedWith(Names.named("default"))
-		.toProvider(DefaultInputProcessorProvider.class)
+		.toProvider(DefaultUiModeProvider.class)
 		.in(Scopes.SINGLETON);
 	bind(Batch.class)
 		.annotatedWith(Names.named("game_screen_batch"))
-		.to(SpriteBatch.class);
+		.to(SpriteBatch.class)
+		.in(Scopes.SINGLETON);
 	bind(Logger.class)
 		.toInstance(Logger.getLogger("org/tendiwa"));
 	bind(CellPosition.class)
@@ -77,9 +91,29 @@ protected void configure() {
 		.annotatedWith(Names.named("cell_selection"))
 		.toProvider(CellSelectionUiModeProvider.class)
 		.in(Scopes.SINGLETON);
+	bind(TendiwaUiStage.class)
+		.in(Scopes.SINGLETON);
+	bind(Stage.class)
+		.annotatedWith(Names.named("game_screen_ui"))
+		.to(TendiwaUiStage.class);
+	bind(Graphics.class)
+		.toProvider(GdxGraphicsProvider.class)
+		.in(Scopes.SINGLETON);
 	bind(Input.class)
-		.toProvider(InputProvider.class);
-//		.in(Scopes.SINGLETON);
+		.toProvider(GdxInputProvider.class)
+		.in(Scopes.SINGLETON);
+	bind(Skin.class)
+		.annotatedWith(Names.named("ui_base"))
+		.toProvider(UiBaseSkinProvider.class)
+		.in(Scopes.SINGLETON);
+	bind(Table.class)
+		.annotatedWith(Names.named("ui_base"))
+		.toProvider(UiBaseTableProvider.class)
+		.in(Scopes.SINGLETON);
+	bind(InputToActionMapper.class)
+		.annotatedWith(Names.named("default"))
+		.to(InputToActionMapper.class)
+		.in(Scopes.SINGLETON);
 	install(new FactoryModuleBuilder()
 		.build(BorderObjectActorFactory.class));
 	install(new FactoryModuleBuilder()

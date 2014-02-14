@@ -1,4 +1,4 @@
-package org.tendiwa.client.ui.controller;
+package org.tendiwa.client.extensions.std.actions;
 
 import com.google.inject.Inject;
 import org.tendiwa.client.EntitySelectionListener;
@@ -8,14 +8,14 @@ import org.tendiwa.client.ui.factories.CellSelectionFactory;
 import org.tendiwa.core.*;
 import org.tendiwa.core.volition.Volition;
 
-public class SpellSelectionListener implements EntitySelectionListener<Spell> {
+public class ActionSelectionListener implements EntitySelectionListener<CharacterAbility> {
 private final Volition volition;
 private final CellSelectionFactory factory;
 private final CellSelectionActor cellSelectionActor;
 private final CursorActor cursorActor;
 
 @Inject
-SpellSelectionListener(
+public ActionSelectionListener(
 	Volition volition,
 	CellSelectionFactory factory,
     CellSelectionActor cellSelectionActor,
@@ -28,11 +28,11 @@ SpellSelectionListener(
 }
 
 @Override
-public void execute(final Spell characterAbility) {
+public void execute(final CharacterAbility characterAbility) {
 	final ActionTargetType action = characterAbility.getAction();
 	if (action instanceof ActionToCell) {
-		cursorActor.setVisible(false);
 		cellSelectionActor.setVisible(true);
+		cursorActor.setVisible(false);
 		factory.create(
 			new EntitySelectionListener<EnhancedPoint>() {
 				@Override
@@ -43,8 +43,8 @@ public void execute(final Spell characterAbility) {
 			new Runnable() {
 				@Override
 				public void run() {
-					cursorActor.setVisible(true);
 					cellSelectionActor.setVisible(false);
+					cursorActor.setVisible(true);
 				}
 			}
 		).start();

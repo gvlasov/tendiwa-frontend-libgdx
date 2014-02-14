@@ -18,6 +18,8 @@ private String defaultCharacters = "";
 @Inject
 public FontRegistry(FreeTypeFontGenerator generator) {
 	this.generator = generator;
+	addDefaultCharacters(FreeTypeFontGenerator.DEFAULT_CHARS);
+	addDefaultCharacters("йцукенгшщзхъфывапролджэячсмитьбюЙЦУКЕНГШЩЗХЪФЫВАПРОЛДЖЭЯЧСМИТЬБЮ");
 }
 
 public BitmapFont obtain(int size, boolean flipped) {

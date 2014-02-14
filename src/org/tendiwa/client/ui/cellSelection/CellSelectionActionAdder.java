@@ -19,21 +19,18 @@ class CellSelectionActionAdder implements ActionsAdder {
 private final UiModeManager uiModeManager;
 private final CursorPosition cursorPosition;
 private final GameScreenViewport viewport;
-private final CellSelectionActor actor;
 private CellSelection currentSelection;
 
 @Inject
 CellSelectionActionAdder(
 	UiModeManager uiModeManager,
 	CursorPosition cursorPosition,
-	GameScreenViewport viewport,
-	CellSelectionActor actor
+	GameScreenViewport viewport
 ) {
 	super();
 	this.uiModeManager = uiModeManager;
 	this.cursorPosition = cursorPosition;
 	this.viewport = viewport;
-	this.actor = actor;
 }
 
 /**
@@ -49,7 +46,7 @@ void setCurrentSelection(CellSelection selection) {
 
 @Override
 public void addTo(InputToActionMapper mapper) {
-	mapper.putMouseAction(Input.Keys.LEFT, new MouseAction("ui.actions.mouse") {
+	mapper.putMouseAction(Input.Buttons.LEFT, new MouseAction("ui.actions.mouse") {
 		@Override
 		public void act(int clickPixelX, int clickPixelY) {
 			uiModeManager.popMode();
@@ -62,7 +59,9 @@ public void addTo(InputToActionMapper mapper) {
 		KeyboardAction("ui.actions.cell_selection.select") {
 			@Override
 			public void act() {
+				uiModeManager.popMode();
 				currentSelection.selectCurrentCell();
+				currentSelection = null;
 			}
 		};
 	mapper.putAction(F, select);
@@ -72,13 +71,14 @@ public void addTo(InputToActionMapper mapper) {
 		public void act(int screenX, int screenY) {
 			EnhancedPoint point = viewport.screenPixelToWorldCell(screenX, screenY);
 			cursorPosition.setPoint(point);
-			actor.setWorldCoordinates(point.x, point.y);
 		}
 	});
 	mapper.putAction(ESCAPE, new KeyboardAction("ui.actions.cell_selection.abort") {
 		@Override
 		public void act() {
 			uiModeManager.popMode();
+			currentSelection.exit();
+			currentSelection = null;
 		}
 	});
 	mapper.putAction(H, new KeyboardAction("ui.actions.cell_selection.west") {

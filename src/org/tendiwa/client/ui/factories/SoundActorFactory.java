@@ -4,7 +4,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.SoundActor;
-import org.tendiwa.client.TendiwaStage;
 import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.core.SoundType;
 
@@ -18,7 +17,6 @@ private final ColorFillFactory colorFillFactory;
 @Inject
 SoundActorFactory(FontRegistry fontRegistry, ColorFillFactory colorFillFactory) {
 	this.fontRegistry = fontRegistry;
-
 	this.colorFillFactory = colorFillFactory;
 }
 
@@ -28,12 +26,6 @@ public SoundActor create(SoundType type, int x, int y) {
 		x * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2,
 		y * GameScreen.TILE_SIZE - SoundActor.width / 2 + GameScreen.TILE_SIZE / 2
 	);
-	actor.addAction(sequence(rotateBy(90, 0.3f), run(new Runnable() {
-		@Override
-		public void run() {
-			actor.getParent().removeActor(actor);
-		}
-	})));
 	return actor;
 }
 }

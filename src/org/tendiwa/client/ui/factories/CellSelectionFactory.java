@@ -5,5 +5,8 @@ import org.tendiwa.client.ui.cellSelection.CellSelection;
 import org.tendiwa.core.EnhancedPoint;
 
 public interface CellSelectionFactory {
-public CellSelection create(EntitySelectionListener<EnhancedPoint> entitySelectionListener);
+public CellSelection create(
+	EntitySelectionListener<EnhancedPoint> entitySelectionListener,
+    Runnable onExit
+);
 }

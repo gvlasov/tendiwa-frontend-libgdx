@@ -1,4 +1,4 @@
-package org.tendiwa.client;
+package org.tendiwa.client.extensions.std.itemSelection;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.ScreenAdapter;
@@ -6,6 +6,8 @@ import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.google.inject.Inject;
+import org.tendiwa.client.EntityFilter;
+import org.tendiwa.client.ItemToKeyMapper;
 import org.tendiwa.client.ui.widgets.UiItemSelectionTable;
 import org.tendiwa.core.Item;
 

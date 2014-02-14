@@ -13,6 +13,8 @@ public class CellSelection {
 private final EntitySelectionListener<EnhancedPoint> entitySelectionListener;
 private final UiMode uiMode;
 private final UiModeManager uiModeManager;
+private final CellSelectionActionAdder actionAdder;
+private final Runnable onExit;
 private final CursorPosition model;
 
 @Inject
@@ -20,19 +22,29 @@ public CellSelection(
 	CursorPosition model,
 	@Assisted EntitySelectionListener<EnhancedPoint> entitySelectionListener,
 	@Named("cell_selection") UiMode uiMode,
-	UiModeManager uiModeManager
+	UiModeManager uiModeManager,
+	CellSelectionActionAdder actionAdder,
+	@Assisted Runnable onExit
 ) {
 	this.model = model;
 	this.entitySelectionListener = entitySelectionListener;
 	this.uiMode = uiMode;
 	this.uiModeManager = uiModeManager;
+	this.actionAdder = actionAdder;
+	this.onExit = onExit;
 }
 
 void selectCurrentCell() {
 	entitySelectionListener.execute(model.getPoint());
+	exit();
 }
 
 public void start() {
+	actionAdder.setCurrentSelection(this);
 	uiModeManager.pushMode(uiMode);
+}
+
+public void exit() {
+	onExit.run();
 }
 }

@@ -6,15 +6,17 @@ import com.google.inject.name.Named;
 
 @Singleton
 public class DefaultKeyMappings {
-private final TendiwaInputProcessor defaultInputProcessor;
+
+private final InputToActionMapper mapper;
 
 @Inject
 DefaultKeyMappings(
-	@Named("default") TendiwaInputProcessor defaultInputProcessor
+	@Named("default") InputToActionMapper mapper
 ) {
-	this.defaultInputProcessor = defaultInputProcessor;
+	this.mapper = mapper;
 }
+
 public void addMapping(InputMapping mapping, NonPointerAction action) {
-	defaultInputProcessor.getMapper().addMapping(mapping, action);
+	mapper.addMapping(mapping, action);
 }
 }

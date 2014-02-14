@@ -8,39 +8,56 @@ import com.google.inject.Inject;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.ItemViewFactory;
 import org.tendiwa.client.ui.fonts.FontRegistry;
+import org.tendiwa.client.ui.model.QuiveredItemHolder;
 import org.tendiwa.core.Item;
+import org.tendiwa.core.events.EventInitialTerrain;
+import org.tendiwa.core.observation.Finishable;
+import org.tendiwa.core.observation.Observer;
+import org.tendiwa.core.observation.ThreadProxy;
 
 public class UiQuiver extends TendiwaWidget {
 private final Label label;
 private final ItemViewFactory itemViewFactory;
+private final QuiveredItemHolder quiveredItemHolder;
 private Image itemIcon;
 
 @Inject
 public UiQuiver(
+	ThreadProxy model,
 	ItemViewFactory itemViewFactory,
 	ColorFillFactory colorFillFactory,
-	FontRegistry fontRegistry
+	FontRegistry fontRegistry,
+	QuiveredItemHolder quiveredItemHolder
 ) {
 	super();
 	this.itemViewFactory = itemViewFactory;
+	this.quiveredItemHolder = quiveredItemHolder;
 	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
 	label = new Label(
 		Languages.getText("ui.quiver"),
-		new Label.LabelStyle(fontRegistry.obtain(14, false), Color.WHITE)
+		new Label.LabelStyle(fontRegistry.obtain(11, false), Color.WHITE)
 	);
 	itemIcon = new Image();
 	add(label).pad(5);
 	add(itemIcon).pad(5);
-	QuiveredItemHolder.addListener(new EntitySelectionListener<Item>() {
+	quiveredItemHolder.addListener(new EntitySelectionListener<Item>() {
 		@Override
 		public void execute(Item entity) {
 			update();
 		}
 	});
+	model.subscribe(new Observer<EventInitialTerrain>() {
+		@Override
+		public void update(EventInitialTerrain event, Finishable<EventInitialTerrain> emitter) {
+			UiQuiver.this.update();
+			emitter.done(this);
+		}
+	}, EventInitialTerrain.class);
+
 }
 
 public void update() {
-	Item item = QuiveredItemHolder.getItem();
+	Item item = quiveredItemHolder.getItem();
 	if (item == null) {
 		label.setText(Languages.getText("ui.quiver_is_empty"));
 		itemIcon.setDrawable(null);

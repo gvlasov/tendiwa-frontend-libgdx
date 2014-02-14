@@ -94,7 +94,12 @@ public void draw() {
 			RenderCell cell = renderWorld.getCurrentPlane().getCell(x, y);
 			if (cell != null) {
 				if (!cell.isVisible()) {
-					shapeRen.rect(x * GameScreen.TILE_SIZE, y * GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE);
+					shapeRen.rect(
+						x * GameScreen.TILE_SIZE,
+						y * GameScreen.TILE_SIZE,
+						GameScreen.TILE_SIZE,
+						GameScreen.TILE_SIZE
+					);
 				}
 			}
 		}
@@ -181,7 +186,7 @@ public void draw() {
 	}
 	fovEdgeOpaque.batch.end();
 
-	// Render not yet seenCells cells
+	// Render not yet seen cells
 //	Gdx.gl.glEnable(GL10.GL_DEPTH_TEST);
 	if (renderNotYetSeenCells) {
 		Gdx.gl.glDepthFunc(GL10.GL_EQUAL);

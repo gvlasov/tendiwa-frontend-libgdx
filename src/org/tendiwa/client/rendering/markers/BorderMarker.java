@@ -9,26 +9,31 @@ import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.ui.cellSelection.CellSelectionPlainActor;
 import org.tendiwa.core.Border;
 import org.tendiwa.core.CardinalDirection;
-import org.tendiwa.core.events.EventFovChange;
-import org.tendiwa.core.observation.EventEmitter;
 import org.tendiwa.core.observation.Observable;
-import org.tendiwa.core.observation.Observer;
+import org.tendiwa.core.observation.ThreadProxy;
 
 public class BorderMarker extends Actor {
 private final static int markerWidth = 4;
 private final CardinalDirection side;
+private final CellSelectionPlainActor cellSelectionPlainActor;
 
 @Inject
-BorderMarker(@Named("tendiwa") Observable model, @Assisted Border border) {
+BorderMarker(
+	ThreadProxy model,
+	@Assisted Border border,
+	CellSelectionPlainActor cellSelectionPlainActor
+) {
+	this.cellSelectionPlainActor = cellSelectionPlainActor;
 	setX(border.x);
 	setY(border.y);
 	this.side = border.side;
-	model.subscribe(new Observer<EventFovChange>() {
-		@Override
-		public void update(EventFovChange event, EventEmitter<EventFovChange> emitter) {
-			BorderMarker.this.getParent().removeActor(BorderMarker.this);
-		}
-	}, EventFovChange.class);
+//	model.subscribe(new Observer<EventFovChange>() {
+//		@Override
+//		public void update(EventFovChange event, EventEmitter<EventFovChange> emitter) {
+//			BorderMarker.this.getParent().removeActor(BorderMarker.this);
+//			emitter.done(this);
+//		}
+//	}, EventFovChange.class);
 }
 
 @Override
@@ -38,7 +43,7 @@ public void draw(Batch batch, float parentAlpha) {
 	float width = side.isVertical() ? GameScreen.TILE_SIZE : markerWidth;
 	float height = side.isHorizontal() ? GameScreen.TILE_SIZE : markerWidth;
 	batch.draw(
-		CellSelectionPlainActor.getTexture(),
+		cellSelectionPlainActor.getTexture(),
 		x,
 		y,
 		width,

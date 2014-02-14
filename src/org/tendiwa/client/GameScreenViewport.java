@@ -1,10 +1,12 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.core.EnhancedPoint;
 import org.tendiwa.core.World;
 import org.tendiwa.core.meta.CellPosition;
@@ -21,6 +23,8 @@ private final int maxStartY;
 private final int maxPixelX;
 private final int maxPixelY;
 private final OrthographicCamera camera;
+private final CursorPosition cursorPosition;
+private final Input gdxInput;
 private int startCellX;
 private int startCellY;
 private int centerPixelX;
@@ -29,7 +33,14 @@ private int startPixelX;
 private int startPixelY;
 
 @Inject
-GameScreenViewport(@Named("current_player_world") World world, @Named("player") CellPosition player) {
+GameScreenViewport(
+	@Named("current_player_world") World world,
+	@Named("player") CellPosition player,
+    CursorPosition cursorPosition,
+    Input gdxInput
+) {
+	this.cursorPosition = cursorPosition;
+	this.gdxInput = gdxInput;
 	windowWidth = Gdx.graphics.getWidth();
 	windowHeight = Gdx.graphics.getHeight();
 	windowWidthCells = (int) Math.ceil(((float) windowWidth) / GameScreen.TILE_SIZE);
@@ -95,6 +106,7 @@ public void centerCamera(int x, int y) {
 	startPixelX = centerPixelX - windowWidth / 2;
 	startPixelY = centerPixelY - windowHeight / 2;
 	camera.position.set(centerPixelX, centerPixelY, 0);
+	cursorPosition.setPoint(screenPixelToWorldCell(gdxInput.getX(), gdxInput.getY()));
 }
 
 public int getWindowWidthCells() {
@@ -150,7 +162,10 @@ public int getMaxRenderCellY() {
 }
 
 public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int startScreenCellY, int widthInCells, int heightInCells) {
-	return x >= startScreenCellX && x < startScreenCellX + widthInCells && y >= startScreenCellY && y < startScreenCellY + heightInCells;
+	return x >= startScreenCellX
+		&& x < startScreenCellX + widthInCells
+		&& y >= startScreenCellY
+		&& y < startScreenCellY + heightInCells;
 }
 
 public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {

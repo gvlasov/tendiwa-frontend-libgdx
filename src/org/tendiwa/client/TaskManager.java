@@ -12,7 +12,6 @@ Task currentTask;
 
 @Inject
 TaskManager(@Named("player") Character player) {
-
 	this.player = player;
 }
 
@@ -25,6 +24,7 @@ public boolean trySettingTask(Task task) {
 	}
 }
 
+
 public void executeCurrentTask() {
 	if (currentTask != null) {
 		if (currentTask.ended()) {
@@ -36,7 +36,7 @@ public void executeCurrentTask() {
 			}
 		}
 	} else {
-		assert false;
+		throw new IllegalStateException("Task wasn't set");
 	}
 }
 

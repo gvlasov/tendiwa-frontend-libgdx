@@ -1,27 +1,30 @@
 package org.tendiwa.client;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Input;
 import com.google.inject.Inject;
+import org.tendiwa.client.extensions.std.itemSelection.ItemSelectionScreen;
+import org.tendiwa.client.extensions.std.itemSelection.ItemSelectionScreenOnComplete;
+import org.tendiwa.client.ui.uiModes.UiMode;
+import org.tendiwa.client.ui.uiModes.UiModeManager;
 import org.tendiwa.core.Item;
 
 public class ItemSelector {
 private final ItemSelectionScreen itemSelectionScreen;
-private final Input gdxInput;
+private final UiModeManager uiModeManager;
 private final Game game;
-private final ItemSelectionScreenOnComplete onComplete;
+private final Runnable onComplete;
 
 @Inject
 ItemSelector(
 	Game game,
 	ItemSelectionScreenOnComplete onComplete,
 	ItemSelectionScreen itemSelectionScreen,
-	Input gdxInput
+	UiModeManager uiModeManager
 ) {
 	this.game = game;
 	this.onComplete = onComplete;
 	this.itemSelectionScreen = itemSelectionScreen;
-	this.gdxInput = gdxInput;
+	this.uiModeManager = uiModeManager;
 }
 
 public void startSelection(
@@ -29,13 +32,14 @@ public void startSelection(
 	EntityFilter<Item> filter,
 	EntitySelectionListener<Item> onNextItemSelected
 ) {
-	EntitySelectionInputProcessor<Item> inputProcessor = new EntitySelectionInputProcessor<>(
+	UiMode inputProcessor = new EntitySelectionInputProcessor<>(
 		mapper,
 		onNextItemSelected,
 		onComplete
 	);
 	itemSelectionScreen.updateTable(mapper, filter);
 	game.setScreen(itemSelectionScreen);
-	gdxInput.setInputProcessor(inputProcessor);
+	uiModeManager.pushMode(inputProcessor);
+
 }
 }

@@ -1,7 +1,5 @@
 package org.tendiwa.client;
 
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.scenes.scene2d.Action;
@@ -21,9 +19,10 @@ import org.tendiwa.client.ui.model.MessageLog;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.events.*;
-import org.tendiwa.core.observation.EventEmitter;
-import org.tendiwa.core.observation.Observable;
+import org.tendiwa.core.observation.Finishable;
 import org.tendiwa.core.observation.Observer;
+import org.tendiwa.core.observation.ThreadProxy;
+import org.tendiwa.core.player.SinglePlayerMode;
 import org.tendiwa.core.vision.Seer;
 
 import java.util.Comparator;
@@ -49,6 +48,7 @@ private final ItemActorFactory itemActorFactory;
 private final ProjectileActorFactory projectileActorFactory;
 private final ObjectActorFactory objectActorFactory;
 private final GraphicsConfig config;
+private final SinglePlayerMode singlePlayerMode;
 private final TimeStream timeStream;
 private final World world;
 private final WallActorFactory wallActorFactory;
@@ -69,7 +69,7 @@ TendiwaStage(
 	CharacterActorFactory characterActorFactory,
 	final MessageLog messageLog,
 	@Named("player") final Character player,
-	@Named("tendiwa") Observable model,
+	final ThreadProxy model,
 	final RenderWorld renderWorld,
 	GameScreenViewport viewport,
 	SoundActorFactory soundActorFactory,
@@ -78,10 +78,11 @@ TendiwaStage(
 	final ItemActorFactory itemActorFactory,
 	final ProjectileActorFactory projectileActorFactory,
 	final ObjectActorFactory objectActorFactory,
-    final BorderMarkerFactory borderMarkerFactory,
-    final GraphicsConfig config
+	final BorderMarkerFactory borderMarkerFactory,
+	final GraphicsConfig config,
+	SinglePlayerMode singlePlayerMode
 ) {
-	super(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true, batch);
+	super(viewport.getWindowWidthPixels(), viewport.getWindowHeightPixels(), true, batch);
 	this.timeStream = timeStream;
 	this.world = world;
 	this.wallActorFactory = wallActorFactory;
@@ -95,12 +96,13 @@ TendiwaStage(
 	this.projectileActorFactory = projectileActorFactory;
 	this.objectActorFactory = objectActorFactory;
 	this.config = config;
+	this.singlePlayerMode = singlePlayerMode;
 	setCamera(viewport.getCamera());
 	initializeActors();
 	model.subscribe(new Observer<EventFovChange>() {
 
 		@Override
-		public void update(EventFovChange event, EventEmitter<EventFovChange> emitter) {
+		public void update(EventFovChange event, Finishable<EventFovChange> emitter) {
 			for (Border border : event.seenBorders) {
 				borderMarkerFactory.create(border);
 			}
@@ -133,7 +135,7 @@ TendiwaStage(
 	}, EventFovChange.class);
 	model.subscribe(new Observer<EventMove>() {
 		@Override
-		public void update(EventMove event, EventEmitter<EventMove> emitter) {
+		public void update(EventMove event, final Finishable<EventMove> emitter) {
 			Actor characterActor = getCharacterActor(event.character);
 			int index = event.character.getY() * world.getWidth() + event.character.getX();
 			sortActorsByY();
@@ -158,10 +160,12 @@ TendiwaStage(
 				} else {
 					action = moveTo(event.character.getX(), event.character.getY(), 0.1f);
 				}
+				final Observer<EventMove> observer = this;
 				Action sequence = sequence(action, run(new Runnable() {
 					@Override
 					public void run() {
 						updateCharactersVisibility();
+						emitter.done(observer);
 					}
 				}));
 				characterActor.addAction(sequence);
@@ -169,38 +173,40 @@ TendiwaStage(
 				characterActor.setX(event.character.getX());
 				characterActor.setY(event.character.getY());
 				updateCharactersVisibility();
-				if (event.character.isPlayer()) {
-					// If this is player moving, then the next event will be
-					// EventFovChange, and to prevent flickering we make the current event
-					// render in the same frame as the previous event.
-				}
+//				if (event.character.isPlayer()) {
+				// If this is player moving, then the next event will be
+				// EventFovChange, and to prevent flickering we make the current event
+				// render in the same frame as the previous event.
+//				}
+				emitter.done(this);
+				model.waitForNextEventInCurrenFrame();
 			}
 		}
 	}, EventMove.class);
 	model.subscribe(new Observer<EventInitialTerrain>() {
 		@Override
-		public void update(EventInitialTerrain event, EventEmitter<EventInitialTerrain> emitter) {
+		public void update(EventInitialTerrain event, Finishable<EventInitialTerrain> emitter) {
 			for (RenderCell cell : event.seenCells) {
-				renderWorld.getCurrentPlane().seeCell(cell);
+//				renderWorld.getCurrentPlane().seeCell(cell);
 				HorizontalPlane plane = player.getPlane();
 				if (plane.hasWall(cell.x, cell.y)) {
 					addWallActor(cell.x, cell.y);
 				} else if (plane.hasObject(cell.x, cell.y)) {
 					addObjectActor(cell.x, cell.y);
 				}
-
 			}
 			for (RenderBorder border : event.seenBorders) {
 				if (border.getObject() != null) {
 					addBorderObjectActor(border);
 				}
 			}
+			emitter.done(this);
 		}
 	}, EventInitialTerrain.class);
 	model.subscribe(new Observer<EventItemDisappear>() {
 
 		@Override
-		public void update(final EventItemDisappear event, EventEmitter<EventItemDisappear> emitter) {
+		public void update(final EventItemDisappear event, Finishable<EventItemDisappear> emitter) {
 			Actor actor = itemActorFactory.create(
 				event.x,
 				event.y,
@@ -222,16 +228,25 @@ TendiwaStage(
 			} else {
 				removeItemActor(event.item);
 			}
+			emitter.done(this);
 		}
 	}, EventItemDisappear.class);
 	model.subscribe(new Observer<EventSound>() {
 		@Override
-		public void update(EventSound event, EventEmitter<EventSound> emitter) {
-			Actor actor = obtainSoundActor(
+		public void update(EventSound event, final Finishable<EventSound> emitter) {
+			final Actor actor = obtainSoundActor(
 				event.sound,
 				event.x,
 				event.y
 			);
+			final Observer<EventSound> observer = this;
+			actor.addAction(sequence(rotateBy(90, 0.3f), run(new Runnable() {
+				@Override
+				public void run() {
+					actor.getParent().removeActor(actor);
+					emitter.done(observer);
+				}
+			})));
 			if (event.source == null) {
 				messageLog.pushMessage(
 					Languages.getText("events.sound_from_cell", event.sound)
@@ -250,7 +265,7 @@ TendiwaStage(
 	}, EventSound.class);
 	model.subscribe(new Observer<EventGetDamage>() {
 		@Override
-		public void update(EventGetDamage event, EventEmitter<EventGetDamage> emitter) {
+		public void update(EventGetDamage event, Finishable<EventGetDamage> emitter) {
 			messageLog.pushMessage(
 				Languages.getText("log.get_damage", event.damageSource, event.damageType, event.character)
 			);
@@ -267,7 +282,7 @@ TendiwaStage(
 	}, EventGetDamage.class);
 	model.subscribe(new Observer<EventDie>() {
 		@Override
-		public void update(EventDie event, EventEmitter<EventDie> emitter) {
+		public void update(EventDie event, Finishable<EventDie> emitter) {
 			CharacterActor characterActor = getCharacterActor(event.character);
 			getRoot().removeActor(characterActor);
 			messageLog.pushMessage(
@@ -277,8 +292,7 @@ TendiwaStage(
 	}, EventDie.class);
 	model.subscribe(new Observer<EventAttack>() {
 		@Override
-		public void update(EventAttack event, final EventEmitter<EventAttack> emitter) {
-
+		public void update(EventAttack event, final Finishable<EventAttack> emitter) {
 			CharacterActor characterActor = getCharacterActor(event.attacker);
 			float dx = event.aim.getX() - event.attacker.getX();
 			float dy = event.aim.getY() - event.attacker.getY();
@@ -300,14 +314,21 @@ TendiwaStage(
 	model.subscribe(new Observer<EventProjectileFly>() {
 
 		@Override
-		public void update(EventProjectileFly event, EventEmitter<EventProjectileFly> emitter) {
+		public void update(EventProjectileFly event, final Finishable<EventProjectileFly> emitter) {
+			final Observer<EventProjectileFly> thisObserver = this;
 			Actor actor = obtainFlyingProjectileActor(
 				event.item,
 				event.fromX,
 				event.fromY,
 				event.toX,
 				event.toY,
-				event.style
+				event.style,
+				new Runnable() {
+					@Override
+					public void run() {
+						emitter.done(thisObserver);
+					}
+				}
 			);
 			addActor(actor);
 		}
@@ -315,7 +336,7 @@ TendiwaStage(
 	model.subscribe(new Observer<EventMoveToPlane>() {
 
 		@Override
-		public void update(EventMoveToPlane event, EventEmitter<EventMoveToPlane> emitter) {
+		public void update(EventMoveToPlane event, Finishable<EventMoveToPlane> emitter) {
 			removeActorsOfPlane(player.getPlane().getLevel());
 			for (RenderCell cell : event.seenCells) {
 				if (player.getPlane().hasWall(cell.x, cell.y)) {
@@ -326,16 +347,16 @@ TendiwaStage(
 					addObjectActor(cell.x, cell.y);
 				}
 			}
+			emitter.done(this);
 		}
 	}, EventMoveToPlane.class);
-
 }
 
 private void initializeActors() {
 	for (Character character : timeStream.getCharacters()) {
 		CharacterActor actor = createCharacterActor(character);
 		characterActors.put(character, actor);
-		if (character == player) {
+		if (singlePlayerMode.isPlayer(character)) {
 			playerCharacterActor = actor;
 		}
 	}
@@ -399,7 +420,15 @@ public boolean hasActorForItem(Item item) {
  * 	Y coordinate of flight end cell in world coordinates.
  * @return A new ItemActor with MoveToAction added to it.
  */
-public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int fromY, int toX, int toY, EventProjectileFly.FlightStyle style) {
+public Actor obtainFlyingProjectileActor(
+	final Projectile item,
+	int fromX,
+	int fromY,
+	int toX,
+	int toY,
+	EventProjectileFly.FlightStyle style,
+	final Runnable onComplete
+) {
 	final Actor actor;
 
 	Action action;
@@ -420,6 +449,7 @@ public Actor obtainFlyingProjectileActor(final Projectile item, int fromX, int f
 		@Override
 		public void run() {
 			TendiwaStage.this.getRoot().removeActor(actor);
+			onComplete.run();
 		}
 	});
 	if (rotating) {

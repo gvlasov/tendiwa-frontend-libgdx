@@ -2,47 +2,65 @@ package org.tendiwa.client.extensions.std;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Screen;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.*;
+import org.tendiwa.client.ui.actors.CursorActor;
+import org.tendiwa.client.ui.cellSelection.CellSelectionActor;
 import org.tendiwa.client.ui.factories.CellSelectionFactory;
 import org.tendiwa.client.ui.input.*;
+import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.model.MessageLog;
-import org.tendiwa.client.ui.uiModes.UiModeManager;
+import org.tendiwa.client.ui.model.QuiveredItemHolder;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.meta.Condition;
+import org.tendiwa.core.volition.Volition;
 import org.tendiwa.groovy.Registry;
 
 import java.util.LinkedList;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
+@Singleton
 public class StdActions implements ActionsAdder {
 private final Character player;
 private final GameScreenViewport viewport;
 private final MessageLog messageLog;
 private final WorldMapScreen worldMapScreen;
 private final ItemSelector itemSelector;
-private final GameScreen gameScreen;
+private final Screen gameScreen;
 private final TaskManager taskManager;
 private final Game game;
 private final CellSelectionFactory cellSelectionFactory;
 private final Volition volition;
 private final ItemToKeyMapper<Item> mapper;
+private final QuiveredItemHolder quiveredItemHolder;
+private final CursorPosition cursorPosition;
+private final CursorActor cursorActor;
+private final GraphicsConfig graphicsConfig;
+private final CellSelectionActor cellSelectionActor;
 
+@Inject
 StdActions(
 	@Named("player") final Character player,
 	final GameScreenViewport viewport,
-	final UiModeManager uiModeManager,
 	final MessageLog messageLog,
 	final WorldMapScreen worldMapScreen,
 	ItemSelector itemSelector,
-	final GameScreen gameScreen,
+	@Named("game") final Screen gameScreen,
 	TaskManager taskManager,
 	final Game game,
 	final CellSelectionFactory cellSelectionFactory,
 	Volition volition,
-	ItemToKeyMapper<Item> mapper
+	ItemToKeyMapper<Item> mapper,
+	QuiveredItemHolder quiveredItemHolder,
+	CursorPosition cursorPosition,
+	CursorActor cursorActor,
+	GraphicsConfig graphicsConfig,
+	CellSelectionActor cellSelectionActor
 ) {
 
 	this.player = player;
@@ -56,11 +74,15 @@ StdActions(
 	this.cellSelectionFactory = cellSelectionFactory;
 	this.volition = volition;
 	this.mapper = mapper;
+	this.quiveredItemHolder = quiveredItemHolder;
+	this.cursorPosition = cursorPosition;
+	this.cursorActor = cursorActor;
+	this.graphicsConfig = graphicsConfig;
+	this.cellSelectionActor = cellSelectionActor;
 }
 
 @Override
 public void addTo(InputToActionMapper actionMapper) {
-
 	actionMapper.putAction(LEFT, new KeyboardAction("action.cameraMoveWest") {
 		@Override
 		public void act() {
@@ -157,14 +179,14 @@ public void addTo(InputToActionMapper actionMapper) {
 	actionMapper.putAction(F10, new KeyboardAction("action.toggleAnimations") {
 		@Override
 		public void act() {
-			gameScreen.getConfig().toggleAnimations();
-			messageLog.pushMessage("Animations " + (gameScreen.getConfig().animationsEnabled ? "enabled" : "disabled") + ".");
+			graphicsConfig.toggleAnimations();
+			messageLog.pushMessage("Animations " + (graphicsConfig.animationsEnabled ? "enabled" : "disabled") + ".");
 		}
 	});
 	actionMapper.putAction(F11, new KeyboardAction("action.toggleStatusBar") {
 		@Override
 		public void act() {
-			gameScreen.toggleStatusbar();
+			graphicsConfig.toggleStatusBar();
 		}
 	});
 	actionMapper.putAction(G, new KeyboardAction("action.pickUp") {
@@ -187,7 +209,7 @@ public void addTo(InputToActionMapper actionMapper) {
 				}, new EntitySelectionListener<Item>() {
 					@Override
 					public void execute(Item item) {
-						QuiveredItemHolder.setItem(item);
+						quiveredItemHolder.setItem(item);
 						game.setScreen(gameScreen);
 					}
 				}
@@ -209,12 +231,24 @@ public void addTo(InputToActionMapper actionMapper) {
 					@Override
 					public void execute(final Item item) {
 						game.setScreen(gameScreen);
-						cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
-							@Override
-							public void execute(EnhancedPoint point) {
-								volition.propel(item.takeSingleItem(), point.x, point.y);
+						cursorActor.setVisible(false);
+						cellSelectionActor.setVisible(true);
+						cellSelectionFactory.create(
+							new EntitySelectionListener<EnhancedPoint>() {
+								@Override
+								public void execute(EnhancedPoint point) {
+									volition.propel(item.takeSingleItem(), point.x, point.y);
+								}
+							},
+							new Runnable() {
+								@Override
+								public void run() {
+									System.out.println("run");
+									cursorActor.setVisible(true);
+									cellSelectionActor.setVisible(false);
+								}
 							}
-						}).start();
+						).start();
 					}
 				}
 			);
@@ -229,16 +263,27 @@ public void addTo(InputToActionMapper actionMapper) {
 					return Items.isRangedWeapon(item.getType());
 				}
 			});
-			final Item quiveredItem = QuiveredItemHolder.getItem();
+			final Item quiveredItem = quiveredItemHolder.getItem();
 			if (rangedWeapon != null && quiveredItem != null && Items.isShootable(quiveredItem.getType())) {
 				final Shootable shootable = Items.asShootable(quiveredItem.getType());
 				if (shootable.getAmmunitionType() == (Items.asRangedWeapon(rangedWeapon.getType())).getAmmunitionType()) {
-					cellSelectionFactory.create(new EntitySelectionListener<EnhancedPoint>() {
-						@Override
-						public void execute(EnhancedPoint point) {
-							volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
+					cursorActor.setVisible(false);
+					cellSelectionActor.setVisible(true);
+					cellSelectionFactory.create(
+						new EntitySelectionListener<EnhancedPoint>() {
+							@Override
+							public void execute(EnhancedPoint point) {
+								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
+							}
+						},
+						new Runnable() {
+							@Override
+							public void run() {
+								cursorActor.setVisible(true);
+								cellSelectionActor.setVisible(false);
+							}
 						}
-					}).start();
+					).start();
 				}
 			}
 		}
@@ -298,7 +343,6 @@ public void addTo(InputToActionMapper actionMapper) {
 	actionMapper.putMouseAction(Input.Buttons.LEFT, new MouseAction("actions.mouse.go_or_attack") {
 		@Override
 		public void act(int screenX, int screenY) {
-
 			final int cellX = (viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE;
 			final int cellY = (viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE;
 			if (cellX == player.getX() && cellY == player.getY()) {
@@ -339,6 +383,15 @@ public void addTo(InputToActionMapper actionMapper) {
 					}
 				}
 			});
+		}
+	});
+	actionMapper.putMouseMovedAction(new MouseAction("ui.actions.cell_selection.mouse_moved") {
+		@Override
+		public void act(int screenX, int screenY) {
+			EnhancedPoint point = viewport.screenPixelToWorldCell(screenX, screenY);
+			if (!cursorPosition.getPoint().equals(point)) {
+				cursorPosition.setPoint(point);
+			}
 		}
 	});
 }

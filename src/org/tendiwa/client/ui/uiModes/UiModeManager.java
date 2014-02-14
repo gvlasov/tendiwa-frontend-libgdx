@@ -26,7 +26,6 @@ public void pushMode(UiMode mode) {
 public void popMode() {
 	modes.pop();
 	gdxInput.setInputProcessor(modes.peek());
-
 }
 
 public UiMode getCurrentMode() {

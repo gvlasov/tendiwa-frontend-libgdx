@@ -1,62 +1,45 @@
-package org.tendiwa.client.ui.widgets;
+package org.tendiwa.client.extensions.std.actions;
 
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.InputProcessor;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.WidgetGroup;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import org.tendiwa.client.*;
-import org.tendiwa.client.ui.controller.ActionSelectionListener;
-import org.tendiwa.client.ui.factories.ColorFillFactory;
-import org.tendiwa.client.ui.fonts.FontRegistry;
-import org.tendiwa.client.ui.input.InputToActionMapper;
-import org.tendiwa.client.ui.input.KeyboardAction;
+import org.tendiwa.client.AtlasItems;
+import org.tendiwa.client.ItemToKeyMapper;
+import org.tendiwa.client.TendiwaWidget;
+import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
 
 import java.util.Collection;
 import java.util.Map;
 
-public class UiActions extends TendiwaWidget {
+@Singleton
+public class ActionsWidget extends TendiwaWidget {
 private final Character player;
-VerticalFlowGroup flowGroup = new VerticalFlowGroup();
-ItemToKeyMapper<CharacterAbility> mapper = new ItemToKeyMapper<>();
-private Label.LabelStyle style;
+private final VerticalFlowGroup flowGroup = new VerticalFlowGroup();
+private final ItemToKeyMapper<CharacterAbility> mapper;
+private final Label.LabelStyle style;
 
 @Inject
-public UiActions(
+public ActionsWidget(
 	@Named("player") Character player,
-	InputToActionMapper actionMapper,
-	final ActionSelectionListener onActionSelected,
-	FontRegistry fontRegistry,
-	ColorFillFactory colorFillFactory,
-	@Named("default") final InputProcessor defaultInputProcessor,
-	final Input gdxInput
+	@Named("actions_widget") ItemToKeyMapper<CharacterAbility> mapper,
+	@Named("actions_widget") Label.LabelStyle style,
+	@Named("actions_widget") Drawable background
 ) {
 	super();
+	this.mapper = mapper;
 	this.player = player;
-	style = new Label.LabelStyle(fontRegistry.obtain(14, false), Color.WHITE);
-	setBackground(colorFillFactory.create(new Color(0.2f, 0.2f, 0.2f, 1.0f)).getDrawable());
+	this.style = style;
+	setBackground(background);
 	add(flowGroup).expand().fill();
-	actionMapper.putAction(Input.Keys.A, new KeyboardAction("action.actionsMenu") {
-		@Override
-		public void act() {
-			setVisible(true);
-			gdxInput.setInputProcessor(new EntitySelectionInputProcessor<>(mapper, onActionSelected, new Runnable() {
-				@Override
-				public void run() {
-					setVisible(false);
-					gdxInput.setInputProcessor(defaultInputProcessor);
-				}
-			}));
-		}
-	});
 }
 
 /**

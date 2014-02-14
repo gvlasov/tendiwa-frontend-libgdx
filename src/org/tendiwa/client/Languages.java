@@ -39,5 +39,7 @@ public static void init() {
 	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/characters.ru_RU.words"));
 	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/sounds.ru_RU.words"));
 	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/items.ru_RU.words"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/spells_widget.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/key_hints_widget.ru_RU.texts"));
 }
 }
