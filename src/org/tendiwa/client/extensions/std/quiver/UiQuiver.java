@@ -1,10 +1,13 @@
-package org.tendiwa.client;
+package org.tendiwa.client.extensions.std.quiver;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.google.inject.Inject;
+import org.tendiwa.client.EntitySelectionListener;
+import org.tendiwa.client.Languages;
+import org.tendiwa.client.ui.TendiwaWidget;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.ItemViewFactory;
 import org.tendiwa.client.ui.fonts.FontRegistry;

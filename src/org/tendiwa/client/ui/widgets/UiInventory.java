@@ -8,7 +8,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
 import com.badlogic.gdx.scenes.scene2d.ui.Widget;
 import com.google.inject.Inject;
-import org.tendiwa.client.TendiwaWidget;
+import org.tendiwa.client.ui.TendiwaWidget;
 import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.ItemViewFactory;

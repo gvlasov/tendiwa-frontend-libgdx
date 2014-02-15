@@ -12,7 +12,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.AtlasItems;
 import org.tendiwa.client.ItemToKeyMapper;
-import org.tendiwa.client.TendiwaWidget;
+import org.tendiwa.client.ui.TendiwaWidget;
 import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;

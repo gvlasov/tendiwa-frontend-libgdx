@@ -179,7 +179,7 @@ TendiwaStage(
 				// render in the same frame as the previous event.
 //				}
 				emitter.done(this);
-				model.waitForNextEventInCurrenFrame();
+				model.waitForNextEventInCurrentFrame();
 			}
 		}
 	}, EventMove.class);

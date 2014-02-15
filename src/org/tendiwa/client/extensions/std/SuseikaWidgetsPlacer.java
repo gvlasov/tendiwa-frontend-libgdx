@@ -4,14 +4,14 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.tendiwa.client.UiQuiver;
+import org.tendiwa.client.extensions.std.quiver.UiQuiver;
 import org.tendiwa.client.extensions.std.actions.Actions;
 import org.tendiwa.client.extensions.std.keyHints.KeyHints;
 import org.tendiwa.client.extensions.std.spells.Spells;
 import org.tendiwa.client.ui.WidgetsPlacer;
-import org.tendiwa.client.ui.widgets.UiHealthBar;
+import org.tendiwa.client.extensions.std.hpBar.UiHealthBar;
 import org.tendiwa.client.ui.widgets.UiInventory;
-import org.tendiwa.client.ui.widgets.UiLog;
+import org.tendiwa.client.extensions.std.log.UiLog;
 
 @Singleton
 public class SuseikaWidgetsPlacer implements WidgetsPlacer {
@@ -53,7 +53,7 @@ public void placeWidgets(
 	actions.getWidget().setVisible(false);
 	spells.getWidget().setVisible(false);
 
-//	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
+	table.add(log).width(400).height(200).expand().pad(5).left().top().colspan(2);
 	table.add(hpBar).expand().right().top().pad(5).colspan(1);
 	table.row();
 	table.add(quiver).expand().right().bottom().pad(5).colspan(3);

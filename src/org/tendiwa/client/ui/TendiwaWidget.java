@@ -1,4 +1,4 @@
-package org.tendiwa.client;
+package org.tendiwa.client.ui;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 

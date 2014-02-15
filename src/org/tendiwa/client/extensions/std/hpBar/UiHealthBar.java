@@ -1,9 +1,9 @@
-package org.tendiwa.client.ui.widgets;
+package org.tendiwa.client.extensions.std.hpBar;
 
 import com.badlogic.gdx.graphics.Color;
 import com.esotericsoftware.tablelayout.Cell;
 import com.google.inject.Inject;
-import org.tendiwa.client.TendiwaWidget;
+import org.tendiwa.client.ui.TendiwaWidget;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.core.events.EventGetDamage;
 import org.tendiwa.core.events.EventInitialTerrain;
@@ -47,8 +47,7 @@ private UiHealthBar(
 	model.subscribe(new Observer<EventInitialTerrain>() {
 		@Override
 		public void update(EventInitialTerrain event, Finishable<EventInitialTerrain> emitter) {
-			changeMaxHp(event.player.getMaxHP());
-			changeHp(event.player.getHp());
+			changeHpAndMaxHp(event.player.getHp(), event.player.getMaxHp());
 			emitter.done(this);
 		}
 	}, EventInitialTerrain.class);
@@ -56,7 +55,9 @@ private UiHealthBar(
 }
 
 public void changeHp(int hp) {
-	greenZone.width(getGreenZoneWidth(hp));
+	int greenZoneWidth = getGreenZoneWidth(hp);
+	greenZone.width(greenZoneWidth);
+	blackZone.width(width - greenZoneWidth);
 	invalidate();
 }
 
@@ -68,5 +69,13 @@ public void changeMaxHp(int maxHp) {
 	this.maxHp = maxHp;
 	blackZone.width(width - getGreenZoneWidth(this.hp));
 	invalidate();
+}
+
+private void changeHpAndMaxHp(int hp, int maxHp) {
+	assert hp >= 0 && maxHp >= 0;
+	this.maxHp = maxHp;
+	changeHp(hp);
+	changeMaxHp(maxHp);
+
 }
 }

@@ -7,7 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.Align;
 import com.google.inject.Inject;
 import org.tendiwa.client.GameScreenViewport;
 import org.tendiwa.client.Languages;
-import org.tendiwa.client.TendiwaWidget;
+import org.tendiwa.client.ui.TendiwaWidget;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.fonts.FontRegistry;
 import org.tendiwa.client.ui.input.Mapping;

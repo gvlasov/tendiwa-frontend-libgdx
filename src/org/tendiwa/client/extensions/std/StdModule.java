@@ -1,5 +1,6 @@
 package org.tendiwa.client.extensions.std;
 
+import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
@@ -16,6 +17,9 @@ protected void configure() {
 	bind(MarkingsLayer.class)
 		.to(StdMarkingsLayer.class)
 		.in(Scopes.SINGLETON);
+	bind(Skin.class)
+		.annotatedWith(Names.named("default"))
+		.to(DefaultSkin.class);
 
 }
 }

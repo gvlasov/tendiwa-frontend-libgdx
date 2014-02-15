@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.ItemToKeyMapper;
-import org.tendiwa.client.TendiwaWidget;
+import org.tendiwa.client.ui.TendiwaWidget;
 import org.tendiwa.client.VerticalFlowGroup;
 import org.tendiwa.client.ui.factories.ColorFillFactory;
 import org.tendiwa.client.ui.factories.SpellViewFactory;
