@@ -7,6 +7,9 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import org.tendiwa.core.*;
 import org.tendiwa.core.meta.Chance;
+import org.tendiwa.geometry.DSL;
+import org.tendiwa.geometry.EnhancedRectangle;
+import org.tendiwa.geometry.Segment;
 
 /**
  * This class generates textures of transitions to a certain type of floor and provides access to them.
