@@ -7,7 +7,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.ui.model.CursorPosition;
-import org.tendiwa.core.EnhancedPoint;
+import org.tendiwa.core.Cell;
 import org.tendiwa.core.World;
 import org.tendiwa.core.meta.CellPosition;
 
@@ -168,8 +168,8 @@ public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int start
 		&& y < startScreenCellY + heightInCells;
 }
 
-public EnhancedPoint screenPixelToWorldCell(int screenX, int screenY) {
-	return new EnhancedPoint(
+public Cell screenPixelToWorldCell(int screenX, int screenY) {
+	return new Cell(
 		(startPixelX + screenX) / GameScreen.TILE_SIZE,
 		(startPixelY + screenY) / GameScreen.TILE_SIZE
 	);

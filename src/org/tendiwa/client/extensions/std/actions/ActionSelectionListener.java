@@ -34,10 +34,10 @@ public void execute(final CharacterAbility characterAbility) {
 		cellSelectionActor.setVisible(true);
 		cursorActor.setVisible(false);
 		factory.create(
-			new EntitySelectionListener<EnhancedPoint>() {
+			new EntitySelectionListener<Cell>() {
 				@Override
-				public void execute(EnhancedPoint point) {
-					volition.actionToCell((ActionToCell) action, point.x, point.y);
+				public void execute(Cell point) {
+					volition.actionToCell((ActionToCell) action, point.getX(), point.getY());
 				}
 			},
 			new Runnable() {

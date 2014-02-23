@@ -234,10 +234,10 @@ public void addTo(InputToActionMapper actionMapper) {
 						cursorActor.setVisible(false);
 						cellSelectionActor.setVisible(true);
 						cellSelectionFactory.create(
-							new EntitySelectionListener<EnhancedPoint>() {
+							new EntitySelectionListener<Cell>() {
 								@Override
-								public void execute(EnhancedPoint point) {
-									volition.propel(item.takeSingleItem(), point.x, point.y);
+								public void execute(Cell point) {
+									volition.propel(item.takeSingleItem(), point.getX(), point.getY());
 								}
 							},
 							new Runnable() {
@@ -270,10 +270,10 @@ public void addTo(InputToActionMapper actionMapper) {
 					cursorActor.setVisible(false);
 					cellSelectionActor.setVisible(true);
 					cellSelectionFactory.create(
-						new EntitySelectionListener<EnhancedPoint>() {
+						new EntitySelectionListener<Cell>() {
 							@Override
-							public void execute(EnhancedPoint point) {
-								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x, point.y);
+							public void execute(Cell point) {
+								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.getX(), point.getY());
 							}
 						},
 						new Runnable() {
@@ -348,7 +348,7 @@ public void addTo(InputToActionMapper actionMapper) {
 			if (cellX == player.getX() && cellY == player.getY()) {
 				return;
 			}
-			LinkedList<EnhancedPoint> path = Paths.getPath(
+			LinkedList<Cell> path = Paths.getPath(
 				player.getX(), player.getY(),
 				cellX, cellY,
 				player.getPathWalkerOverCharacters(),
@@ -367,7 +367,7 @@ public void addTo(InputToActionMapper actionMapper) {
 
 				@Override
 				public void execute() {
-					LinkedList<EnhancedPoint> path = Paths.getPath(
+					LinkedList<Cell> path = Paths.getPath(
 						player.getX(), player.getY(),
 						cellX, cellY,
 						player.getPathWalkerOverCharacters(),
@@ -378,8 +378,8 @@ public void addTo(InputToActionMapper actionMapper) {
 						return;
 					}
 					if (!path.isEmpty()) {
-						EnhancedPoint nextStep = path.removeFirst();
-						moveToOrAttackCharacterInCell(nextStep.x, nextStep.y);
+						Cell nextStep = path.removeFirst();
+						moveToOrAttackCharacterInCell(nextStep.getX(), nextStep.getY());
 					}
 				}
 			});
@@ -388,7 +388,7 @@ public void addTo(InputToActionMapper actionMapper) {
 	actionMapper.putMouseMovedAction(new MouseAction("ui.actions.cell_selection.mouse_moved") {
 		@Override
 		public void act(int screenX, int screenY) {
-			EnhancedPoint point = viewport.screenPixelToWorldCell(screenX, screenY);
+			Cell point = viewport.screenPixelToWorldCell(screenX, screenY);
 			if (!cursorPosition.getPoint().equals(point)) {
 				cursorPosition.setPoint(point);
 			}

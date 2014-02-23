@@ -53,7 +53,7 @@ public Pixmap createTransition(CardinalDirection dir) {
 	// Fill the most of the pixmap with transparent pixels.
 	pixmap.fillRectangle(clearRec.getX(), clearRec.getY(), clearRec.getWidth(), clearRec.getHeight());
 	Segment sideSegment = transitionRec.getSideAsSegment(dir);
-	EnhancedPoint point = new EnhancedPoint(sideSegment.x, sideSegment.y);
+	Cell point = new Cell(sideSegment.x, sideSegment.y);
 	pixmap.setColor(0, 0, 0, 0);
 	CardinalDirection dynamicGrowingDir = dir.isVertical() ? Directions.E : Directions.S;
 	int startI = sideSegment.getStaticCoord();
@@ -71,12 +71,11 @@ public Pixmap createTransition(CardinalDirection dir) {
 			) {
 			if (Chance.roll((i - startI) / oppositeGrowing * 100 / diffusionDepth + 50)) {
 				// Set transparent pixels to leave only some non-transparent ones.
-				pixmap.drawPixel(point.x, point.y);
+				pixmap.drawPixel(point.getX(), point.getY());
 			}
-			point.moveToSide(dynamicGrowingDir);
+			point = point.moveToSide(dynamicGrowingDir);
 		}
-		point.setLocation(sideSegment.x, sideSegment.y);
-		point.moveToSide(opposite, iterationsI++);
+		point = new Cell(sideSegment.x, sideSegment.y).moveToSide(opposite, iterationsI++);
 	}
 	return pixmap;
 }

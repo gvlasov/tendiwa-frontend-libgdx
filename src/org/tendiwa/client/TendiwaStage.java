@@ -443,7 +443,7 @@ public Actor obtainFlyingProjectileActor(
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
-	moveToAction.setDuration((float) (EnhancedPoint.distanceDouble(fromX, fromY, toX, toY) * 0.05));
+	moveToAction.setDuration((float) (Cell.distanceDouble(fromX, fromY, toX, toY) * 0.05));
 	ParallelAction movingAndRotating = parallel(moveToAction, rotateBy(360, moveToAction.getDuration()));
 	RunnableAction runnable = run(new Runnable() {
 		@Override
