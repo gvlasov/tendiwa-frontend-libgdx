@@ -5,7 +5,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
-import org.tendiwa.core.*;
+import org.tendiwa.core.CardinalDirection;
+import org.tendiwa.core.Directions;
 import org.tendiwa.core.meta.Chance;
 import org.tendiwa.geometry.Cell;
 import org.tendiwa.geometry.DSL;
@@ -48,21 +49,19 @@ protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
 	// Fill the most of the pixmap with transparent pixels.
 	pixmap.fillRectangle(clearRec.getX(), clearRec.getY(), clearRec.getWidth(), clearRec.getHeight());
 	Segment sideSegment = transitionRec.getSideAsSegment(dir);
-	Cell point = new Cell(sideSegment.x, sideSegment.y);
+	Cell point = new Cell(sideSegment.getX(), sideSegment.getY());
 	pixmap.setColor(0, 0, 0, 0);
 	CardinalDirection dynamicGrowingDir = dir.isVertical() ? Directions.E : Directions.S;
 	int startI = sideSegment.getStaticCoord();
 	int oppositeGrowing = opposite.getGrowing();
 	int iterationsI = 0;
-	for (
-		int i = startI;
-		i != startI + (diffusionDepth + 1) * opposite.getGrowing();
-		i += oppositeGrowing
+	for (int i = startI;
+	     i != startI + (diffusionDepth + 1) * opposite.getGrowing();
+	     i += oppositeGrowing
 		) {
-		for (
-			int j = sideSegment.getStartCoord();
-			j <= sideSegment.getEndCoord();
-			j += 1
+		for (int j = sideSegment.getStartCoord();
+		     j <= sideSegment.getEndCoord();
+		     j += 1
 			) {
 			if (Chance.roll((i - startI) / oppositeGrowing * 100 / diffusionDepth + 10)) {
 				// Discard pixel (set it to be transparent)
@@ -70,7 +69,7 @@ protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
 			}
 			point = point.moveToSide(dynamicGrowingDir);
 		}
-		point = new Cell(sideSegment.x, sideSegment.y).moveToSide(opposite, iterationsI++);
+		point = new Cell(sideSegment.getX(), sideSegment.getY()).moveToSide(opposite, iterationsI++);
 	}
 	return pixmap;
 }
