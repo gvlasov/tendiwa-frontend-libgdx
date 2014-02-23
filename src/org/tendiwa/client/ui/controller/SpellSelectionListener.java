@@ -7,6 +7,7 @@ import org.tendiwa.client.ui.cellSelection.CellSelectionActor;
 import org.tendiwa.client.ui.factories.CellSelectionFactory;
 import org.tendiwa.core.*;
 import org.tendiwa.core.volition.Volition;
+import org.tendiwa.geometry.Cell;
 
 public class SpellSelectionListener implements EntitySelectionListener<Spell> {
 private final Volition volition;

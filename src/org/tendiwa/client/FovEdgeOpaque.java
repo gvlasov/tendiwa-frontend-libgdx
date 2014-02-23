@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.tendiwa.core.*;
 import org.tendiwa.core.meta.Chance;
+import org.tendiwa.geometry.Cell;
 import org.tendiwa.geometry.DSL;
 import org.tendiwa.geometry.EnhancedRectangle;
 import org.tendiwa.geometry.Segment;

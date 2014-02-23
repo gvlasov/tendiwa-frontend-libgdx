@@ -7,7 +7,7 @@ import org.tendiwa.client.EntitySelectionListener;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiMode;
 import org.tendiwa.client.ui.uiModes.UiModeManager;
-import org.tendiwa.core.Cell;
+import org.tendiwa.geometry.Cell;
 
 public class CellSelection {
 private final EntitySelectionListener<Cell> entitySelectionListener;

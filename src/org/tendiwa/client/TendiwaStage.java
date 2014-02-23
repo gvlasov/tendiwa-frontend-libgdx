@@ -24,6 +24,7 @@ import org.tendiwa.core.observation.Observer;
 import org.tendiwa.core.observation.ThreadProxy;
 import org.tendiwa.core.player.SinglePlayerMode;
 import org.tendiwa.core.vision.Seer;
+import org.tendiwa.geometry.Cell;
 
 import java.util.Comparator;
 import java.util.HashMap;

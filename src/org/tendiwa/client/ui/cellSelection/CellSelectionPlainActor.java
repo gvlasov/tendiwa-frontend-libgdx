@@ -8,7 +8,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.ui.model.CursorPosition;
-import org.tendiwa.core.Cell;
+import org.tendiwa.geometry.Cell;
 import org.tendiwa.core.Chunk;
 import org.tendiwa.core.meta.CellPosition;
 

@@ -18,6 +18,7 @@ import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.meta.Condition;
 import org.tendiwa.core.volition.Volition;
+import org.tendiwa.geometry.Cell;
 import org.tendiwa.groovy.Registry;
 
 import java.util.LinkedList;

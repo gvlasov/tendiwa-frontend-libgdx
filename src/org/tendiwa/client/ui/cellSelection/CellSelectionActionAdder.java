@@ -10,7 +10,7 @@ import org.tendiwa.client.ui.input.KeyboardAction;
 import org.tendiwa.client.ui.input.MouseAction;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiModeManager;
-import org.tendiwa.core.Cell;
+import org.tendiwa.geometry.Cell;
 
 import static com.badlogic.gdx.Input.Keys.*;
 

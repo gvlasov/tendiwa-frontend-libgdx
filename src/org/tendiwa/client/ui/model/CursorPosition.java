@@ -2,7 +2,7 @@ package org.tendiwa.client.ui.model;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.tendiwa.core.Cell;
+import org.tendiwa.geometry.Cell;
 
 @Singleton
 public class CursorPosition {
