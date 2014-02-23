@@ -9,7 +9,7 @@ import org.tendiwa.core.*;
 import org.tendiwa.core.meta.Chance;
 import org.tendiwa.geometry.Cell;
 import org.tendiwa.geometry.DSL;
-import org.tendiwa.geometry.EnhancedRectangle;
+import org.tendiwa.geometry.Rectangle;
 import org.tendiwa.geometry.Segment;
 
 public class FovEdgeOpaque extends TransitionPregenerator {
@@ -42,8 +42,8 @@ protected Pixmap createTransition(CardinalDirection dir, final float opacity) {
 	pixmap.setColor(0, 0, 0, opacity);
 	pixmap.fill();
 	CardinalDirection opposite = dir.opposite();
-	EnhancedRectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
-	EnhancedRectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
+	Rectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
+	Rectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
 	pixmap.setColor(0, 0, 0, 0);
 	// Fill the most of the pixmap with transparent pixels.
 	pixmap.fillRectangle(clearRec.getX(), clearRec.getY(), clearRec.getWidth(), clearRec.getHeight());
