@@ -24,7 +24,7 @@ import org.tendiwa.core.observation.Observer;
 import org.tendiwa.core.observation.ThreadProxy;
 import org.tendiwa.core.player.SinglePlayerMode;
 import org.tendiwa.core.vision.Seer;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.Cells;
 
 import java.util.Comparator;
 import java.util.HashMap;
@@ -444,7 +444,7 @@ public Actor obtainFlyingProjectileActor(
 	}
 	MoveToAction moveToAction = new MoveToAction();
 	moveToAction.setPosition(toX, toY);
-	moveToAction.setDuration((float) (Cell.distanceDouble(fromX, fromY, toX, toY) * 0.05));
+	moveToAction.setDuration((float) (Cells.distanceDouble(fromX, fromY, toX, toY) * 0.05));
 	ParallelAction movingAndRotating = parallel(moveToAction, rotateBy(360, moveToAction.getDuration()));
 	RunnableAction runnable = run(new Runnable() {
 		@Override
