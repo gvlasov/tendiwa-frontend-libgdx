@@ -20,6 +20,7 @@ import org.tendiwa.core.meta.Condition;
 import org.tendiwa.core.volition.Volition;
 import org.tendiwa.geometry.Cell;
 import org.tendiwa.groovy.Registry;
+import org.tendiwa.pathfinding.dijkstra.Paths;
 
 import java.util.LinkedList;
 
