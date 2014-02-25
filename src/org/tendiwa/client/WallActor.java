@@ -14,11 +14,12 @@ import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
-import org.tendiwa.client.ui.factories.TileTextureRegionProviderFactory;
-import org.tendiwa.client.ui.factories.WallImageCacheFactory;
 import org.tendiwa.client.ui.factories.WallImageCacheRegistry;
 import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
+import org.tendiwa.core.clients.RenderCell;
+import org.tendiwa.core.clients.RenderPlane;
+import org.tendiwa.core.clients.RenderWorld;
 import org.tendiwa.groovy.Registry;
 
 import java.util.HashMap;

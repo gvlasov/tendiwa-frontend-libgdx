@@ -14,6 +14,8 @@ import com.google.inject.name.Named;
 import org.apache.log4j.Logger;
 import org.tendiwa.client.ui.factories.FloorTransitionsProvidersRegistry;
 import org.tendiwa.core.*;
+import org.tendiwa.core.clients.RenderCell;
+import org.tendiwa.core.clients.RenderWorld;
 import org.tendiwa.groovy.Registry;
 
 import java.util.HashMap;

@@ -15,6 +15,8 @@ import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiMode;
 import org.tendiwa.client.ui.uiModes.UiModeManager;
 import org.tendiwa.core.*;
+import org.tendiwa.core.clients.RenderCell;
+import org.tendiwa.core.clients.RenderWorld;
 import org.tendiwa.core.observation.ThreadProxy;
 import org.tendiwa.core.volition.Volition;
 

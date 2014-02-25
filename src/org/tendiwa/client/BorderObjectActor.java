@@ -9,7 +9,7 @@ import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import org.tendiwa.core.Border;
 import org.tendiwa.core.BorderObject;
-import org.tendiwa.core.RenderPlane;
+import org.tendiwa.core.clients.RenderPlane;
 
 public class BorderObjectActor extends Actor {
 private final BorderObject borderObject;

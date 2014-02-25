@@ -3,7 +3,7 @@ package org.tendiwa.client.ui.factories;
 import com.google.inject.assistedinject.Assisted;
 import org.tendiwa.client.ItemActor;
 import org.tendiwa.core.Item;
-import org.tendiwa.core.RenderPlane;
+import org.tendiwa.core.clients.RenderPlane;
 
 public interface ItemActorFactory {
 public ItemActor create(

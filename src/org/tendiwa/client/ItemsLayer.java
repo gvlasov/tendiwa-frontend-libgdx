@@ -9,6 +9,9 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.*;
+import org.tendiwa.core.clients.RememberedItem;
+import org.tendiwa.core.clients.RenderPlane;
+import org.tendiwa.core.clients.RenderWorld;
 
 @Singleton
 public class ItemsLayer {

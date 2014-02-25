@@ -2,7 +2,7 @@ package org.tendiwa.client.ui.factories;
 
 import com.google.inject.assistedinject.Assisted;
 import org.tendiwa.client.WallActor;
-import org.tendiwa.core.RenderPlane;
+import org.tendiwa.core.clients.RenderPlane;
 import org.tendiwa.core.WallType;
 
 public interface WallActorFactory {

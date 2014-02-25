@@ -9,7 +9,7 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import org.tendiwa.core.Item;
-import org.tendiwa.core.RenderPlane;
+import org.tendiwa.core.clients.RenderPlane;
 
 public class ItemActor extends Actor {
 private final TextureRegion texture;

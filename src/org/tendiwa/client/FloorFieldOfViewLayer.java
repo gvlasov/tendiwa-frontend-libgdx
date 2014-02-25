@@ -10,8 +10,8 @@ import com.bitfire.postprocessing.PostProcessor;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import org.tendiwa.core.RenderCell;
-import org.tendiwa.core.RenderWorld;
+import org.tendiwa.core.clients.RenderCell;
+import org.tendiwa.core.clients.RenderWorld;
 import org.tendiwa.core.meta.CellPosition;
 
 @Singleton
