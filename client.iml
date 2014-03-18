@@ -10,6 +10,10 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="com.google.guava:guava:15.0" level="project" />
     <orderEntry type="library" name="liblexeme" level="project" />
+    <orderEntry type="library" name="com.google.code.guice:guice:2.0.1" level="project" />
+    <orderEntry type="library" name="com.google.inject.extensions:guice-assistedinject:3.0" level="project" />
+    <orderEntry type="library" name="junit:junit:4.11" level="project" />
+    <orderEntry type="module" module-name="core" />
   </component>
 </module>
 
