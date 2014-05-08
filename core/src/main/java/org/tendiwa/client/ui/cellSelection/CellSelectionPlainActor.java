@@ -11,6 +11,7 @@ import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.geometry.Cell;
 import org.tendiwa.core.Chunk;
 import org.tendiwa.core.meta.CellPosition;
+import org.tendiwa.geometry.CellLine;
 
 @Singleton
 public class CellSelectionPlainActor extends CellSelectionActor {
@@ -36,12 +37,12 @@ public Texture getTexture() {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 //	batch.begin();
-	Cell[] vector = Chunk.vector(
-		player.getX(),
-		player.getY(),
-		cursorPosition.getWorldX(),
-		cursorPosition.getWorldY()
-	);
+	Cell[] vector = CellLine.vector(
+            player.getX(),
+            player.getY(),
+            cursorPosition.getWorldX(),
+            cursorPosition.getWorldY()
+    );
 	for (Cell coord : vector) {
 		batch.draw(getTexture(), coord.getX() * GameScreen.TILE_SIZE, coord.getY() * GameScreen.TILE_SIZE);
 	}
