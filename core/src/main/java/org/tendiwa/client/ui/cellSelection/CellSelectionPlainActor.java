@@ -37,11 +37,11 @@ public Texture getTexture() {
 public void draw(Batch batch, float parentAlpha) {
 //	batch.begin();
 	Cell[] vector = CellSegment.vector(
-            player.getX(),
-            player.getY(),
-            cursorPosition.getWorldX(),
-            cursorPosition.getWorldY()
-    );
+		player.getX(),
+		player.getY(),
+		cursorPosition.getWorldX(),
+		cursorPosition.getWorldY()
+	);
 	for (Cell coord : vector) {
 		batch.draw(getTexture(), coord.getX() * GameScreen.TILE_SIZE, coord.getY() * GameScreen.TILE_SIZE);
 	}

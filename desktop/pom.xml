@@ -41,7 +41,12 @@
 			<version>${gdx.version}</version>
 			<classifier>natives-desktop</classifier>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.tendiwa.client</groupId>
+            <artifactId>tendiwa-client-gdx-core</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+    </dependencies>
 
 	<build>
 		<resources>
