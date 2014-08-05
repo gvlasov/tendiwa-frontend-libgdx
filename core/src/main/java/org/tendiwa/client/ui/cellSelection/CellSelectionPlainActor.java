@@ -36,7 +36,7 @@ public Texture getTexture() {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 //	batch.begin();
-	Cell[] vector = CellSegment.vector(
+	Cell[] vector = CellSegment.cells(
 		player.getX(),
 		player.getY(),
 		cursorPosition.getWorldX(),
