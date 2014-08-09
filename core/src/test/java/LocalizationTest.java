@@ -10,7 +10,7 @@ public class LocalizationTest extends TestCase {
     @Test
     public void test() {
         Language russian = new Russian();
-        URL resource = Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/actions.ru_RU.words");
+        URL resource = Resources.getResource("language/ru_RU/actions.ru_RU.words");
         russian.loadDictionary(resource);
     }
 

@@ -31,15 +31,15 @@ public static Language getCurrentLanguage() {
 
 public static void init() {
 	INSTANCE.currentLanguage = new Russian();
-	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/messages.ru_RU.texts"));
-	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/uiActions.ru_RU.texts"));
-	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/ui.ru_RU.texts"));
-	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/events.ru_RU.texts"));
-	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/actions.ru_RU.words"));
-	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/characters.ru_RU.words"));
-	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/sounds.ru_RU.words"));
-	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/items.ru_RU.words"));
-	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/spells_widget.ru_RU.texts"));
-	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("org/tendiwa/modules/mainModule/language/ru_RU/key_hints_widget.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/messages.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/uiActions.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/ui.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/events.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/actions.ru_RU.words"));
+	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/characters.ru_RU.words"));
+	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/sounds.ru_RU.words"));
+	INSTANCE.currentLanguage.loadDictionary(Resources.getResource("language/ru_RU/items.ru_RU.words"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/spells_widget.ru_RU.texts"));
+	INSTANCE.currentLanguage.loadCorpus(Resources.getResource("language/ru_RU/key_hints_widget.ru_RU.texts"));
 }
 }
