@@ -12,7 +12,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.core.clients.RenderCell;
 import org.tendiwa.core.clients.RenderWorld;
-import org.tendiwa.core.meta.CellPosition;
+import org.tendiwa.core.meta.Cell;
 
 @Singleton
 public class FloorFieldOfViewLayer {
@@ -22,7 +22,7 @@ private final ShapeRenderer shapeRen = new ShapeRenderer();
 private final ShaderProgram notYetSeenShader;
 private final Texture blackOpaqueTexture;
 private final Batch batch;
-private final CellPosition player;
+private final Cell player;
 private final RenderWorld renderWorld;
 private final FrameBuffer depthTestFrameBuffer;
 private final PostProcessor postProcessor;
@@ -36,7 +36,7 @@ private boolean renderNotYetSeenCells = false;
 @Inject
 FloorFieldOfViewLayer(
 	@Named("game_screen_batch") Batch batch,
-	@Named("player") CellPosition player,
+	@Named("player") Cell player,
 	RenderWorld renderWorld,
 	@Named("game_screen_depth_test_fb") FrameBuffer depthTestFrameBuffer,
 	@Named("game_screen_default_post_processor") PostProcessor postProcessor,
@@ -121,8 +121,8 @@ public void draw() {
 						x * GameScreen.TILE_SIZE,
 						y * GameScreen.TILE_SIZE,
 						hasUnseenNeighbors,
-						x + viewport.getWindowWidthCells() - player.getX(),
-						y - viewport.getWindowHeightCells() - player.getY()
+						x + viewport.getWindowWidthCells() - player.x(),
+						y - viewport.getWindowHeightCells() - player.y()
 					);
 				}
 			}
@@ -158,8 +158,8 @@ public void draw() {
 				int hashX, hashY;
 				if (cell.isVisible()) {
 					// For visible cells
-					hashX = x + viewport.getWindowWidthCells() - player.getX();
-					hashY = y + viewport.getWindowHeightCells() - player.getY();
+					hashX = x + viewport.getWindowWidthCells() - player.x();
+					hashY = y + viewport.getWindowHeightCells() - player.y();
 				} else {
 					// For unseen cells
 					hashX = x;

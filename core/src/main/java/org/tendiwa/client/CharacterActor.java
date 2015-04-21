@@ -33,8 +33,8 @@ public CharacterActor(
 	Character character
 ) {
 	this.character = character;
-	setX(character.getX());
-	setY(character.getY());
+	setX(character.x());
+	setY(character.y());
 	if (character.getType().hasAspect(CharacterAspect.HUMANOID)) {
 		frameBuffer = new FrameBuffer(Pixmap.Format.RGBA8888, GameScreen.TILE_SIZE, GameScreen.TILE_SIZE, true);
 		updateTexture();
@@ -43,7 +43,7 @@ public CharacterActor(
 		String typeName = character.getType().getResourceName();
 		texture = atlasCharacters.findRegion(typeName);
 	}
-	setZIndex(character.getY() * world.getWidth() + character.getX());
+	setZIndex(character.y() * world.getWidth() + character.x());
 	model.subscribe(new Observer<EventPutOn>() {
 		@Override
 		public void update(EventPutOn event, Finishable<EventPutOn> emitter) {

@@ -10,7 +10,7 @@ import org.tendiwa.client.ui.input.KeyboardAction;
 import org.tendiwa.client.ui.input.MouseAction;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiModeManager;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.BasicCell;
 
 import static com.badlogic.gdx.Input.Keys.*;
 
@@ -69,7 +69,7 @@ public void addTo(InputToActionMapper mapper) {
 	mapper.putMouseMovedAction(new MouseAction("ui.actions.cell_selection.mouse_moved") {
 		@Override
 		public void act(int screenX, int screenY) {
-			Cell point = viewport.screenPixelToWorldCell(screenX, screenY);
+			BasicCell point = viewport.screenPixelToWorldCell(screenX, screenY);
 			cursorPosition.setPoint(point);
 		}
 	});

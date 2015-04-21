@@ -52,8 +52,8 @@ public Iterable<CharacterAbility> findActionsAroundPlayer() {
 	ImmutableSet.Builder<CharacterAbility> builder = ImmutableSet.builder();
 	for (Direction dir : Directions.ALL_DIRECTIONS) {
 		int[] d = dir.side2d();
-		int x = player.getX() + d[0];
-		int y = player.getY() + d[1];
+		int x = player.x() + d[0];
+		int y = player.y() + d[1];
 		if (plane.containsCell(x, y) && plane.hasObject(x, y)) {
 			Usable usable = GameObjects.asUsable(plane.getGameObject(x, y).getType());
 			if (usable != null) {

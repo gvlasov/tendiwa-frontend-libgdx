@@ -2,7 +2,7 @@ package org.tendiwa.client.ui.model;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.BasicCell;
 
 @Singleton
 public class CursorPosition {
@@ -31,12 +31,12 @@ public int getWorldY() {
 	return y;
 }
 
-public Cell getPoint() {
-	return new Cell(x, y);
+public BasicCell getPoint() {
+	return new BasicCell(x, y);
 }
 
-public void setPoint(Cell point) {
-	x = point.getX();
-	y = point.getY();
+public void setPoint(BasicCell point) {
+	x = point.x();
+	y = point.y();
 }
 }

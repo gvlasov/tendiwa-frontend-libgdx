@@ -36,7 +36,7 @@ import org.tendiwa.client.ui.widgets.UiAtlasProvider;
 import org.tendiwa.core.dependencies.PlayerCharacterProvider;
 import org.tendiwa.core.dependencies.WorldProvider;
 import org.tendiwa.core.factories.RenderPlaneFactory;
-import org.tendiwa.core.meta.CellPosition;
+import org.tendiwa.core.meta.Cell;
 
 public class TendiwaLibgdxModule extends AbstractModule {
 
@@ -73,7 +73,7 @@ public class TendiwaLibgdxModule extends AbstractModule {
                 .annotatedWith(Names.named("game_screen_batch"))
                 .to(SpriteBatch.class)
                 .in(Scopes.SINGLETON);
-        bind(CellPosition.class)
+        bind(Cell.class)
                 .annotatedWith(Names.named("player"))
                 .toProvider(PlayerCharacterProvider.class);
         bind(TextureAtlas.class)

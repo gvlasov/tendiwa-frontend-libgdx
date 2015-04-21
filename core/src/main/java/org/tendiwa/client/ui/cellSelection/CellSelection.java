@@ -7,10 +7,10 @@ import org.tendiwa.client.EntitySelectionListener;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.client.ui.uiModes.UiMode;
 import org.tendiwa.client.ui.uiModes.UiModeManager;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.BasicCell;
 
 public class CellSelection {
-private final EntitySelectionListener<Cell> entitySelectionListener;
+private final EntitySelectionListener<BasicCell> entitySelectionListener;
 private final UiMode uiMode;
 private final UiModeManager uiModeManager;
 private final CellSelectionActionAdder actionAdder;
@@ -20,7 +20,7 @@ private final CursorPosition model;
 @Inject
 public CellSelection(
 	CursorPosition model,
-	@Assisted EntitySelectionListener<Cell> entitySelectionListener,
+	@Assisted EntitySelectionListener<BasicCell> entitySelectionListener,
 	@Named("cell_selection") UiMode uiMode,
 	UiModeManager uiModeManager,
 	CellSelectionActionAdder actionAdder,

@@ -18,7 +18,7 @@ import org.tendiwa.core.*;
 import org.tendiwa.core.Character;
 import org.tendiwa.core.meta.Condition;
 import org.tendiwa.core.volition.Volition;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.BasicCell;
 import org.tendiwa.groovy.Registry;
 import org.tendiwa.pathfinding.dijkstra.Paths;
 
@@ -120,52 +120,52 @@ public void addTo(InputToActionMapper actionMapper) {
 	actionMapper.putAction(H, new KeyboardAction("action.stepWest") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY());
+			moveToOrAttackCharacterInCell(player.x() - 1, player.y());
 		}
 	});
 	actionMapper.putAction(L, new KeyboardAction("action.stepEast") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY());
+			moveToOrAttackCharacterInCell(player.x() + 1, player.y());
 		}
 	});
 	actionMapper.putAction(J, new KeyboardAction("action.stepSouth") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX(), player.getY() + 1);
+			moveToOrAttackCharacterInCell(player.x(), player.y() + 1);
 		}
 
 	});
 	actionMapper.putAction(K, new KeyboardAction("action.stepNorth") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX(), player.getY() - 1);
+			moveToOrAttackCharacterInCell(player.x(), player.y() - 1);
 		}
 
 	});
 	actionMapper.putAction(Y, new KeyboardAction("action.stepNorthWest") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY() - 1);
+			moveToOrAttackCharacterInCell(player.x() - 1, player.y() - 1);
 		}
 	});
 	actionMapper.putAction(U, new KeyboardAction("action.stepNorthEast") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY() - 1);
+			moveToOrAttackCharacterInCell(player.x() + 1, player.y() - 1);
 		}
 	});
 
 	actionMapper.putAction(B, new KeyboardAction("action.stepSouthWest") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX() - 1, player.getY() + 1);
+			moveToOrAttackCharacterInCell(player.x() - 1, player.y() + 1);
 		}
 	});
 	actionMapper.putAction(N, new KeyboardAction("action.stepSouthEast") {
 		@Override
 		public void act() {
-			moveToOrAttackCharacterInCell(player.getX() + 1, player.getY() + 1);
+			moveToOrAttackCharacterInCell(player.x() + 1, player.y() + 1);
 		}
 	});
 	actionMapper.putAction(F9, new KeyboardAction("action.toggleWorldMapScreen") {
@@ -194,7 +194,7 @@ public void addTo(InputToActionMapper actionMapper) {
 	actionMapper.putAction(G, new KeyboardAction("action.pickUp") {
 		@Override
 		public void act() {
-			if (player.getPlane().hasAnyItems(player.getX(), player.getY())) {
+			if (player.getPlane().hasAnyItems(player.x(), player.y())) {
 				volition.pickUp();
 			}
 		}
@@ -236,10 +236,10 @@ public void addTo(InputToActionMapper actionMapper) {
 						cursorActor.setVisible(false);
 						cellSelectionActor.setVisible(true);
 						cellSelectionFactory.create(
-							new EntitySelectionListener<Cell>() {
+							new EntitySelectionListener<BasicCell>() {
 								@Override
-								public void execute(Cell point) {
-									volition.propel(item.takeSingleItem(), point.getX(), point.getY());
+								public void execute(BasicCell point) {
+									volition.propel(item.takeSingleItem(), point.x(), point.y());
 								}
 							},
 							new Runnable() {
@@ -272,10 +272,10 @@ public void addTo(InputToActionMapper actionMapper) {
 					cursorActor.setVisible(false);
 					cellSelectionActor.setVisible(true);
 					cellSelectionFactory.create(
-						new EntitySelectionListener<Cell>() {
+						new EntitySelectionListener<BasicCell>() {
 							@Override
-							public void execute(Cell point) {
-								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.getX(), point.getY());
+							public void execute(BasicCell point) {
+								volition.shoot(rangedWeapon, quiveredItem.takeSingleItem(), point.x(), point.y());
 							}
 						},
 						new Runnable() {
@@ -347,11 +347,11 @@ public void addTo(InputToActionMapper actionMapper) {
 		public void act(int screenX, int screenY) {
 			final int cellX = (viewport.getStartPixelX() + screenX) / GameScreen.TILE_SIZE;
 			final int cellY = (viewport.getStartPixelY() + screenY) / GameScreen.TILE_SIZE;
-			if (cellX == player.getX() && cellY == player.getY()) {
+			if (cellX == player.x() && cellY == player.y()) {
 				return;
 			}
-			LinkedList<Cell> path = Paths.getPath(
-				player.getX(), player.getY(),
+			LinkedList<BasicCell> path = Paths.getPath(
+				player.x(), player.y(),
 				cellX, cellY,
 				player.getPathWalkerOverCharacters(),
 				100
@@ -364,13 +364,13 @@ public void addTo(InputToActionMapper actionMapper) {
 
 				@Override
 				public boolean ended() {
-					return forcedEnd || player.getX() == cellX && player.getY() == cellY;
+					return forcedEnd || player.x() == cellX && player.y() == cellY;
 				}
 
 				@Override
 				public void execute() {
-					LinkedList<Cell> path = Paths.getPath(
-						player.getX(), player.getY(),
+					LinkedList<BasicCell> path = Paths.getPath(
+						player.x(), player.y(),
 						cellX, cellY,
 						player.getPathWalkerOverCharacters(),
 						100
@@ -380,8 +380,8 @@ public void addTo(InputToActionMapper actionMapper) {
 						return;
 					}
 					if (!path.isEmpty()) {
-						Cell nextStep = path.removeFirst();
-						moveToOrAttackCharacterInCell(nextStep.getX(), nextStep.getY());
+						BasicCell nextStep = path.removeFirst();
+						moveToOrAttackCharacterInCell(nextStep.x(), nextStep.y());
 					}
 				}
 			});
@@ -390,7 +390,7 @@ public void addTo(InputToActionMapper actionMapper) {
 	actionMapper.putMouseMovedAction(new MouseAction("ui.actions.cell_selection.mouse_moved") {
 		@Override
 		public void act(int screenX, int screenY) {
-			Cell point = viewport.screenPixelToWorldCell(screenX, screenY);
+			BasicCell point = viewport.screenPixelToWorldCell(screenX, screenY);
 			if (!cursorPosition.getPoint().equals(point)) {
 				cursorPosition.setPoint(point);
 			}
@@ -409,8 +409,8 @@ public void addTo(InputToActionMapper actionMapper) {
  */
 private void moveToOrAttackCharacterInCell(int x, int y) {
 	// Only neighbor cells are allowed here
-	int dx = player.getX() - x;
-	int dy = player.getY() - y;
+	int dx = player.x() - x;
+	int dy = player.y() - y;
 	assert Math.abs(dx) <= 1 && Math.abs(dy) <= 1;
 	if (player.canStepOn(x, y)) {
 		volition.move(Directions.shiftToDirection(-dx, -dy));

@@ -7,7 +7,7 @@ import org.tendiwa.client.ui.cellSelection.CellSelectionActor;
 import org.tendiwa.client.ui.factories.CellSelectionFactory;
 import org.tendiwa.core.*;
 import org.tendiwa.core.volition.Volition;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.BasicCell;
 
 public class SpellSelectionListener implements EntitySelectionListener<Spell> {
 private final Volition volition;
@@ -35,10 +35,10 @@ public void execute(final Spell characterAbility) {
 		cursorActor.setVisible(false);
 		cellSelectionActor.setVisible(true);
 		factory.create(
-			new EntitySelectionListener<Cell>() {
+			new EntitySelectionListener<BasicCell>() {
 				@Override
-				public void execute(Cell point) {
-					volition.actionToCell((ActionToCell) action, point.getX(), point.getY());
+				public void execute(BasicCell point) {
+					volition.actionToCell((ActionToCell) action, point.x(), point.y());
 				}
 			},
 			new Runnable() {

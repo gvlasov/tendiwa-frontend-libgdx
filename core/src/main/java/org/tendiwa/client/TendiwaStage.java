@@ -142,18 +142,18 @@ TendiwaStage(
 		@Override
 		public void update(EventMove event, final Finishable<EventMove> emitter) {
 			Actor characterActor = getCharacterActor(event.character);
-			int index = event.character.getY() * world.getWidth() + event.character.getX();
+			int index = event.character.y() * world.getWidth() + event.character.x();
 			sortActorsByY();
 
 			if (config.animationsEnabled) {
 				Action action;
 				if (event.movingStyle == MovingStyle.STEP) {
 					action = new MoveToAction();
-					((MoveToAction) action).setPosition(event.character.getX(), event.character.getY());
+					((MoveToAction) action).setPosition(event.character.x(), event.character.y());
 					((MoveToAction) action).setDuration(0.1f);
 				} else if (event.movingStyle == MovingStyle.LEAP) {
 					MoveByAction moveTo = new MoveByAction();
-					moveTo.setAmount(event.character.getX() - event.xPrev, event.character.getY() - event.yPrev);
+					moveTo.setAmount(event.character.x() - event.xPrev, event.character.y() - event.yPrev);
 					float lengthMovingDuration = 0.3f;
 					moveTo.setDuration(lengthMovingDuration);
 					MoveByAction moveUp = moveBy(0, -1, lengthMovingDuration / 2);
@@ -163,7 +163,7 @@ TendiwaStage(
 					Action upAndDown = sequence(moveUp, moveDown);
 					action = parallel(moveTo, upAndDown);
 				} else {
-					action = moveTo(event.character.getX(), event.character.getY(), 0.1f);
+					action = moveTo(event.character.x(), event.character.y(), 0.1f);
 				}
 				final Observer<EventMove> observer = this;
 				Action sequence = sequence(action, run(new Runnable() {
@@ -175,8 +175,8 @@ TendiwaStage(
 				}));
 				characterActor.addAction(sequence);
 			} else {
-				characterActor.setX(event.character.getX());
-				characterActor.setY(event.character.getY());
+				characterActor.setX(event.character.x());
+				characterActor.setY(event.character.y());
 				updateCharactersVisibility();
 //				if (event.character.isPlayer()) {
 				// If this is player moving, then the next event will be
@@ -274,7 +274,7 @@ TendiwaStage(
 			messageLog.pushMessage(
 				Languages.getText("log.get_damage", event.damageSource, event.damageType, event.character)
 			);
-			final Actor blood = new Blood(event.character.getX(), event.character.getY());
+			final Actor blood = new Blood(event.character.x(), event.character.y());
 			blood.addAction(sequence(delay(0.3f), run(new Runnable() {
 				@Override
 				public void run() {
@@ -299,8 +299,8 @@ TendiwaStage(
 		@Override
 		public void update(EventAttack event, final Finishable<EventAttack> emitter) {
 			CharacterActor characterActor = getCharacterActor(event.attacker);
-			float dx = event.aim.getX() - event.attacker.getX();
-			float dy = event.aim.getY() - event.attacker.getY();
+			float dx = event.aim.x() - event.attacker.x();
+			float dy = event.aim.y() - event.attacker.y();
 			final Observer<EventAttack> self = this;
 			characterActor.addAction(sequence(
 				moveBy(-dx * 0.2f, -dy * 0.2f, 0.1f),
@@ -385,7 +385,7 @@ void sortActorsByY() {
 
 private CharacterActor createCharacterActor(Character character) {
 	CharacterActor actor = characterActorFactory.create(character);
-	if (playerSeer.canSee(character.getX(), character.getY())) {
+	if (playerSeer.canSee(character.x(), character.y())) {
 		actor.setVisible(true);
 	} else {
 		actor.setVisible(false);
@@ -475,10 +475,10 @@ public void updateCharactersVisibility() {
 	for (CharacterActor actor : characterActors.values()) {
 		if (actor != null) {
 			Character character = actor.getCharacter();
-			if (playerSeer.canSee(character.getX(), character.getY())
+			if (playerSeer.canSee(character.x(), character.y())
 				&& !actor.isVisible()) {
 				actor.setVisible(true);
-			} else if (!playerSeer.canSee(character.getX(), character.getY())
+			} else if (!playerSeer.canSee(character.x(), character.y())
 				&& actor.isVisible()) {
 				actor.setVisible(false);
 			}

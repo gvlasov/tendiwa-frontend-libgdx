@@ -8,17 +8,17 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.ui.model.CursorPosition;
-import org.tendiwa.geometry.Cell;
-import org.tendiwa.core.meta.CellPosition;
+import org.tendiwa.geometry.BasicCell;
+import org.tendiwa.core.meta.Cell;
 import org.tendiwa.geometry.CellSegment;
 
 @Singleton
 public class CellSelectionPlainActor extends CellSelectionActor {
 public static Texture texture;
-private final CellPosition player;
+private final Cell player;
 
 @Inject
-public CellSelectionPlainActor(@Named("player") CellPosition player, CursorPosition cursorPosition) {
+public CellSelectionPlainActor(@Named("player") Cell player, CursorPosition cursorPosition) {
 	super(cursorPosition);
 	this.player = player;
 }
@@ -36,14 +36,14 @@ public Texture getTexture() {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 //	batch.begin();
-	Cell[] vector = CellSegment.cells(
-		player.getX(),
-		player.getY(),
+	BasicCell[] vector = CellSegment.cells(
+		player.x(),
+		player.y(),
 		cursorPosition.getWorldX(),
 		cursorPosition.getWorldY()
 	);
-	for (Cell coord : vector) {
-		batch.draw(getTexture(), coord.getX() * GameScreen.TILE_SIZE, coord.getY() * GameScreen.TILE_SIZE);
+	for (BasicCell coord : vector) {
+		batch.draw(getTexture(), coord.x() * GameScreen.TILE_SIZE, coord.y() * GameScreen.TILE_SIZE);
 	}
 //	batch.end();
 }

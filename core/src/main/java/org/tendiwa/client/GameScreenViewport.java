@@ -7,9 +7,9 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import org.tendiwa.client.ui.model.CursorPosition;
-import org.tendiwa.geometry.Cell;
+import org.tendiwa.geometry.BasicCell;
 import org.tendiwa.core.World;
-import org.tendiwa.core.meta.CellPosition;
+import org.tendiwa.core.meta.Cell;
 
 @Singleton
 public class GameScreenViewport {
@@ -35,7 +35,7 @@ private int startPixelY;
 @Inject
 GameScreenViewport(
 	@Named("current_player_world") World world,
-	@Named("player") CellPosition player,
+	@Named("player") Cell player,
     CursorPosition cursorPosition,
     Input gdxInput
 ) {
@@ -52,7 +52,7 @@ GameScreenViewport(
 	camera = new OrthographicCamera(windowWidth, windowHeight);
 	camera.setToOrtho(true, windowWidth, windowHeight);
 
-	centerCamera(player.getX() * GameScreen.TILE_SIZE, player.getY() * GameScreen.TILE_SIZE);
+	centerCamera(player.x() * GameScreen.TILE_SIZE, player.y() * GameScreen.TILE_SIZE);
 	camera.update();
 }
 
@@ -168,8 +168,8 @@ public boolean isInScreenRectangle(int x, int y, int startScreenCellX, int start
 		&& y < startScreenCellY + heightInCells;
 }
 
-public Cell screenPixelToWorldCell(int screenX, int screenY) {
-	return new Cell(
+public BasicCell screenPixelToWorldCell(int screenX, int screenY) {
+	return new BasicCell(
 		(startPixelX + screenX) / GameScreen.TILE_SIZE,
 		(startPixelY + screenY) / GameScreen.TILE_SIZE
 	);
