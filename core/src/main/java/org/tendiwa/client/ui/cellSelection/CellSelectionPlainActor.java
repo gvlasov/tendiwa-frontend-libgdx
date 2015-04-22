@@ -10,7 +10,7 @@ import org.tendiwa.client.GameScreen;
 import org.tendiwa.client.ui.model.CursorPosition;
 import org.tendiwa.geometry.BasicCell;
 import org.tendiwa.core.meta.Cell;
-import org.tendiwa.geometry.CellSegment;
+import org.tendiwa.geometry.BasicCellSegment;
 
 @Singleton
 public class CellSelectionPlainActor extends CellSelectionActor {
@@ -36,7 +36,7 @@ public Texture getTexture() {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 //	batch.begin();
-	BasicCell[] vector = CellSegment.cells(
+	BasicCell[] vector = BasicCellSegment.cells(
 		player.x(),
 		player.y(),
 		cursorPosition.getWorldX(),
