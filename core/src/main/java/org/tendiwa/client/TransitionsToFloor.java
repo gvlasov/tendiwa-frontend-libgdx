@@ -6,8 +6,12 @@ import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 import com.google.inject.name.Named;
 import org.tendiwa.core.*;
+import org.tendiwa.core.meta.Cell;
 import org.tendiwa.core.meta.Chance;
 import org.tendiwa.geometry.*;
+
+import static org.tendiwa.geometry.GeometryPrimitives.cell;
+import static org.tendiwa.geometry.GeometryPrimitives.rectangle;
 
 /**
  * This class generates textures of transitions to a certain type of floor and provides access to them.
@@ -45,13 +49,13 @@ public Pixmap createTransition(CardinalDirection dir) {
 	Pixmap.setBlending(Pixmap.Blending.None);
 	Pixmap pixmap = pixmapTextureAtlasFloors.createPixmap(floorType.getResourceName());
 	CardinalDirection opposite = dir.opposite();
-	Rectangle transitionRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(dir).createRectangle(diffusionDepth);
-	Rectangle clearRec = DSL.rectangle(TILE_SIZE, TILE_SIZE).getSideAsSidePiece(opposite).createRectangle(TILE_SIZE - diffusionDepth);
+	Rectangle transitionRec = rectangle(TILE_SIZE, TILE_SIZE).side(dir).crust(diffusionDepth);
+	Rectangle clearRec = rectangle(TILE_SIZE, TILE_SIZE).side(opposite).crust(TILE_SIZE - diffusionDepth);
 	pixmap.setColor(0, 0, 0, 0);
 	// Fill the most of the pixmap with transparent pixels.
-	pixmap.fillRectangle(clearRec.getX(), clearRec.getY(), clearRec.width(), clearRec.height());
-	OrthoCellSegment sideSegment = transitionRec.getSideAsSegment(dir);
-	BasicCell point = new BasicCell(sideSegment.getX(), sideSegment.getY());
+	pixmap.fillRectangle(clearRec.x(), clearRec.y(), clearRec.width(), clearRec.height());
+	OrthoCellSegment sideSegment = transitionRec.side(dir);
+	Cell point = sideSegment.start();
 	pixmap.setColor(0, 0, 0, 0);
 	CardinalDirection dynamicGrowingDir = dir.isVertical() ? Directions.E : Directions.S;
 	int startI = sideSegment.getStaticCoord();
@@ -73,7 +77,7 @@ public Pixmap createTransition(CardinalDirection dir) {
 			}
 			point = point.moveToSide(dynamicGrowingDir);
 		}
-		point = new BasicCell(sideSegment.getX(), sideSegment.getY()).moveToSide(opposite, iterationsI++);
+		point = cell(sideSegment.getX(), sideSegment.getY()).moveToSide(opposite, iterationsI++);
 	}
 	return pixmap;
 }

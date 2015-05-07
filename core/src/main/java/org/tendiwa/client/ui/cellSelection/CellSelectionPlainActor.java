@@ -36,13 +36,13 @@ public Texture getTexture() {
 @Override
 public void draw(Batch batch, float parentAlpha) {
 //	batch.begin();
-	BasicCell[] vector = BasicCellSegment.cells(
+	Cell[] vector = BasicCellSegment.cells(
 		player.x(),
 		player.y(),
 		cursorPosition.getWorldX(),
 		cursorPosition.getWorldY()
 	);
-	for (BasicCell coord : vector) {
+	for (Cell coord : vector) {
 		batch.draw(getTexture(), coord.x() * GameScreen.TILE_SIZE, coord.y() * GameScreen.TILE_SIZE);
 	}
 //	batch.end();

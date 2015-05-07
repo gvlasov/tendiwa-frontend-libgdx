@@ -16,7 +16,6 @@ import org.tendiwa.client.ui.factories.FloorTransitionsProvidersRegistry;
 import org.tendiwa.core.*;
 import org.tendiwa.core.clients.RenderCell;
 import org.tendiwa.core.clients.RenderWorld;
-import org.tendiwa.groovy.Registry;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,7 +28,8 @@ private final GameScreenViewport viewport;
 private final Logger logger;
 private final ShaderProgram defaultShader;
 private final FloorTransitionsProvidersRegistry registry;
-private final GraphicsConfig config;
+	private final Encyclopedia encyclopedia;
+	private final GraphicsConfig config;
 private final TextureAtlas atlasFloors;
 private final SpriteBatch batch;
 private final int transitionsAtlasSize = 1024;
@@ -51,6 +51,7 @@ public FloorLayer(
 	@Named("shader_liquid_floor_animate") ShaderProgram liquidFloorAnimateShader,
 	@Named("shader_default") ShaderProgram defaultShader,
 	FloorTransitionsProvidersRegistry registry,
+	Encyclopedia encyclopedia,
 	GraphicsConfig config
 ) {
 	this.world = world;
@@ -59,6 +60,7 @@ public FloorLayer(
 	this.logger = logger;
 	this.defaultShader = defaultShader;
 	this.registry = registry;
+	this.encyclopedia = encyclopedia;
 	this.config = config;
 	atlasFloors = new TextureAtlas(Gdx.files.internal("pack/floors.atlas"), true);
 	cacheRegions();
@@ -163,7 +165,7 @@ private TextureRegion getFloorTextureByCell(FloorType floor, int x, int y) {
 private void cacheRegions() {
 	Map<String, FloorType> name2Type = new HashMap<>();
 	Map<String, Array<TextureAtlas.AtlasRegion>> name2Regions = new HashMap<>();
-	for (FloorType floorType : Registry.floorTypes) {
+	for (FloorType floorType : encyclopedia.floors()) {
 		name2Type.put(floorType.getResourceName(), floorType);
 		floorRegions.put(floorType, new HashMap<Integer, TextureRegion>());
 		assert atlasFloors.findRegion(floorType.getResourceName()) != null;

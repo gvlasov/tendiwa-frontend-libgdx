@@ -55,8 +55,9 @@ public Iterable<CharacterAbility> findActionsAroundPlayer() {
 		int x = player.x() + d[0];
 		int y = player.y() + d[1];
 		if (plane.containsCell(x, y) && plane.hasObject(x, y)) {
-			Usable usable = GameObjects.asUsable(plane.getGameObject(x, y).getType());
-			if (usable != null) {
+			GameObject gameObject = plane.getGameObject(x, y);
+			if (gameObject.isUsable()) {
+				Usable usable = (Usable) gameObject;
 				builder.addAll(usable.getActions());
 			}
 		}
